@@ -1,223 +1,257 @@
+"use client";
+import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import Link from "next/link";
+import { useAppStore } from "@/store/useAppStore";
+import { useAuth } from "@/context/AuthContext";
+import { getGESColor, getGESLabel, calculateAggregate, aggregateRating } from "@/lib/utils";
+import toast from "react-hot-toast";
 
-const navItems = [
-  { icon: "🏠", label: "My Dashboard", href: "/student" },
-  { icon: "📅", label: "My Schedule", href: "/student#schedule" },
-  { icon: "📚", label: "Homework", href: "/student#homework" },
-  { icon: "📊", label: "My Grades", href: "/student#grades" },
-  { icon: "🎓", label: "BECE Prep", href: "/bece" },
-  { icon: "📸", label: "School Feed", href: "/student#feed" },
-];
+function fmtSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
-const grades = [
-  { subject: "Mathematics", score: 82, grade: 2, change: "+5" },
-  { subject: "English", score: 76, grade: 3, change: "-2" },
-  { subject: "Integrated Science", score: 89, grade: 2, change: "+8" },
-  { subject: "Social Studies", score: 91, grade: 1, change: "+3" },
-  { subject: "ICT", score: 74, grade: 3, change: "0" },
-  { subject: "French", score: 61, grade: 5, change: "-4" },
-];
-
-const gradeColors: Record<number, string> = {
-  1: "#22c55e", 2: "#10b981", 3: "#00D4FF", 4: "#f59e0b", 5: "#ef4444", 6: "#ef4444",
-};
-const gradeLabels: Record<number, string> = {
-  1: "Excellent", 2: "Very Good", 3: "Good", 4: "Credit", 5: "Pass", 6: "Weak Pass",
-};
-
-const homework = [
-  { subject: "Mathematics", task: "Exercises 14.1–14.4: Fractions", due: "Mon 6 May", done: false },
-  { subject: "English", task: "Write a 2-page essay on 'My Community'", due: "Wed 8 May", done: true },
-  { subject: "Science", task: "Draw and label types of soil in Ghana", due: "Fri 10 May", done: false },
-];
-
-const schedule = [
-  { time: "7:30", subj: "Assembly / Morning Devotion", room: "Hall" },
-  { time: "8:00", subj: "Mathematics", room: "JHS 3A" },
-  { time: "9:00", subj: "English Language", room: "JHS 3A" },
-  { time: "10:00", subj: "Break", room: "Canteen" },
-  { time: "10:30", subj: "Integrated Science", room: "Lab" },
-  { time: "11:30", subj: "Social Studies", room: "JHS 3A" },
-  { time: "12:30", subj: "Lunch", room: "Canteen" },
-  { time: "1:30", subj: "ICT", room: "Computer Lab" },
-  { time: "2:30", subj: "French", room: "JHS 3A" },
-];
-
-const beceSubjects = [
-  { subj: "Mathematics", score: 71, total: 100, weakness: "Mensuration & Algebra" },
-  { subj: "English", score: 66, total: 100, weakness: "Summary Writing" },
-  { subj: "Science", score: 74, total: 100, weakness: "Genetics" },
-  { subj: "Social Studies", score: 82, total: 100, weakness: "History: Independence" },
-  { subj: "French", score: 55, total: 100, weakness: "Verb conjugation" },
+const NAV = [
+  { icon: "🏠", label: "Dashboard",    href: "/student" },
+  { icon: "📊", label: "My Grades",    href: "/student#grades" },
+  { icon: "📚", label: "Homework",     href: "/student#homework" },
+  { icon: "🎓", label: "BECE Prep",    href: "/bece" },
+  { icon: "📸", label: "School Feed",  href: "/student#feed" },
 ];
 
 export default function StudentPortal() {
-  const avg = Math.round(grades.reduce((s, g) => s + g.score, 0) / grades.length);
-  const aggregate = grades.reduce((s, g) => s + g.grade, 0);
+  const { user }   = useAuth();
+  const students   = useAppStore((s) => s.students);
+  const grades     = useAppStore((s) => s.grades);
+  const homework   = useAppStore((s) => s.homework);
+  const beceAttempts = useAppStore((s) => s.beceAttempts);
+  const feedPosts  = useAppStore((s) => s.feedPosts);
+  const likePost   = useAppStore((s) => s.likePost);
+  const homeworkSubmissions = useAppStore((s) => s.homeworkSubmissions);
+  const submitHomeworkFn    = useAppStore((s) => s.submitHomework);
+
+  const [pendingFiles, setPendingFiles] = useState<Record<string, File | null>>({});
+
+  const student    = students.find((s) => s.full_name === user?.full_name) ?? students[0];
+  const myGrades   = grades.filter((g) => g.student_id === student?.id);
+  const myHW       = homework.filter((h) => h.class_name === student?.class_name);
+  const myAttempts = beceAttempts.filter((a) => a.student_id === student?.id);
+
+  const mySubmissions = Object.fromEntries(
+    homeworkSubmissions.filter((s) => s.student_id === student?.id).map((s) => [s.homework_id, s])
+  );
+
+  const handleSubmit = (hwId: string) => {
+    const file = pendingFiles[hwId];
+    if (!file || !student) return;
+    submitHomeworkFn(hwId, student.id, student.full_name, file.name, file.type, file.size);
+    setPendingFiles((p) => ({ ...p, [hwId]: null }));
+    toast.success("Homework submitted successfully!");
+  };
+
+  const aggregate = myGrades.length ? calculateAggregate(myGrades) : null;
+  const avgScore  = myGrades.length ? Math.round(myGrades.reduce((s, g) => s + g.raw_score, 0) / myGrades.length) : null;
+
+  const subjectScores = myGrades.map((g) => ({ subject: g.subject, score: g.raw_score, ges: g.ges_grade }));
+  const weakSubjects  = subjectScores.filter((s) => s.score < 60).sort((a, b) => a.score - b.score);
 
   return (
-    <DashboardShell title="Kwame Mensah" subtitle="JHS 3A · Student ID: JHS-2024-088"
-      role="Student" roleColor="#E5B800" navItems={navItems}>
-
-      {/* Hero card */}
-      <div className="rounded-3xl p-6 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-5"
+    <DashboardShell role="student" navItems={NAV}>
+      {/* Hero */}
+      <div className="rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-4"
         style={{ background: "linear-gradient(135deg, #E5B800, #FFD700)" }}>
-        <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0"
-          style={{ background: "rgba(0,0,0,0.1)" }}>👦</div>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+          style={{ background: "rgba(0,0,0,0.1)" }}>
+          {student?.gender === "female" ? "👧" : "👦"}
+        </div>
         <div className="flex-1 text-center sm:text-left">
-          <div className="font-black text-2xl text-black mb-1">Kwame Mensah</div>
-          <div className="text-yellow-800 text-sm mb-3">JHS 3A · Phoenix International School</div>
+          <h2 className="text-xl font-black text-black mb-0.5">{student?.full_name ?? user?.full_name}</h2>
+          <p className="text-yellow-800 text-sm mb-2">{student?.class_name} · {student?.student_id}</p>
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-            <span className="text-xs px-3 py-1 rounded-full font-bold bg-black/10 text-black">Avg: {avg}%</span>
-            <span className="text-xs px-3 py-1 rounded-full font-bold bg-black/10 text-black">Aggregate: {aggregate}</span>
-            <span className="text-xs px-3 py-1 rounded-full font-bold bg-black/10 text-black">Rank: 7 / 27</span>
-            <span className="text-xs px-3 py-1 rounded-full font-bold bg-black/10 text-black">BECE: Nov 2026</span>
+            {avgScore !== null && <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-black/10">Avg: {avgScore}%</span>}
+            {aggregate !== null && <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-black/10">Aggregate: {aggregate}</span>}
+            {myAttempts.length > 0 && <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-black/10">BECE Attempts: {myAttempts.length}</span>}
           </div>
         </div>
-        <Link href="/bece" className="whitespace-nowrap text-sm px-5 py-2.5 rounded-full font-black"
+        <Link href="/bece"
+          className="whitespace-nowrap text-sm px-5 py-2.5 rounded-full font-black flex-shrink-0"
           style={{ background: "#0A1628", color: "#FFD700" }}>
-          Start BECE Practice →
+          BECE Practice →
         </Link>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid lg:grid-cols-2 gap-5 mb-5">
         {/* Grades */}
-        <div className="lg:col-span-2 glass rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-black text-gray-900">My Grades — Term 2</h3>
-            <div className="flex gap-2">
-              <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: "rgba(255,215,0,0.1)", color: "#E5B800" }}>
-                Avg: {avg}%
-              </span>
-              <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: "rgba(0,48,135,0.08)", color: "#003087" }}>
-                Agg: {aggregate}
-              </span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {grades.map((g) => {
-              const color = gradeColors[g.grade];
-              return (
-                <div key={g.subject} className="flex items-center gap-3">
-                  <div className="w-28 text-xs font-semibold text-gray-600 truncate">{g.subject}</div>
-                  <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${g.score}%`, background: color }}></div>
-                  </div>
-                  <div className="w-8 text-xs font-black text-gray-900">{g.score}</div>
-                  <div className="w-16 text-center">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                      style={{ background: color + "20", color }}>
-                      {gradeLabels[g.grade]}
+        <div id="grades" className="glass rounded-2xl p-5">
+          <h3 className="font-black text-gray-900 mb-4">My Grades — Term {myGrades[0]?.term ?? 2}</h3>
+          {myGrades.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No grades available yet.</p>
+          ) : (
+            <>
+              <div className="space-y-2.5 mb-3">
+                {myGrades.map((g) => (
+                  <div key={g.id} className="flex items-center gap-3">
+                    <div className="w-28 text-xs font-semibold text-gray-600 truncate">{g.subject}</div>
+                    <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${g.raw_score}%`, background: getGESColor(g.ges_grade) }} />
+                    </div>
+                    <div className="w-8 text-xs font-black text-gray-900">{g.raw_score}</div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: getGESColor(g.ges_grade) + "20", color: getGESColor(g.ges_grade) }}>
+                      {getGESLabel(g.ges_grade)}
                     </span>
                   </div>
-                  <div className={`w-8 text-xs font-bold text-center ${g.change.startsWith("+") ? "text-green-500" : g.change === "0" ? "text-gray-400" : "text-red-500"}`}>
-                    {g.change}
+                ))}
+              </div>
+              {aggregate !== null && (
+                <div className="p-3 rounded-xl" style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.25)" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl font-black" style={{ color: "#E5B800" }}>{aggregate}</div>
+                    <div className="text-xs text-gray-600">{aggregateRating(aggregate)}</div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 p-3 rounded-xl" style={{ background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)" }}>
-            <div className="text-xs text-gray-500 mb-1">Current BECE Aggregate Estimate</div>
-            <div className="flex items-center gap-3">
-              <div className="text-3xl font-black" style={{ color: "#E5B800" }}>{aggregate}</div>
-              <div className="text-xs text-gray-500">
-                {aggregate <= 8 ? "🟢 Excellent — Top SHS likely" :
-                 aggregate <= 12 ? "🔵 Very Good — Good SHS placement" :
-                 aggregate <= 18 ? "🟡 Good — Keep improving" :
-                 "🔴 Needs serious improvement"}
-              </div>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Today's Schedule */}
-        <div className="glass rounded-2xl p-5">
-          <h3 className="font-black text-gray-900 mb-4">Today&apos;s Schedule</h3>
-          <div className="space-y-1.5 overflow-y-auto max-h-72 scrollbar-hide">
-            {schedule.map((s, i) => (
-              <div key={i} className={`flex gap-3 p-2 rounded-xl ${i === 1 ? "border-l-4" : ""}`}
-                style={i === 1 ? { background: "rgba(0,48,135,0.06)", borderColor: "#003087" } : {}}>
-                <div className="text-xs font-bold w-10 text-gray-400 flex-shrink-0 pt-0.5">{s.time}</div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-800">{s.subj}</div>
-                  <div className="text-[10px] text-gray-400">{s.room}</div>
+        {/* Homework */}
+        <div id="homework" className="glass rounded-2xl p-5">
+          <h3 className="font-black text-gray-900 mb-4">Homework Due</h3>
+          {myHW.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No homework assigned.</p>
+          ) : (
+            <div className="space-y-3">
+              {myHW.map((hw) => {
+                const overdue    = new Date(hw.due_date) < new Date();
+                const submission = mySubmissions[hw.id];
+                const pending    = pendingFiles[hw.id];
+                return (
+                  <div key={hw.id} className="p-3 rounded-xl"
+                    style={{ background: overdue ? "rgba(239,68,68,0.05)" : "rgba(0,48,135,0.05)" }}>
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-xs font-black text-gray-800">{hw.subject}</span>
+                      <span className={`text-[10px] font-bold ${overdue ? "text-red-500" : "text-orange-500"}`}>
+                        {overdue ? "Overdue" : `Due ${hw.due_date}`}
+                      </span>
+                    </div>
+                    <div className="text-xs font-semibold text-gray-700 mb-0.5">{hw.title}</div>
+                    {hw.description && (
+                      <div className="text-[11px] text-gray-500 mb-1">{hw.description}</div>
+                    )}
+                    {hw.video_url && (
+                      <a href={hw.video_url} target="_blank" rel="noreferrer"
+                        className="text-[11px] text-blue-600 font-bold hover:underline mb-1 block">
+                        📹 Watch explanation
+                      </a>
+                    )}
+
+                    {/* Submission status / upload */}
+                    {submission ? (
+                      <div className="mt-2 flex items-center gap-2 p-2 rounded-lg"
+                        style={{ background: "rgba(34,197,94,0.1)" }}>
+                        <span className="text-xs font-black text-green-600">✅ Submitted</span>
+                        <span className="text-[11px] text-gray-600 truncate flex-1">{submission.file_name}</span>
+                        <span className="text-[10px] text-gray-400 flex-shrink-0">{fmtSize(submission.file_size)}</span>
+                        <label className="cursor-pointer text-[10px] text-blue-500 font-bold flex-shrink-0 hover:underline">
+                          Replace
+                          <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                            className="hidden"
+                            onChange={(e) => { const f = e.target.files?.[0]; if (f) setPendingFiles((p) => ({ ...p, [hw.id]: f })); e.target.value = ""; }} />
+                        </label>
+                      </div>
+                    ) : pending ? (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 min-w-0 text-[11px] text-gray-600 bg-gray-50 rounded-lg px-2 py-1.5 truncate">
+                          📄 {pending.name} <span className="text-gray-400">({fmtSize(pending.size)})</span>
+                        </div>
+                        <button type="button" onClick={() => handleSubmit(hw.id)}
+                          className="text-xs font-black px-3 py-1.5 rounded-lg flex-shrink-0"
+                          style={{ background: "#22c55e", color: "white" }}>Submit →</button>
+                        <button type="button" onClick={() => setPendingFiles((p) => ({ ...p, [hw.id]: null }))}
+                          className="text-xs text-gray-400 hover:text-red-400 flex-shrink-0">✕</button>
+                      </div>
+                    ) : (
+                      <label className="mt-2 cursor-pointer inline-block">
+                        <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                          className="hidden"
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) setPendingFiles((p) => ({ ...p, [hw.id]: f })); e.target.value = ""; }} />
+                        <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg inline-block"
+                          style={{ background: "rgba(0,48,135,0.08)", color: "#003087" }}>
+                          📎 Attach & Submit Work
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* BECE Weak Areas */}
+      {weakSubjects.length > 0 && (
+        <div className="rounded-2xl p-5 mb-5"
+          style={{ background: "linear-gradient(135deg, #0A1628, #003087)" }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-black text-white">🎯 BECE — Weak Areas to Focus On</h3>
+            <Link href="/bece" className="text-xs font-bold px-4 py-2 rounded-full"
+              style={{ background: "#FFD700", color: "#0A1628" }}>Practice Now →</Link>
+          </div>
+          <div className="space-y-2">
+            {weakSubjects.map((s) => (
+              <div key={s.subject} className="flex items-center gap-3">
+                <div className="w-24 text-xs text-blue-300 font-semibold">{s.subject}</div>
+                <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${s.score}%`, background: getGESColor(s.ges) }} />
                 </div>
+                <span className="text-xs font-black text-white w-8">{s.score}%</span>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Homework */}
-      <div className="glass rounded-2xl p-5 mb-6">
-        <h3 className="font-black text-gray-900 mb-4">Homework Due</h3>
-        <div className="grid sm:grid-cols-3 gap-3">
-          {homework.map((hw) => (
-            <div key={hw.subject} className={`rounded-xl p-4 ${hw.done ? "opacity-60" : ""}`}
-              style={{ background: hw.done ? "rgba(34,197,94,0.06)" : "rgba(0,48,135,0.06)", border: `1px solid ${hw.done ? "rgba(34,197,94,0.2)" : "rgba(0,48,135,0.1)"}` }}>
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-xs font-black text-gray-700">{hw.subject}</span>
-                {hw.done ? <span className="text-green-500 text-sm">✅</span> : <span className="text-orange-400 text-sm">⏳</span>}
+      {/* BECE Practice History */}
+      {myAttempts.length > 0 && (
+        <div className="glass rounded-2xl p-5 mb-5">
+          <h3 className="font-black text-gray-900 mb-3">BECE Practice History</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {myAttempts.slice(-8).map((a) => (
+              <div key={a.id} className="p-3 rounded-xl text-center"
+                style={{ background: a.percentage >= 70 ? "rgba(34,197,94,0.08)" : "rgba(245,158,11,0.08)" }}>
+                <div className="text-xs font-bold text-gray-700">{a.subject}</div>
+                <div className="text-xl font-black mt-1" style={{ color: a.percentage >= 70 ? "#22c55e" : "#f59e0b" }}>
+                  {a.percentage}%
+                </div>
+                <div className="text-[10px] text-gray-400">{a.score}/{a.total}</div>
               </div>
-              <div className="text-xs text-gray-600 mb-2">{hw.task}</div>
-              <div className="text-[11px] font-bold" style={{ color: hw.done ? "#22c55e" : "#f59e0b" }}>
-                Due: {hw.due}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Feed */}
+      <div id="feed" className="glass rounded-2xl p-5">
+        <h3 className="font-black text-gray-900 mb-3">📸 School Feed</h3>
+        <div className="space-y-2">
+          {feedPosts.slice(0, 3).map((p) => (
+            <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+              <div className="min-w-0">
+                <div className="font-bold text-gray-900 text-sm truncate">{p.title}</div>
+                <div className="text-[10px] text-gray-400">{p.author_name}</div>
               </div>
+              <button type="button" onClick={() => likePost(p.id)}
+                className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full ml-2 flex-shrink-0"
+                style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
+                ❤️ {p.likes}
+              </button>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* BECE Subject Weakness */}
-      <div className="rounded-2xl p-5 mb-6" style={{ background: "linear-gradient(135deg, #0A1628, #003087)" }}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🎯</span>
-            <h3 className="font-black text-white">BECE Weak Areas — Fix These First</h3>
-          </div>
-          <Link href="/bece" className="text-xs font-bold px-4 py-2 rounded-full"
-            style={{ background: "#FFD700", color: "#0A1628" }}>Start Pasco →</Link>
-        </div>
-        <div className="space-y-3">
-          {beceSubjects.map((s) => {
-            const pct = s.score;
-            const color = pct >= 80 ? "#22c55e" : pct >= 70 ? "#00D4FF" : pct >= 60 ? "#f59e0b" : "#ef4444";
-            return (
-              <div key={s.subj} className="flex items-center gap-3">
-                <div className="w-20 text-xs font-semibold text-blue-300">{s.subj}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 h-2 bg-white/10 rounded-full">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }}></div>
-                    </div>
-                    <span className="text-xs font-bold text-white">{pct}%</span>
-                  </div>
-                  {pct < 70 && (
-                    <div className="text-[10px] text-orange-300">⚠️ Weak: {s.weakness}</div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Admin Dashboard", href: "/admin", icon: "🏛️", color: "#003087" },
-          { label: "Teacher Portal", href: "/teacher", icon: "👩‍🏫", color: "#1565C0" },
-          { label: "Parent Portal", href: "/parent", icon: "👨‍👩‍👧", color: "#1565C0" },
-          { label: "BECE Simulator", href: "/bece", icon: "🎓", color: "#8b5cf6" },
-        ].map((l) => (
-          <Link key={l.href} href={l.href}
-            className="glass rounded-xl p-3 flex items-center gap-2 text-xs font-semibold card-hover"
-            style={{ color: l.color }}>
-            <span className="text-lg">{l.icon}</span>{l.label}
-          </Link>
-        ))}
       </div>
     </DashboardShell>
   );

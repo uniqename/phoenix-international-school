@@ -1,0 +1,190 @@
+import type {
+  Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
+  HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
+  CanteenWallet, FeedPost, Payroll, UserProfile, QuizQuestion,
+} from './types'
+import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
+
+export const MOCK_USERS: UserProfile[] = [
+  { id: 'admin-1', email: 'admin@phoenixgh.edu', full_name: 'Mr. Emmanuel Adjei', role: 'admin', phone: '0244123456' },
+  { id: 'teacher-1', email: 'teacher@phoenixgh.edu', full_name: 'Mrs. Adjoa Koomson', role: 'teacher', phone: '0244234567' },
+  { id: 'parent-1', email: 'parent@phoenixgh.edu', full_name: 'Mr. Kwame Asante', role: 'parent', phone: '0244345678' },
+  { id: 'student-1', email: 'student@phoenixgh.edu', full_name: 'Kwame Asante Jr.', role: 'student', phone: '' },
+]
+
+export const MOCK_STUDENTS: Student[] = [
+  { id: 's1', student_id: 'JHS-2024-001', full_name: 'Kwame Asante Jr.', dob: '2010-03-15', gender: 'male', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mr. Kwame Asante', parent_phone: '0244345678', fee_status: 'cleared', created_at: '2024-01-05T00:00:00Z' },
+  { id: 's2', student_id: 'JHS-2024-002', full_name: 'Abena Frimpong', dob: '2010-07-22', gender: 'female', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mrs. Frimpong', parent_phone: '0201456789', fee_status: 'cleared', created_at: '2024-01-05T00:00:00Z' },
+  { id: 's3', student_id: 'JHS-2024-003', full_name: 'Yaw Mensah', dob: '2011-01-10', gender: 'male', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mr. Mensah', parent_phone: '0277567890', fee_status: 'outstanding', created_at: '2024-01-05T00:00:00Z' },
+  { id: 's4', student_id: 'PR-2024-001', full_name: 'Ama Boateng', dob: '2013-05-18', gender: 'female', level: 'primary', class_name: 'Primary 5B', parent_name: 'Mrs. Boateng', parent_phone: '0244678901', fee_status: 'cleared', created_at: '2024-01-06T00:00:00Z' },
+  { id: 's5', student_id: 'PR-2024-002', full_name: 'Kofi Asiedu', dob: '2013-11-30', gender: 'male', level: 'primary', class_name: 'Primary 5B', parent_name: 'Mr. Asiedu', parent_phone: '0200789012', fee_status: 'partial', created_at: '2024-01-06T00:00:00Z' },
+  { id: 's6', student_id: 'PR-2024-003', full_name: 'Efua Darko', dob: '2014-02-14', gender: 'female', level: 'primary', class_name: 'Primary 5B', parent_name: 'Mr. Darko', parent_phone: '0246890123', fee_status: 'cleared', created_at: '2024-01-06T00:00:00Z' },
+  { id: 's7', student_id: 'KG-2024-001', full_name: 'Nana Owusu', dob: '2019-08-05', gender: 'male', level: 'kg', class_name: 'KG 2', parent_name: 'Mrs. Owusu', parent_phone: '0244901234', fee_status: 'cleared', created_at: '2024-01-07T00:00:00Z' },
+  { id: 's8', student_id: 'CR-2024-001', full_name: 'Maame Adu', dob: '2022-04-10', gender: 'female', level: 'creche', class_name: 'Crèche', parent_name: 'Mrs. Adu', parent_phone: '0277012345', fee_status: 'cleared', created_at: '2024-01-07T00:00:00Z' },
+  { id: 's9', student_id: 'JHS-2024-004', full_name: 'Akua Nyarko', dob: '2010-09-25', gender: 'female', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mr. Nyarko', parent_phone: '0200123456', fee_status: 'outstanding', created_at: '2024-01-05T00:00:00Z' },
+  { id: 's10', student_id: 'JHS-2024-005', full_name: 'Kweku Appiah', dob: '2011-12-01', gender: 'male', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mrs. Appiah', parent_phone: '0244234567', fee_status: 'cleared', created_at: '2024-01-05T00:00:00Z' },
+]
+
+export const MOCK_TEACHERS: Teacher[] = [
+  { id: 't1', employee_id: 'EMP-001', full_name: 'Mrs. Adjoa Koomson', phone: '0244234567', email: 'akoomson@phoenixgh.edu', class_name: 'JHS 3A', subjects: ['Mathematics', 'Integrated Science'], basic_salary: 3200, hire_date: '2018-09-01', ssnit_number: 'G0001234567' },
+  { id: 't2', employee_id: 'EMP-002', full_name: 'Mr. Kofi Amponsah', phone: '0201345678', email: 'kamponsah@phoenixgh.edu', class_name: 'JHS 2A', subjects: ['English Language', 'Social Studies'], basic_salary: 2800, hire_date: '2019-01-15' },
+  { id: 't3', employee_id: 'EMP-003', full_name: 'Miss Yaa Owusu', phone: '0246456789', email: 'yowusu@phoenixgh.edu', class_name: 'Primary 5B', subjects: ['Mathematics', 'Science', 'Social Studies'], basic_salary: 2500, hire_date: '2020-09-01' },
+  { id: 't4', employee_id: 'EMP-004', full_name: 'Mr. Ebo Asante', phone: '0277567890', email: 'easante@phoenixgh.edu', class_name: 'KG 2', subjects: ['All KG Subjects'], basic_salary: 2200, hire_date: '2021-01-05' },
+  { id: 't5', employee_id: 'EMP-005', full_name: 'Mrs. Ama Boateng-Addae', phone: '0200678901', email: 'aboateng@phoenixgh.edu', class_name: 'Crèche', subjects: ['All Crèche Activities'], basic_salary: 2000, hire_date: '2022-09-01' },
+]
+
+export const MOCK_FEES: Fee[] = [
+  { id: 'f1', student_id: 's1', student_name: 'Kwame Asante Jr.', class_name: 'JHS 3A', term: 2, academic_year: '2025/2026', fee_type: 'School Fees', amount: 800, paid_amount: 800, status: 'cleared', created_at: '2026-01-10T00:00:00Z' },
+  { id: 'f2', student_id: 's2', student_name: 'Abena Frimpong', class_name: 'JHS 3A', term: 2, academic_year: '2025/2026', fee_type: 'School Fees', amount: 800, paid_amount: 800, status: 'cleared', created_at: '2026-01-10T00:00:00Z' },
+  { id: 'f3', student_id: 's3', student_name: 'Yaw Mensah', class_name: 'JHS 3A', term: 2, academic_year: '2025/2026', fee_type: 'School Fees', amount: 800, paid_amount: 0, status: 'outstanding', created_at: '2026-01-10T00:00:00Z' },
+  { id: 'f4', student_id: 's4', student_name: 'Ama Boateng', class_name: 'Primary 5B', term: 2, academic_year: '2025/2026', fee_type: 'School Fees', amount: 650, paid_amount: 650, status: 'cleared', created_at: '2026-01-10T00:00:00Z' },
+  { id: 'f5', student_id: 's5', student_name: 'Kofi Asiedu', class_name: 'Primary 5B', term: 2, academic_year: '2025/2026', fee_type: 'School Fees', amount: 650, paid_amount: 300, status: 'partial', created_at: '2026-01-10T00:00:00Z' },
+  { id: 'f6', student_id: 's9', student_name: 'Akua Nyarko', class_name: 'JHS 3A', term: 2, academic_year: '2025/2026', fee_type: 'School Fees', amount: 800, paid_amount: 0, status: 'outstanding', created_at: '2026-01-10T00:00:00Z' },
+]
+
+export const MOCK_PAYMENTS: Payment[] = [
+  { id: 'p1', student_id: 's1', student_name: 'Kwame Asante Jr.', class_name: 'JHS 3A', amount: 800, method: 'mtn_momo', reference: 'MTN-ABC123', receipt_number: 'PIS-2026-A1B2C', paid_at: '2026-01-12T09:02:00Z' },
+  { id: 'p2', student_id: 's2', student_name: 'Abena Frimpong', class_name: 'JHS 3A', amount: 800, method: 'telecel', reference: 'TEL-DEF456', receipt_number: 'PIS-2026-D3E4F', paid_at: '2026-01-13T10:30:00Z' },
+  { id: 'p3', student_id: 's4', student_name: 'Ama Boateng', class_name: 'Primary 5B', amount: 650, method: 'mtn_momo', reference: 'MTN-GHI789', receipt_number: 'PIS-2026-G5H6I', paid_at: '2026-01-14T11:00:00Z' },
+  { id: 'p4', student_id: 's5', student_name: 'Kofi Asiedu', class_name: 'Primary 5B', amount: 300, method: 'at_money', reference: 'AT-JKL012', receipt_number: 'PIS-2026-J7K8L', paid_at: '2026-01-15T12:05:00Z' },
+]
+
+const today = new Date().toISOString().split('T')[0]
+
+export const MOCK_ATTENDANCE: AttendanceRecord[] = [
+  { id: 'a1', student_id: 's1', student_name: 'Kwame Asante Jr.', class_name: 'JHS 3A', date: today, status: 'present', parent_notified: false },
+  { id: 'a2', student_id: 's2', student_name: 'Abena Frimpong', class_name: 'JHS 3A', date: today, status: 'present', parent_notified: false },
+  { id: 'a3', student_id: 's3', student_name: 'Yaw Mensah', class_name: 'JHS 3A', date: today, status: 'absent', parent_notified: true },
+  { id: 'a4', student_id: 's9', student_name: 'Akua Nyarko', class_name: 'JHS 3A', date: today, status: 'present', parent_notified: false },
+  { id: 'a5', student_id: 's10', student_name: 'Kweku Appiah', class_name: 'JHS 3A', date: today, status: 'late', parent_notified: false },
+]
+
+const rawGrades = [
+  { student_id: 's1', student_name: 'Kwame Asante Jr.', scores: [82, 76, 89, 91, 74, 61] },
+  { student_id: 's2', student_name: 'Abena Frimpong', scores: [91, 88, 85, 93, 82, 78] },
+  { student_id: 's3', student_name: 'Yaw Mensah', scores: [55, 48, 62, 70, 51, 43] },
+  { student_id: 's9', student_name: 'Akua Nyarko', scores: [77, 72, 80, 84, 68, 55] },
+  { student_id: 's10', student_name: 'Kweku Appiah', scores: [68, 81, 74, 78, 72, 65] },
+]
+const subjects = ['Mathematics', 'English Language', 'Integrated Science', 'Social Studies', 'ICT', 'French']
+
+export const MOCK_GRADES: Grade[] = rawGrades.flatMap(({ student_id, student_name, scores }) =>
+  subjects.map((subject, i) => ({
+    id: `g-${student_id}-${i}`,
+    student_id,
+    student_name,
+    subject,
+    class_name: 'JHS 3A',
+    term: 2,
+    academic_year: '2025/2026',
+    raw_score: scores[i],
+    ges_grade: getGESGrade(scores[i]),
+    created_at: '2026-04-01T00:00:00Z',
+  }))
+)
+
+export const MOCK_HOMEWORK: HomeworkAssignment[] = [
+  { id: 'hw1', class_name: 'JHS 3A', subject: 'Mathematics', title: 'Exercises 14.1–14.4: Fractions & Decimals', description: 'Complete all questions in the textbook.', due_date: '2026-05-06', teacher_name: 'Mrs. Adjoa Koomson', submission_count: 18, total_students: 27, created_at: '2026-05-03T00:00:00Z' },
+  { id: 'hw2', class_name: 'JHS 3A', subject: 'English Language', title: 'Essay: My Community', description: 'Write a 2-page essay on your community.', due_date: '2026-05-08', teacher_name: 'Mr. Kofi Amponsah', submission_count: 24, total_students: 27, created_at: '2026-05-03T00:00:00Z' },
+  { id: 'hw3', class_name: 'JHS 3A', subject: 'Integrated Science', title: 'Diagram: Types of Soil', description: 'Draw and label the three types of soil found in Ghana.', due_date: '2026-05-10', teacher_name: 'Mrs. Adjoa Koomson', submission_count: 9, total_students: 27, created_at: '2026-05-03T00:00:00Z' },
+  { id: 'hw4', class_name: 'Primary 5B', subject: 'Mathematics', title: 'Multiplication Tables 1–12', description: 'Practice and memorise all tables.', due_date: '2026-05-07', teacher_name: 'Miss Yaa Owusu', submission_count: 28, total_students: 32, created_at: '2026-05-03T00:00:00Z' },
+]
+
+export const MOCK_LESSON_PLANS: LessonPlan[] = [
+  { id: 'lp1', class_name: 'JHS 3A', subject: 'Mathematics', strand: 'Number and Algebra', sub_strand: 'Fractions & Decimals', week_number: 14, content: 'Students will be able to add, subtract and simplify fractions. Starter: 5 warm-up problems. Main: Guided practice with worked examples. Group work: peer teaching. Plenary: exit ticket.', teacher_name: 'Mrs. Adjoa Koomson', created_at: '2026-04-28T00:00:00Z' },
+  { id: 'lp2', class_name: 'JHS 3A', subject: 'Integrated Science', strand: 'Earth & Environment', sub_strand: 'Soil Types in Ghana', week_number: 14, content: 'Identify and compare clay, sandy and loam soils. Practical: soil texture test using water. Discussion on farming implications.', teacher_name: 'Mrs. Adjoa Koomson', created_at: '2026-04-29T00:00:00Z' },
+]
+
+export const MOCK_ANNOUNCEMENTS: Announcement[] = [
+  { id: 'an1', title: 'No School — Workers Day Holiday', content: 'School will be closed on Thursday 1st May for Workers Day. School resumes Friday 2nd May.', type: 'both', audience: 'all', created_by: 'Mr. Emmanuel Adjei', created_at: '2026-04-30T08:00:00Z' },
+  { id: 'an2', title: 'BECE Mock Exams — Week 16', content: 'JHS 3 students will write mock BECE exams starting Monday 19th May. Please ensure all fees are cleared to access results.', type: 'sms', audience: 'parents', created_at: '2026-05-01T09:00:00Z' },
+  { id: 'an3', title: 'Sports Day — 24 May 2026', content: 'Annual Sports Day will be held on Saturday 24th May. All students are to report by 7:30 AM in their house colours.', type: 'both', audience: 'all', created_at: '2026-05-02T10:00:00Z' },
+]
+
+export const MOCK_CRECHE_LOG: CrecheLog[] = [
+  { id: 'cl1', student_id: 's8', student_name: 'Maame Adu', log_date: today, arrival_time: '7:28 AM', breakfast_note: 'Ate well — porridge & boiled egg', lunch_note: 'Rice & stew, full portion', nap_duration: '45 minutes (10:00–10:45)', health_notes: 'No issues', activity_notes: 'Finger painting & building blocks', mood: 'happy', created_by: 'Mrs. Ama Boateng-Addae' },
+]
+
+export const MOCK_CANTEEN_WALLETS: CanteenWallet[] = [
+  { id: 'cw1', student_id: 's1', student_name: 'Kwame Asante Jr.', class_name: 'JHS 3A', balance: 42.50, updated_at: today },
+  { id: 'cw2', student_id: 's2', student_name: 'Abena Frimpong', class_name: 'JHS 3A', balance: 78.00, updated_at: today },
+  { id: 'cw3', student_id: 's3', student_name: 'Yaw Mensah', class_name: 'JHS 3A', balance: 5.00, updated_at: today },
+  { id: 'cw4', student_id: 's4', student_name: 'Ama Boateng', class_name: 'Primary 5B', balance: 55.00, updated_at: today },
+  { id: 'cw5', student_id: 's7', student_name: 'Nana Owusu', class_name: 'KG 2', balance: 30.00, updated_at: today },
+  { id: 'cw6', student_id: 's8', student_name: 'Maame Adu', class_name: 'Crèche', balance: 20.00, updated_at: today },
+]
+
+export const MOCK_FEED_POSTS: FeedPost[] = [
+  { id: 'fp1', title: 'Sports Day Prep — JHS vs Primary', content: 'Our JHS students practiced relay races today! The energy was amazing. Sports Day is 24 May — see you there!', likes: 24, author_name: 'Mrs. Adjoa Koomson', created_at: '2026-05-02T14:30:00Z' },
+  { id: 'fp2', title: 'Crèche Painting Day', content: 'Our little ones explored finger painting today. Every masterpiece is now on display at the Crèche corridor!', likes: 38, author_name: 'Mrs. Ama Boateng-Addae', created_at: '2026-05-01T11:00:00Z' },
+  { id: 'fp3', title: 'Wear Ghana Friday', content: 'Students and teachers showed up in beautiful Ghanaian attire for Wear Ghana Friday. Proud of our culture!', likes: 52, author_name: 'Admin', created_at: '2026-04-25T16:00:00Z' },
+]
+
+export const MOCK_PAYROLL: Payroll[] = MOCK_TEACHERS.map((t, i) => {
+  const paye = calculatePAYE(t.basic_salary)
+  const ssnit = calculateSSNIT(t.basic_salary)
+  return {
+    id: `pay-${i}`,
+    teacher_id: t.id,
+    teacher_name: t.full_name,
+    month: 4,
+    year: 2026,
+    basic_salary: t.basic_salary,
+    allowances: 200,
+    paye,
+    ssnit_employee: ssnit.employee,
+    ssnit_employer: ssnit.employer,
+    net_pay: t.basic_salary + 200 - paye - ssnit.employee,
+    paid: i < 3,
+  }
+})
+
+const D = "2025-01-01T00:00:00Z"
+export const MOCK_QUIZ_QUESTIONS: QuizQuestion[] = [
+  // Mathematics
+  { id:"qq-m1",  subject:"Mathematics", question:"Simplify: 3/4 + 2/3",                                           options:["5/7","17/12","1 5/12","11/12"],                                                                                       answer:2, explanation:"LCM of 4 and 3 is 12. So 9/12 + 8/12 = 17/12 = 1 5/12", source:"BECE Sample", created_at:D },
+  { id:"qq-m2",  subject:"Mathematics", question:"Find the value of x in: 2x + 5 = 17",                           options:["4","6","5","11"],                                                                                                       answer:1, explanation:"2x = 17 − 5 = 12, so x = 6",                              source:"BECE Sample", created_at:D },
+  { id:"qq-m3",  subject:"Mathematics", question:"A rectangle has length 8cm and width 5cm. What is its area?",    options:["26 cm²","40 cm²","13 cm²","80 cm²"],                                                                                   answer:1, explanation:"Area = length × width = 8 × 5 = 40 cm²",                   source:"BECE Sample", created_at:D },
+  { id:"qq-m4",  subject:"Mathematics", question:"What is 15% of GH₵200?",                                        options:["GH₵25","GH₵30","GH₵35","GH₵20"],                                                                                      answer:1, explanation:"15% × 200 = 0.15 × 200 = GH₵30",                           source:"BECE Sample", created_at:D },
+  { id:"qq-m5",  subject:"Mathematics", question:"Round 4,756 to the nearest hundred.",                            options:["4,700","4,800","5,000","4,760"],                                                                                        answer:1, explanation:"The digit in the tens place is 5, so we round up: 4,800",   source:"BECE Sample", created_at:D },
+  { id:"qq-m6",  subject:"Mathematics", question:"What is the HCF of 12 and 18?",                                  options:["3","6","9","12"],                                                                                                       answer:1, explanation:"Factors of 12: 1,2,3,4,6,12. Factors of 18: 1,2,3,6,9,18. HCF = 6", source:"BECE Sample", created_at:D },
+  { id:"qq-m7",  subject:"Mathematics", question:"A shopkeeper buys an item for GH₵120 and sells it for GH₵150. What is the profit percentage?", options:["20%","25%","30%","15%"],                                                               answer:1, explanation:"Profit = 30. Profit% = (30/120) × 100 = 25%",               source:"BECE Sample", created_at:D },
+  { id:"qq-m8",  subject:"Mathematics", question:"Find the perimeter of a square with side 7cm.",                  options:["28 cm","49 cm","14 cm","21 cm"],                                                                                        answer:0, explanation:"Perimeter = 4 × side = 4 × 7 = 28 cm",                      source:"BECE Sample", created_at:D },
+  { id:"qq-m9",  subject:"Mathematics", question:"Express 0.35 as a fraction in its lowest terms.",                options:["35/100","7/20","3/5","7/10"],                                                                                           answer:1, explanation:"0.35 = 35/100 = 7/20 (divide by 5)",                        source:"BECE Sample", created_at:D },
+  { id:"qq-m10", subject:"Mathematics", question:"Solve: 3(x − 2) = 9",                                            options:["x = 3","x = 5","x = 1","x = 7"],                                                                                       answer:1, explanation:"3x − 6 = 9, 3x = 15, x = 5",                               source:"BECE Sample", created_at:D },
+  // English Language
+  { id:"qq-e1", subject:"English Language", question:"Choose the correct sentence:", options:["The boys plays football every day.","The boys play football every day.","The boys playing football every day.","The boys played football every days."], answer:1, explanation:"'The boys' is plural so we use 'play' (base form), not 'plays'.", source:"BECE Sample", created_at:D },
+  { id:"qq-e2", subject:"English Language", question:"Which of these is a synonym of 'courageous'?",               options:["Cowardly","Fearful","Brave","Timid"],                                                                                   answer:2, explanation:"'Courageous' means showing courage — 'Brave' is the correct synonym.", source:"BECE Sample", created_at:D },
+  { id:"qq-e3", subject:"English Language", question:"The word 'benevolent' means:",                                options:["Wicked","Charitable and kind","Powerful","Cowardly"],                                                                  answer:1, explanation:"'Benevolent' means well-meaning and kindly — charitable and kind.", source:"BECE Sample", created_at:D },
+  { id:"qq-e4", subject:"English Language", question:"Which punctuation mark ends a question?",                     options:["Full stop","Exclamation mark","Question mark","Comma"],                                                                answer:2, explanation:"A question mark (?) is placed at the end of a direct question.", source:"BECE Sample", created_at:D },
+  { id:"qq-e5", subject:"English Language", question:"Choose the correct plural of 'leaf':",                        options:["Leafs","Leaves","Leaes","Leafes"],                                                                                     answer:1, explanation:"Words ending in '-f' or '-fe' change to '-ves' in the plural: leaf → leaves.", source:"BECE Sample", created_at:D },
+  { id:"qq-e6", subject:"English Language", question:"What is the antonym of 'generous'?",                         options:["Kind","Giving","Miserly","Wealthy"],                                                                                   answer:2, explanation:"'Miserly' means unwilling to spend — the opposite of generous.", source:"BECE Sample", created_at:D },
+  { id:"qq-e7", subject:"English Language", question:"The sentence 'She went to the market' is in which tense?",   options:["Present simple","Past simple","Future simple","Present continuous"],                                                  answer:1, explanation:"'Went' is the past tense of 'go' — so this is past simple.", source:"BECE Sample", created_at:D },
+  // Integrated Science
+  { id:"qq-s1", subject:"Integrated Science", question:"Which organ is responsible for filtering waste from the blood?",   options:["Heart","Liver","Kidney","Lungs"],                                              answer:2, explanation:"The kidneys filter waste products and excess water from the blood to produce urine.", source:"BECE Sample", created_at:D },
+  { id:"qq-s2", subject:"Integrated Science", question:"What is the process by which plants make their own food?",        options:["Respiration","Transpiration","Photosynthesis","Digestion"],                    answer:2, explanation:"Photosynthesis: plants use sunlight, water, and CO₂ to make glucose.", source:"BECE Sample", created_at:D },
+  { id:"qq-s3", subject:"Integrated Science", question:"The force that pulls objects toward the Earth is called:",        options:["Friction","Magnetism","Gravity","Tension"],                                    answer:2, explanation:"Gravity is the force of attraction between the Earth and objects on or near its surface.", source:"BECE Sample", created_at:D },
+  { id:"qq-s4", subject:"Integrated Science", question:"What gas do plants take in during photosynthesis?",               options:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],                              answer:2, explanation:"Plants absorb CO₂ through tiny pores called stomata during photosynthesis.", source:"BECE Sample", created_at:D },
+  { id:"qq-s5", subject:"Integrated Science", question:"Which state of matter has no fixed shape or volume?",             options:["Solid","Liquid","Gas","Plasma"],                                               answer:2, explanation:"Gases expand to fill any container — they have no fixed shape or volume.", source:"BECE Sample", created_at:D },
+  { id:"qq-s6", subject:"Integrated Science", question:"The unit of electric current is:",                                options:["Volt","Ampere","Ohm","Watt"],                                                  answer:1, explanation:"Electric current is measured in Amperes (A).", source:"BECE Sample", created_at:D },
+  { id:"qq-s7", subject:"Integrated Science", question:"Which of these is a renewable source of energy?",                 options:["Coal","Petroleum","Natural Gas","Solar energy"],                              answer:3, explanation:"Solar energy is renewable — it comes from the sun and will not run out.", source:"BECE Sample", created_at:D },
+  // Social Studies
+  { id:"qq-ss1", subject:"Social Studies", question:"Who was Ghana's first President?",                                    options:["J.J. Rawlings","John Kufuor","Kwame Nkrumah","Kofi Busia"],                   answer:2, explanation:"Dr. Kwame Nkrumah became Ghana's first President on 1 July 1960.", source:"BECE Sample", created_at:D },
+  { id:"qq-ss2", subject:"Social Studies", question:"What does 'GDP' stand for?",                                          options:["Gross Domestic Product","General Development Plan","Government Domestic Policy","Gross Daily Production"], answer:0, explanation:"GDP = Gross Domestic Product — the total value of all goods and services produced in a country.", source:"BECE Sample", created_at:D },
+  { id:"qq-ss3", subject:"Social Studies", question:"Lake Volta was created by the construction of which dam?",            options:["Bui Dam","Akosombo Dam","Kpong Dam","Vea Dam"],                               answer:1, explanation:"The Akosombo Dam (1961–1965) created Lake Volta, one of the world's largest man-made lakes.", source:"BECE Sample", created_at:D },
+  { id:"qq-ss4", subject:"Social Studies", question:"The capital city of Ghana is:",                                       options:["Kumasi","Tamale","Accra","Takoradi"],                                          answer:2, explanation:"Accra is the capital and largest city of Ghana.", source:"BECE Sample", created_at:D },
+  { id:"qq-ss5", subject:"Social Studies", question:"Ghana gained independence from which country?",                       options:["France","Portugal","USA","Britain"],                                           answer:3, explanation:"Ghana (formerly the Gold Coast) gained independence from Britain on 6 March 1957.", source:"BECE Sample", created_at:D },
+  { id:"qq-ss6", subject:"Social Studies", question:"Which is the largest region in Ghana by land area?",                  options:["Ashanti","Northern","Oti","North East"],                                      answer:1, explanation:"Among current regions, the Northern Region remains the largest by land area.", source:"BECE Sample", created_at:D },
+  // French
+  { id:"qq-f1", subject:"French", question:"What is the French word for 'school'?",                                        options:["Maison","École","Classe","Livre"],                                             answer:1, explanation:"'École' is the French word for school.", source:"BECE Sample", created_at:D },
+  { id:"qq-f2", subject:"French", question:"Translate: 'Je m'appelle Kwame'",                                              options:["I am from Kwame","My name is Kwame","I know Kwame","Hello Kwame"],            answer:1, explanation:"'Je m'appelle' literally means 'I call myself' — in English: 'My name is'.", source:"BECE Sample", created_at:D },
+  { id:"qq-f3", subject:"French", question:"How do you say 'Thank you' in French?",                                        options:["Bonjour","Au revoir","Merci","S'il vous plaît"],                              answer:2, explanation:"'Merci' means 'Thank you' in French.", source:"BECE Sample", created_at:D },
+  { id:"qq-f4", subject:"French", question:"What does 'Bonjour' mean?",                                                    options:["Good night","Goodbye","Good morning / Hello","Please"],                       answer:2, explanation:"'Bonjour' is a daytime greeting meaning 'Good day' or 'Hello'.", source:"BECE Sample", created_at:D },
+  { id:"qq-f5", subject:"French", question:"Translate: 'Combien coûte ce livre?'",                                         options:["Where is the book?","Is this your book?","How much does this book cost?","I like this book"], answer:2, explanation:"'Combien coûte' = 'How much does … cost'. So: 'How much does this book cost?'", source:"BECE Sample", created_at:D },
+  // RME
+  { id:"qq-r1", subject:"RME", question:"Which of these is the holy book of Islam?",                                       options:["The Bible","The Torah","The Quran","The Vedas"],                              answer:2, explanation:"The Quran (also written Koran) is the holy scripture of Islam.", source:"BECE Sample", created_at:D },
+  { id:"qq-r2", subject:"RME", question:"The Golden Rule in most religions teaches us to:",                                 options:["Pray daily","Treat others as you want to be treated","Give to the poor only","Attend church regularly"], answer:1, explanation:"The Golden Rule: 'Do unto others as you would have them do unto you.'", source:"BECE Sample", created_at:D },
+  { id:"qq-r3", subject:"RME", question:"Which of these is a traditional Ghanaian festival?",                               options:["Diwali","Odwira","Eid al-Fitr","Christmas"],                                  answer:1, explanation:"Odwira is a traditional Akan festival of purification and thanksgiving.", source:"BECE Sample", created_at:D },
+  { id:"qq-r4", subject:"RME", question:"The pillar of Islam that requires fasting is called:",                             options:["Salah","Zakat","Sawm","Hajj"],                                                answer:2, explanation:"Sawm is the Islamic practice of fasting, particularly during the month of Ramadan.", source:"BECE Sample", created_at:D },
+  { id:"qq-r5", subject:"RME", question:"The Ten Commandments were given to which prophet?",                                options:["Abraham","David","Jesus","Moses"],                                            answer:3, explanation:"According to the Bible, God gave the Ten Commandments to Moses on Mount Sinai.", source:"BECE Sample", created_at:D },
+]

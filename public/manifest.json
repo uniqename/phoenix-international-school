@@ -1,0 +1,20 @@
+{
+  "name": "Phoenix International School Ghana",
+  "short_name": "Phoenix School",
+  "description": "Official school portal — Crèche through JHS 3",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A1628",
+  "theme_color": "#FFD700",
+  "orientation": "portrait-primary",
+  "categories": ["education"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Admin Portal",   "url": "/login?role=admin",   "description": "Admin dashboard" },
+    { "name": "Teacher Portal", "url": "/login?role=teacher", "description": "Teacher dashboard" },
+    { "name": "Parent Portal",  "url": "/login?role=parent",  "description": "Parent dashboard" },
+    { "name": "Student Portal", "url": "/login?role=student", "description": "Student dashboard" }
+  ]
+}

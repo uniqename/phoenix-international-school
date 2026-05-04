@@ -1,15 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f0f4ff;
-  --foreground: #0A1628;
-  --blue-deep: #003087;
-  --blue-mid: #1565C0;
-  --blue-sky: #42A5F5;
-  --gold: #FFD700;
-  --gold-dark: #E5B800;
-  --cyan: #00D4FF;
-  --navy: #0A1628;
+  /* ── Phoenix School Brand Colors ─── */
+  --background: #F4F2FF;       /* soft purple-white page */
+  --foreground: #0C0A1E;       /* school black */
+
+  --blue:        #1A3FA0;      /* school royal blue */
+  --blue-mid:    #2B55C9;
+  --blue-light:  #4D78F0;
+
+  --purple:      #6B21A8;      /* school deep purple */
+  --purple-mid:  #8B35E0;
+  --purple-light: #A855F7;
+
+  --black:       #0C0A1E;      /* near-black, purple-tinted */
+  --dark:        #160D30;      /* sidebar / hero dark */
+
+  --gold:        #FFD700;      /* logo sun accent */
+  --gold-dark:   #E5B800;
 }
 
 @theme inline {
@@ -19,9 +27,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   background: var(--background);
@@ -30,66 +36,141 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Glass surfaces ── */
 .glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.88);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
 }
 
 .glass-dark {
-  background: rgba(0, 48, 135, 0.75);
-  backdrop-filter: blur(20px);
+  background: rgba(22, 13, 48, 0.82);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* ── Gradients ── */
 .gradient-text {
-  background: linear-gradient(135deg, #003087 0%, #00D4FF 50%, #FFD700 100%);
+  background: linear-gradient(135deg, #1A3FA0 0%, #6B21A8 55%, #A855F7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.gradient-gold {
-  background: linear-gradient(135deg, #FFD700, #E5B800);
+.gradient-purple {
+  background: linear-gradient(135deg, #6B21A8, #A855F7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* ── Hero / dark backgrounds ── */
 .hero-bg {
-  background: linear-gradient(135deg, #0A1628 0%, #003087 40%, #1565C0 70%, #0A1628 100%);
+  background: linear-gradient(135deg,
+    #0C0A1E 0%,
+    #1E0B42 30%,
+    #2D1060 55%,
+    #1A3FA0 80%,
+    #0C0A1E 100%
+  );
 }
 
+/* ── Card / interaction ── */
 .card-hover {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 48, 135, 0.15);
+  box-shadow: 0 20px 40px rgba(107, 33, 168, 0.18);
 }
 
+/* ── Glows ── */
 .gold-glow {
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.35), 0 0 40px rgba(255, 215, 0, 0.12);
 }
-
-.cyan-glow {
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 0 40px rgba(0, 212, 255, 0.1);
+.purple-glow {
+  box-shadow: 0 0 20px rgba(107, 33, 168, 0.4), 0 4px 20px rgba(107, 33, 168, 0.2);
 }
-
 .blue-glow {
-  box-shadow: 0 0 20px rgba(0, 48, 135, 0.2), 0 4px 20px rgba(0, 48, 135, 0.15);
+  box-shadow: 0 0 20px rgba(26, 63, 160, 0.35), 0 4px 20px rgba(26, 63, 160, 0.2);
+}
+.cyan-glow {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(168, 85, 247, 0.1);
 }
 
+/* ── Stat card ── */
 .stat-card {
-  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(240, 244, 255, 0.95));
+  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(244,242,255,0.96));
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 48, 135, 0.1);
+  border: 1px solid rgba(107, 33, 168, 0.1);
   border-radius: 20px;
   padding: 1.5rem;
 }
 
+/* ── Buttons ── */
+.btn-gold {
+  /* Primary CTA — school blue → purple */
+  background: linear-gradient(135deg, #1A3FA0, #6B21A8);
+  color: white;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(107, 33, 168, 0.35);
+}
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(107, 33, 168, 0.5);
+  background: linear-gradient(135deg, #2B55C9, #8B35E0);
+}
+
+.btn-outline {
+  background: transparent;
+  color: white;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 11px 26px;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+}
+.btn-outline:hover {
+  border-color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Light-surface outline variant (e.g. inside white cards) */
+.btn-outline.light {
+  color: #1A3FA0;
+  border-color: rgba(26, 63, 160, 0.35);
+}
+.btn-outline.light:hover {
+  border-color: #6B21A8;
+  color: #6B21A8;
+  background: rgba(107, 33, 168, 0.06);
+}
+
+/* ── Nav links ── */
+.nav-link {
+  position: relative;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 500;
+  font-size: 14px;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+.nav-link:hover { color: #A855F7; }
+
+/* ── Table rows ── */
+.table-row:hover { background: rgba(107, 33, 168, 0.04); }
+
+/* ── Phase / status badges ── */
 .phase-badge {
   display: inline-flex;
   align-items: center;
@@ -102,51 +183,7 @@ body {
   text-transform: uppercase;
 }
 
-.nav-link {
-  position: relative;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
-  font-size: 14px;
-  transition: color 0.2s;
-  text-decoration: none;
-}
-.nav-link:hover {
-  color: #FFD700;
-}
-
-.btn-gold {
-  background: linear-gradient(135deg, #FFD700, #E5B800);
-  color: #0A1628;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 12px 28px;
-  font-size: 14px;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
-}
-.btn-gold:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
-}
-
-.btn-outline {
-  background: transparent;
-  color: white;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 11px 26px;
-  font-size: 14px;
-  transition: all 0.2s;
-  border: 1.5px solid rgba(255,255,255,0.5);
-  cursor: pointer;
-}
-.btn-outline:hover {
-  border-color: white;
-  background: rgba(255,255,255,0.1);
-}
-
+/* ── Feature icon ── */
 .feature-icon {
   width: 52px;
   height: 52px;
@@ -158,38 +195,32 @@ body {
   flex-shrink: 0;
 }
 
-.tick {
-  color: #22c55e;
-  font-weight: 700;
-}
+.tick { color: #22c55e; font-weight: 700; }
 
-.table-row:hover {
-  background: rgba(0, 48, 135, 0.04);
-}
-
+/* ── Animations ── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  50%       { transform: translateY(-12px); }
 }
-
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
-  50% { box-shadow: 0 0 0 12px rgba(255, 215, 0, 0); }
+@keyframes pulse-purple {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45); }
+  50%       { box-shadow: 0 0 0 14px rgba(107, 33, 168, 0); }
 }
-
 @keyframes slide-in {
   from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-float { animation: float 4s ease-in-out infinite; }
-.animate-pulse-gold { animation: pulse-gold 2s infinite; }
-.animate-slide-in { animation: slide-in 0.6s ease forwards; }
+.animate-float       { animation: float 4s ease-in-out infinite; }
+.animate-pulse-gold  { animation: pulse-purple 2s infinite; }
+.animate-slide-in    { animation: slide-in 0.6s ease forwards; }
 
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
+/* ── Grid pattern overlay ── */
 .grid-pattern {
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.07) 1px, transparent 0);
   background-size: 32px 32px;
 }
+
+/* ── Scrollbar ── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

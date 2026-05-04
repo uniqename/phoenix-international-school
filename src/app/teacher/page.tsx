@@ -1,200 +1,164 @@
+"use client";
 import DashboardShell from "@/components/DashboardShell";
 import Link from "next/link";
+import React from "react";
+import { useAppStore } from "@/store/useAppStore";
+import { useAuth } from "@/context/AuthContext";
+import { getGESColor, getGESLabel, todayISO, CLASSES } from "@/lib/utils";
 
-const navItems = [
-  { icon: "📊", label: "Overview", href: "/teacher" },
-  { icon: "📡", label: "Attendance", href: "/teacher#attendance" },
-  { icon: "📋", label: "Gradebook", href: "/teacher#grades" },
-  { icon: "📝", label: "Lesson Planner", href: "/teacher#lessons" },
-  { icon: "📚", label: "Homework", href: "/teacher#homework" },
-  { icon: "📄", label: "Report Cards", href: "/teacher#reports" },
-  { icon: "📸", label: "School Feed", href: "/teacher#feed" },
+const NAV = [
+  { icon: "📊", label: "Overview",      href: "/teacher" },
+  { icon: "📡", label: "Attendance",     href: "/teacher/attendance" },
+  { icon: "📋", label: "Gradebook",      href: "/teacher/gradebook" },
+  { icon: "📝", label: "Lesson Planner", href: "/teacher/lessons" },
+  { icon: "📚", label: "Homework",       href: "/teacher/homework" },
+  { icon: "📸", label: "School Feed",    href: "/teacher/feed" },
+  { icon: "❓", label: "Question Bank", href: "/teacher/questions" },
+  { icon: "🔐", label: "Pickup Verify",  href: "/teacher/pickup" },
 ];
 
-const classStudents = [
-  { name: "Abena Frimpong", id: "P-2024-001", avg: 87, grade: 2, present: true, fees: "Cleared" },
-  { name: "Kweku Owusu", id: "P-2024-002", avg: 74, grade: 3, present: true, fees: "Cleared" },
-  { name: "Maame Asare", id: "P-2024-003", avg: 91, grade: 1, present: true, fees: "Cleared" },
-  { name: "Yaw Mensah", id: "P-2024-004", avg: 62, grade: 4, present: false, fees: "Outstanding" },
-  { name: "Akua Darko", id: "P-2024-005", avg: 55, grade: 5, present: true, fees: "Cleared" },
-  { name: "Kofi Boateng", id: "P-2024-006", avg: 79, grade: 3, present: true, fees: "Outstanding" },
-  { name: "Esi Nyarko", id: "P-2024-007", avg: 94, grade: 1, present: false, fees: "Cleared" },
-];
+export default function TeacherOverview() {
+  const { user }   = useAuth();
+  const students   = useAppStore((s) => s.students);
+  const attendance = useAppStore((s) => s.attendance);
+  const grades     = useAppStore((s) => s.grades);
+  const homework   = useAppStore((s) => s.homework);
+  const teachers   = useAppStore((s) => s.teachers);
 
-const lessonStrands = [
-  { subject: "Mathematics", strand: "Number and Algebra", sub: "Fractions & Decimals", week: "Week 14" },
-  { subject: "English", strand: "Reading & Writing", sub: "Comprehension Passages", week: "Week 14" },
-  { subject: "Science", strand: "Earth & Environment", sub: "Soil Types in Ghana", week: "Week 14" },
-  { subject: "Social Studies", strand: "Our Nation Ghana", sub: "Traditional Governance", week: "Week 14" },
-];
+  const teacher    = teachers.find((t) => t.full_name === user?.full_name) ?? teachers[0];
+  const [activeClass, setActiveClass] = React.useState(teacher?.class_name ?? "JHS 3A");
+  const myClass    = activeClass;
+  const myStudents = students.filter((s) => s.class_name === myClass);
 
-const gradeScale: Record<number, { label: string; color: string }> = {
-  1: { label: "Excellent", color: "#22c55e" },
-  2: { label: "Very Good", color: "#10b981" },
-  3: { label: "Good", color: "#00D4FF" },
-  4: { label: "Credit", color: "#f59e0b" },
-  5: { label: "Pass", color: "#ef4444" },
-  6: { label: "Weak Pass", color: "#ef4444" },
-};
-
-export default function TeacherPortal() {
-  const present = classStudents.filter((s) => s.present).length;
+  const today      = todayISO();
+  const todayAtt   = attendance.filter((a) => a.date === today && a.class_name === myClass);
+  const present    = todayAtt.filter((a) => a.status === "present" || a.status === "late").length;
+  const myGrades   = grades.filter((g) => g.class_name === myClass);
+  const avgScore   = myGrades.length ? Math.round(myGrades.reduce((s, g) => s + g.raw_score, 0) / myGrades.length) : 0;
+  const myHW       = homework.filter((h) => h.class_name === myClass);
 
   return (
-    <DashboardShell title="Mrs. Adjoa Koomson" subtitle="JHS 2A · Form Teacher · Mathematics"
-      role="Teacher" roleColor="#1565C0" navItems={navItems}>
+    <DashboardShell role="teacher" navItems={NAV}>
+      <div className="mb-4">
+        <h2 className="text-xl font-black text-gray-900">Welcome, {user?.full_name?.split(" ")[0]}</h2>
+        <p className="text-sm text-gray-500">{teacher?.subjects?.join(", ")}</p>
+      </div>
 
-      <div className="grid sm:grid-cols-4 gap-4 mb-8">
+      {/* Class switcher */}
+      <div className="glass rounded-2xl p-3 mb-5 flex items-center gap-3 flex-wrap">
+        <span className="text-xs font-black text-gray-600">Viewing Class:</span>
+        <div className="flex gap-1.5 flex-wrap">
+          {CLASSES.map((c) => (
+            <button type="button" key={c} onClick={() => setActiveClass(c)}
+              className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+              style={activeClass === c
+                ? { background: "#003087", color: "white" }
+                : { background: "rgba(0,48,135,0.07)", color: "#003087" }}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "My Class", value: "JHS 2A", icon: "🏫", color: "#003087", bg: "rgba(0,48,135,0.08)" },
-          { label: "Students", value: "32", icon: "🎒", color: "#1565C0", bg: "rgba(21,101,192,0.08)" },
-          { label: "Present Today", value: `${present} / ${classStudents.length}`, icon: "✅", color: "#22c55e", bg: "rgba(34,197,94,0.08)" },
-          { label: "Avg Class Score", value: "76.8%", icon: "📊", color: "#FFD700", bg: "rgba(255,215,0,0.08)" },
+          { label: "My Class",      value: myClass,                                    icon: "🏫", color: "#003087" },
+          { label: "Students",      value: myStudents.length,                           icon: "🎒", color: "#1565C0" },
+          { label: "Present Today", value: todayAtt.length ? `${present}/${todayAtt.length}` : "—", icon: "✅", color: "#22c55e" },
+          { label: "Class Avg",     value: avgScore ? `${avgScore}%` : "—",             icon: "📊", color: "#FFD700" },
         ].map((s) => (
           <div key={s.label} className="glass rounded-2xl p-4 card-hover">
             <div className="text-2xl mb-2">{s.icon}</div>
-            <div className="text-xl font-black mb-1" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-xl font-black mb-0.5" style={{ color: s.color }}>{s.value}</div>
             <div className="text-xs text-gray-500">{s.label}</div>
           </div>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        {/* Attendance */}
+        {/* Today's class */}
         <div className="glass rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-black text-gray-900">Attendance — Today</h3>
-            <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e" }}>
-              {present}/{classStudents.length} Present
-            </span>
+            <h3 className="font-black text-gray-900">Today&apos;s Attendance — {myClass}</h3>
+            <Link href="/teacher/attendance" className="text-xs text-blue-600 font-bold hover:underline">Mark →</Link>
           </div>
-          <div className="space-y-2">
-            {classStudents.map((s) => (
-              <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-xl"
-                style={{ background: s.present ? "rgba(34,197,94,0.05)" : "rgba(239,68,68,0.05)" }}>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white"
-                  style={{ background: s.present ? "#22c55e" : "#ef4444" }}>
-                  {s.present ? "✓" : "✗"}
+          {todayAtt.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-400 mb-3">Not yet marked for today.</p>
+              <Link href="/teacher/attendance" className="btn-gold text-xs py-2 px-5">Mark Attendance</Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {todayAtt.slice(0, 6).map((a) => (
+                <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl"
+                  style={{ background: a.status === "present" ? "rgba(34,197,94,0.05)" : a.status === "late" ? "rgba(245,158,11,0.05)" : "rgba(239,68,68,0.05)" }}>
+                  <span className="text-sm font-semibold text-gray-800">{a.student_name}</span>
+                  <span className="text-xs font-bold capitalize" style={{ color: a.status === "present" ? "#22c55e" : a.status === "late" ? "#f59e0b" : "#ef4444" }}>
+                    {a.status}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-gray-800">{s.name}</div>
-                  <div className="text-xs text-gray-400">{s.id}</div>
+              ))}
+              {todayAtt.length > 6 && <p className="text-xs text-gray-400 text-center">+{todayAtt.length - 6} more</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Grades */}
+        <div className="glass rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-black text-gray-900">Recent Grades</h3>
+            <Link href="/teacher/gradebook" className="text-xs text-blue-600 font-bold hover:underline">Enter Grades →</Link>
+          </div>
+          {myGrades.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No grades entered yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {myGrades.slice(0, 6).map((g) => (
+                <div key={g.id} className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50">
+                  <div>
+                    <div className="text-xs font-bold text-gray-800">{g.student_name}</div>
+                    <div className="text-[10px] text-gray-400">{g.subject}</div>
+                  </div>
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                    style={{ background: getGESColor(g.ges_grade) + "20", color: getGESColor(g.ges_grade) }}>
+                    {g.raw_score}% · {getGESLabel(g.ges_grade)}
+                  </span>
                 </div>
-                {!s.present && (
-                  <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                    style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>Absent</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Homework summary */}
+      <div className="glass rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-black text-gray-900">Homework Assigned</h3>
+          <Link href="/teacher/homework" className="text-xs text-blue-600 font-bold hover:underline">Manage →</Link>
+        </div>
+        {myHW.length === 0 ? (
+          <p className="text-sm text-gray-400">No homework assigned yet.</p>
+        ) : (
+          <div className="grid sm:grid-cols-3 gap-3">
+            {myHW.map((hw) => (
+              <div key={hw.id} className="rounded-xl p-3" style={{ background: "rgba(21,101,192,0.06)" }}>
+                <div className="text-xs font-black text-gray-900">{hw.subject}</div>
+                <div className="text-xs text-gray-600 mt-0.5 line-clamp-2">{hw.title}</div>
+                <div className="text-[11px] text-orange-500 font-bold mt-2">Due: {hw.due_date}</div>
+                {hw.submission_count !== undefined && (
+                  <div className="mt-1">
+                    <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
+                      <span>Submissions</span><span>{hw.submission_count}/{hw.total_students ?? myStudents.length}</span>
+                    </div>
+                    <div className="h-1 bg-gray-100 rounded-full">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${((hw.submission_count ?? 0) / (hw.total_students ?? myStudents.length)) * 100}%` }} />
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
           </div>
-          <button className="mt-4 w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all"
-            style={{ background: "linear-gradient(135deg, #003087, #1565C0)" }}>
-            Submit Attendance & Notify Parents
-          </button>
-        </div>
-
-        {/* Gradebook */}
-        <div className="glass rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-black text-gray-900">Gradebook — Maths SBA</h3>
-            <span className="text-xs text-gray-400">Term 2 · Week 14</span>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-400 uppercase tracking-wider">
-                <th className="text-left pb-3">Student</th>
-                <th className="text-center pb-3">Score</th>
-                <th className="text-center pb-3">Grade</th>
-                <th className="text-center pb-3">Fees</th>
-              </tr>
-            </thead>
-            <tbody>
-              {classStudents.map((s) => {
-                const gs = gradeScale[s.grade];
-                return (
-                  <tr key={s.id} className="table-row border-t border-gray-50">
-                    <td className="py-2.5 text-gray-800 font-medium text-xs">{s.name}</td>
-                    <td className="py-2.5 text-center font-black text-gray-900">{s.avg}%</td>
-                    <td className="py-2.5 text-center">
-                      <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                        style={{ background: gs.color + "20", color: gs.color }}>
-                        {s.grade} – {gs.label}
-                      </span>
-                    </td>
-                    <td className="py-2.5 text-center">
-                      <span className="text-xs">{s.fees === "Cleared" ? "✅" : "🔒"}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* NaCCA Lesson Planner */}
-      <div className="glass rounded-2xl p-5 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-black text-gray-900">NaCCA / GES Lesson Planner</h3>
-          <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: "rgba(0,212,255,0.1)", color: "#00D4FF" }}>
-            GES Aligned
-          </span>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {lessonStrands.map((l) => (
-            <div key={l.subject} className="rounded-xl p-4 card-hover"
-              style={{ background: "rgba(0,48,135,0.04)", border: "1px solid rgba(0,48,135,0.08)" }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-black text-gray-900">{l.subject}</span>
-                <span className="text-xs text-gray-400">{l.week}</span>
-              </div>
-              <div className="text-xs font-semibold text-blue-700 mb-0.5">{l.strand}</div>
-              <div className="text-xs text-gray-500">{l.sub}</div>
-              <button className="mt-2 text-xs text-blue-600 font-bold hover:underline">Generate Lesson Note →</button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Homework Upload */}
-      <div className="glass rounded-2xl p-5">
-        <h3 className="font-black text-gray-900 mb-4">Upload Homework</h3>
-        <div className="grid sm:grid-cols-3 gap-4">
-          {[
-            { subject: "Mathematics", due: "Mon 6 May", assigned: 30, submitted: 22 },
-            { subject: "English", due: "Wed 8 May", assigned: 30, submitted: 28 },
-            { subject: "Science", due: "Fri 10 May", assigned: 30, submitted: 15 },
-          ].map((hw) => (
-            <div key={hw.subject} className="rounded-xl p-4" style={{ background: "rgba(21,101,192,0.06)" }}>
-              <div className="font-bold text-gray-900 text-sm mb-1">{hw.subject}</div>
-              <div className="text-xs text-gray-400 mb-3">Due: {hw.due}</div>
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-gray-500">Submissions</span>
-                <span className="font-bold text-gray-800">{hw.submitted}/{hw.assigned}</span>
-              </div>
-              <div className="h-1.5 bg-gray-100 rounded-full">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(hw.submitted / hw.assigned) * 100}%` }}></div>
-              </div>
-              <button className="mt-3 w-full text-xs py-1.5 rounded-lg font-bold text-white"
-                style={{ background: "#1565C0" }}>+ Add Video Note</button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Admin Dashboard", href: "/admin", icon: "🏛️", color: "#003087" },
-          { label: "Parent Portal", href: "/parent", icon: "👨‍👩‍👧", color: "#1565C0" },
-          { label: "Student Portal", href: "/student", icon: "🎒", color: "#E5B800" },
-          { label: "BECE Simulator", href: "/bece", icon: "🎓", color: "#8b5cf6" },
-        ].map((l) => (
-          <Link key={l.href} href={l.href}
-            className="glass rounded-xl p-3 flex items-center gap-2 text-xs font-semibold card-hover"
-            style={{ color: l.color }}>
-            <span className="text-lg">{l.icon}</span>{l.label}
-          </Link>
-        ))}
+        )}
       </div>
     </DashboardShell>
   );

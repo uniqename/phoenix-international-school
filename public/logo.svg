@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 298" role="img" aria-label="Phoenix International School Ghana crest">
+  <defs>
+    <clipPath id="eagle-box">
+      <rect x="6" y="65" width="104" height="112"/>
+    </clipPath>
+    <clipPath id="sun-box">
+      <rect x="110" y="65" width="104" height="112"/>
+    </clipPath>
+    <clipPath id="book-box">
+      <path d="M 6,177 L 214,177 L 214,165 C 214,240 110,264 110,264 C 110,264 6,240 6,165 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Shield white fill -->
+  <path d="M 6,6 L 214,6 L 214,165 C 214,240 110,264 110,264 C 110,264 6,240 6,165 Z" fill="white"/>
+
+  <!-- ── Title ── -->
+  <text x="110" y="36" font-family="Arial Black, Arial, sans-serif" font-size="24" font-weight="900" text-anchor="middle" fill="#111111" letter-spacing="-0.5">PHOENIX</text>
+  <text x="110" y="57" font-family="Arial Black, Arial, sans-serif" font-size="14.5" font-weight="900" text-anchor="middle" fill="#111111" letter-spacing="1">INT. SCHOOL</text>
+
+  <!-- ── Dividers ── -->
+  <line x1="6"  y1="65"  x2="214" y2="65"  stroke="#111" stroke-width="4.5"/>
+  <line x1="110" y1="65" x2="110" y2="177" stroke="#111" stroke-width="4.5"/>
+  <line x1="6"  y1="177" x2="214" y2="177" stroke="#111" stroke-width="4.5"/>
+
+  <!-- ── Eagle (left quadrant, clipped) ── -->
+  <g clip-path="url(#eagle-box)">
+    <g transform="translate(57,118)" fill="#111111">
+      <!-- Wide left wing -->
+      <path d="M 0,-4 C -10,-14 -44,-26 -46,-8 C -32,-12 -16,-6 -2,7 Z"/>
+      <!-- Right wing (tucked) -->
+      <path d="M 6,-4 C 16,-12 44,-20 42,-6 C 30,-10 16,-4 4,7 Z"/>
+      <!-- Body -->
+      <ellipse cx="3" cy="10" rx="11" ry="19" transform="rotate(-7,3,10)"/>
+      <!-- Neck -->
+      <path d="M 6,-2 C 10,-10 14,-14 16,-14 C 12,-14 8,-4 6,-2 Z"/>
+      <!-- Head -->
+      <circle cx="16" cy="-16" r="9"/>
+      <!-- Beak -->
+      <path d="M 22,-13 L 32,-10 L 21,-6 Z"/>
+      <!-- Tail feathers -->
+      <path d="M -6,26 L -15,44 M -1,28 L -4,46 M 4,28 L 5,46 M 9,26 L 16,44"
+        stroke="#111" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    </g>
+  </g>
+
+  <!-- ── Rising Sun (right quadrant, clipped) ── -->
+  <g clip-path="url(#sun-box)">
+    <g transform="translate(162,150)">
+      <!-- Rays first (behind sun) -->
+      <g stroke="#FFD700" stroke-width="6" stroke-linecap="round">
+        <line x1="0"   y1="-36" x2="0"   y2="-50"/>
+        <line x1="26"  y1="-26" x2="35"  y2="-35"/>
+        <line x1="-26" y1="-26" x2="-35" y2="-35"/>
+        <line x1="36"  y1="0"   x2="50"  y2="0"/>
+        <line x1="-36" y1="0"   x2="-50" y2="0"/>
+        <line x1="18"  y1="-32" x2="24"  y2="-44"/>
+        <line x1="-18" y1="-32" x2="-24" y2="-44"/>
+      </g>
+      <!-- Sun disc -->
+      <circle cx="0" cy="0" r="28" fill="#FFD700"/>
+    </g>
+  </g>
+
+  <!-- ── Open Book (bottom section, clipped to shield) ── -->
+  <g clip-path="url(#book-box)">
+    <g transform="translate(110,214)">
+      <!-- Left page -->
+      <path d="M 0,22 Q -42,28 -66,16 L -66,-18 Q -42,-24 0,-20 Z"
+        fill="white" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Right page -->
+      <path d="M 0,22 Q 42,28 66,16 L 66,-18 Q 42,-24 0,-20 Z"
+        fill="white" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Spine -->
+      <line x1="0" y1="-20" x2="0" y2="22" stroke="#111" stroke-width="3"/>
+      <!-- Left page lines -->
+      <line x1="-8" y1="-6"  x2="-58" y2="-2"  stroke="#111" stroke-width="1.5"/>
+      <line x1="-8" y1="5"   x2="-58" y2="9"   stroke="#111" stroke-width="1.5"/>
+      <line x1="-8" y1="15"  x2="-58" y2="19"  stroke="#111" stroke-width="1.5"/>
+      <!-- Right page lines -->
+      <line x1="8" y1="-6"  x2="58" y2="-2"  stroke="#111" stroke-width="1.5"/>
+      <line x1="8" y1="5"   x2="58" y2="9"   stroke="#111" stroke-width="1.5"/>
+      <line x1="8" y1="15"  x2="58" y2="19"  stroke="#111" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- ── Shield border (on top) ── -->
+  <path d="M 6,6 L 214,6 L 214,165 C 214,240 110,264 110,264 C 110,264 6,240 6,165 Z"
+    fill="none" stroke="#111111" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- ── Banner ribbon ── -->
+  <g transform="translate(110,272)">
+    <!-- Left scroll -->
+    <path d="M -28,-4 L -88,-4 Q -104,-4 -104,8 Q -104,18 -88,18 L -28,18 Z"
+      fill="white" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Centre band -->
+    <rect x="-68" y="-8" width="136" height="28" rx="2"
+      fill="white" stroke="#111" stroke-width="2.5"/>
+    <!-- Right scroll -->
+    <path d="M 28,-4 L 88,-4 Q 104,-4 104,8 Q 104,18 88,18 L 28,18 Z"
+      fill="white" stroke="#111" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Year numbers -->
+    <text x="-82" y="13" font-family="Georgia, serif" font-size="12" font-weight="700" text-anchor="middle" fill="#111">20</text>
+    <text x="82"  y="13" font-family="Georgia, serif" font-size="12" font-weight="700" text-anchor="middle" fill="#111">06</text>
+    <!-- Motto -->
+    <text x="0" y="12" font-family="Arial Black, Arial, sans-serif" font-size="8.5" font-weight="900"
+      text-anchor="middle" fill="#111" letter-spacing="1.5">THE PACE SETTERS</text>
+  </g>
+</svg>

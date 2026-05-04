@@ -1,0 +1,256 @@
+export type UserRole = 'admin' | 'teacher' | 'parent' | 'student'
+export type FeeStatus = 'cleared' | 'partial' | 'outstanding'
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
+export type PaymentMethod = 'mtn_momo' | 'telecel' | 'at_money' | 'cash' | 'bank'
+export type StudentLevel = 'creche' | 'nursery' | 'kg' | 'primary' | 'jhs'
+export type Mood = 'happy' | 'tired' | 'sad' | 'active' | 'sick'
+
+export interface UserProfile {
+  id: string
+  email: string
+  full_name: string
+  role: UserRole
+  phone?: string
+}
+
+export interface Student {
+  id: string
+  student_id: string
+  full_name: string
+  dob?: string
+  gender?: 'male' | 'female'
+  level: StudentLevel
+  class_name: string
+  parent_id?: string
+  parent_name?: string
+  parent_phone?: string
+  fee_status: FeeStatus
+  photo_url?: string
+  created_at: string
+}
+
+export interface Teacher {
+  id: string
+  profile_id?: string
+  employee_id: string
+  full_name: string
+  phone?: string
+  email?: string
+  class_name?: string
+  subjects: string[]
+  basic_salary: number
+  hire_date?: string
+  ssnit_number?: string
+}
+
+export interface Fee {
+  id: string
+  student_id: string
+  student_name?: string
+  class_name?: string
+  term: 1 | 2 | 3
+  academic_year: string
+  fee_type: string
+  amount: number
+  paid_amount: number
+  due_date?: string
+  status: FeeStatus
+  created_at: string
+}
+
+export interface Payment {
+  id: string
+  student_id: string
+  student_name?: string
+  class_name?: string
+  fee_id?: string
+  amount: number
+  method: PaymentMethod
+  reference?: string
+  receipt_number: string
+  paid_at: string
+  recorded_by?: string
+}
+
+export interface AttendanceRecord {
+  id: string
+  student_id: string
+  student_name?: string
+  class_name: string
+  date: string
+  status: AttendanceStatus
+  parent_notified: boolean
+  marked_by?: string
+  context?: 'classroom' | 'bus'
+}
+
+export interface Grade {
+  id: string
+  student_id: string
+  student_name?: string
+  subject: string
+  class_name?: string
+  term: number
+  academic_year: string
+  raw_score: number
+  ges_grade: number
+  position?: number
+  created_at?: string
+}
+
+export interface HomeworkAssignment {
+  id: string
+  class_name: string
+  subject: string
+  title: string
+  description?: string
+  due_date: string
+  teacher_id?: string
+  teacher_name?: string
+  video_url?: string
+  submission_count?: number
+  total_students?: number
+  created_at: string
+}
+
+export interface LessonPlan {
+  id: string
+  teacher_id?: string
+  teacher_name?: string
+  class_name?: string
+  subject: string
+  strand: string
+  sub_strand: string
+  week_number?: number
+  content?: string
+  created_at: string
+}
+
+export interface Announcement {
+  id: string
+  title: string
+  content: string
+  type: 'push' | 'sms' | 'both' | 'internal'
+  audience: 'all' | 'parents' | 'teachers' | 'students' | 'specific_class'
+  class_name?: string
+  created_by?: string
+  created_at: string
+}
+
+export interface CrecheLog {
+  id: string
+  student_id: string
+  student_name?: string
+  log_date: string
+  arrival_time?: string
+  breakfast_note?: string
+  lunch_note?: string
+  nap_duration?: string
+  health_notes?: string
+  activity_notes?: string
+  mood?: Mood
+  created_by?: string
+}
+
+export interface PickupCode {
+  id: string
+  student_id: string
+  student_name?: string
+  code: string
+  valid_date: string
+  used: boolean
+  used_at?: string
+}
+
+export interface CanteenWallet {
+  id: string
+  student_id: string
+  student_name?: string
+  class_name?: string
+  balance: number
+  updated_at: string
+}
+
+export interface CanteenTransaction {
+  id: string
+  student_id: string
+  student_name?: string
+  amount: number
+  type: 'credit' | 'debit'
+  description: string
+  created_at: string
+}
+
+export interface Payroll {
+  id: string
+  teacher_id: string
+  teacher_name?: string
+  month: number
+  year: number
+  basic_salary: number
+  allowances: number
+  paye: number
+  ssnit_employee: number
+  ssnit_employer: number
+  net_pay: number
+  paid: boolean
+  paid_at?: string
+}
+
+export interface FeedPost {
+  id: string
+  title: string
+  content?: string
+  image_url?: string
+  likes: number
+  created_by?: string
+  author_name?: string
+  created_at: string
+}
+
+export interface BECEAttempt {
+  id: string
+  student_id: string
+  subject: string
+  score: number
+  total: number
+  percentage: number
+  completed_at: string
+}
+
+export interface HomeworkSubmission {
+  id: string
+  homework_id: string
+  student_id: string
+  student_name?: string
+  file_name: string
+  file_type: string
+  file_size: number
+  submitted_at: string
+}
+
+export interface QuizQuestion {
+  id: string
+  subject: string
+  year?: number
+  question: string
+  options: [string, string, string, string]
+  answer: 0 | 1 | 2 | 3
+  explanation?: string
+  source?: string
+  created_by?: string
+  created_at: string
+}
+
+export interface UserAccount {
+  id: string
+  full_name: string
+  email: string
+  role: UserRole
+  password: string
+  is_active: boolean
+  force_password_change: boolean
+  created_at: string
+  last_login?: string
+  linked_id?: string
+}
