@@ -90,7 +90,7 @@ export default function StudentsPage() {
   return (
     <DashboardShell role="admin" navItems={NAV}>
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h2 className="text-xl font-black text-gray-900">Students ({students.length})</h2>
+        <h2 className="text-xl font-black text-white">Students ({students.length})</h2>
         <button type="button" onClick={openAdd} className="btn-gold text-xs py-2 px-5">+ Add Student</button>
       </div>
 

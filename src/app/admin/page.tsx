@@ -46,7 +46,7 @@ export default function AdminOverview() {
 
   return (
     <DashboardShell role="admin" navItems={NAV}>
-      <h2 className="text-xl font-black text-gray-900 mb-6">School Overview</h2>
+      <h2 className="text-xl font-black text-white mb-6">School Overview</h2>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">

@@ -82,7 +82,7 @@ export default function LessonsPage() {
     <DashboardShell role="teacher" navItems={NAV}>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-black text-gray-900">NaCCA / GES Lesson Planner</h2>
+          <h2 className="text-xl font-black text-white">NaCCA / GES Lesson Planner</h2>
           <p className="text-xs text-gray-500">GES-aligned curriculum</p>
         </div>
         <button type="button" onClick={() => setShowForm(!showForm)} className="btn-gold text-xs py-2 px-5">

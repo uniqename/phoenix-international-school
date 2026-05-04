@@ -104,7 +104,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
   };
 
   return (
-    <div className="flex" style={{ background: "#F4F2FF" }}>
+    <div className="flex" style={{ background: "linear-gradient(160deg, #0f0c28 0%, #0a1640 100%)", minHeight: "100vh" }}>
       {/* Force-password-change modal — blocks entire UI until done */}
       {showPwChange && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"

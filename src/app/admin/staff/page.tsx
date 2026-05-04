@@ -62,7 +62,7 @@ export default function StaffPage() {
   return (
     <DashboardShell role="admin" navItems={NAV}>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h2 className="text-xl font-black text-gray-900">Teaching Staff ({teachers.length})</h2>
+        <h2 className="text-xl font-black text-white">Teaching Staff ({teachers.length})</h2>
         <button type="button" onClick={openAdd} className="btn-gold text-xs py-2 px-5">+ Add Staff</button>
       </div>
 

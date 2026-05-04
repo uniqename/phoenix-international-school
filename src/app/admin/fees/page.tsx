@@ -164,7 +164,7 @@ export default function FeesPage() {
     <DashboardShell role="admin" navItems={NAV}>
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h2 className="text-xl font-black text-gray-900">Fee Management</h2>
+        <h2 className="text-xl font-black text-white">Fee Management</h2>
         <button type="button" onClick={() => setShowPayModal(true)} className="btn-gold text-xs py-2 px-5">
           + Record Payment
         </button>
@@ -180,7 +180,7 @@ export default function FeesPage() {
         ].map((s) => (
           <div key={s.label} className="glass rounded-2xl p-4">
             <div className="text-xl mb-1">{s.icon}</div>
-            <div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-xl font-black text-white" style={{ color: s.color }}>{s.value}</div>
             <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
           </div>
         ))}

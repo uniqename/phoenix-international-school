@@ -91,7 +91,7 @@ export default function HomeworkPage() {
   return (
     <DashboardShell role="teacher" navItems={NAV}>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h2 className="text-xl font-black text-gray-900">Homework</h2>
+        <h2 className="text-xl font-black text-white">Homework</h2>
         <button type="button" onClick={() => setShowForm(!showForm)} className="btn-gold text-xs py-2 px-5">
           {showForm ? "Cancel" : "+ Assign Homework"}
         </button>

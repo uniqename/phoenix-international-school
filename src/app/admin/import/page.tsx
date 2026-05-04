@@ -328,7 +328,7 @@ export default function DataImportPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Data Import from Adesua</h1>
+          <h1 className="text-2xl font-black text-white">Data Import from Adesua</h1>
           <p className="text-sm text-gray-500 mt-1">
             Migrate your existing school data into Phoenix in three steps: export from Adesua → upload CSV → confirm import.
           </p>

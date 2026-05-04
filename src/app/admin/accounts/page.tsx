@@ -228,7 +228,7 @@ export default function AccountsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h2 className="text-xl font-black text-gray-900">Account Access Management</h2>
+          <h2 className="text-xl font-black text-white">Account Access Management</h2>
           <p className="text-xs text-gray-500 mt-0.5">Create login credentials for teachers and parents, share via print or WhatsApp.</p>
         </div>
         <div className="flex gap-2 flex-wrap">

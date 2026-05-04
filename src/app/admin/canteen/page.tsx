@@ -66,7 +66,7 @@ export default function CanteenPage() {
   return (
     <DashboardShell role="admin" navItems={NAV}>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h2 className="text-xl font-black text-gray-900">Canteen Wallet</h2>
+        <h2 className="text-xl font-black text-white">Canteen Wallet</h2>
         <div className="flex gap-2">
           <button type="button" onClick={() => setShowTopup(true)} className="btn-gold text-xs py-2 px-4">+ Top-up</button>
           <button type="button" onClick={() => setShowDebit(true)}
@@ -85,7 +85,7 @@ export default function CanteenPage() {
         ].map((s) => (
           <div key={s.label} className="glass rounded-2xl p-4">
             <div className="text-xl mb-1">{s.icon}</div>
-            <div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-xl font-black text-white" style={{ color: s.color }}>{s.value}</div>
             <div className="text-xs text-gray-500">{s.label}</div>
           </div>
         ))}

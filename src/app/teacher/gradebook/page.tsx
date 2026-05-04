@@ -86,7 +86,7 @@ export default function GradebookPage() {
   return (
     <DashboardShell role="teacher" navItems={NAV}>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h2 className="text-xl font-black text-gray-900">Gradebook</h2>
+        <h2 className="text-xl font-black text-white">Gradebook</h2>
         <div className="flex gap-2 flex-wrap">
           <select aria-label="Subject" value={subject} onChange={(e) => { setSubject(e.target.value); setScores({}); }}
             className="px-3 py-2 rounded-xl border border-blue-100 text-sm bg-white focus:outline-none">

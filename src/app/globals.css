@@ -38,10 +38,11 @@ body {
 
 /* ── Glass surfaces ── */
 .glass {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.97);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(107, 33, 168, 0.18);
+  box-shadow: 0 4px 28px rgba(26, 63, 160, 0.13), 0 1px 4px rgba(107, 33, 168, 0.08);
 }
 
 .glass-dark {
@@ -102,11 +103,13 @@ body {
 
 /* ── Stat card ── */
 .stat-card {
-  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(244,242,255,0.96));
+  background: rgba(255, 255, 255, 0.97);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(107, 33, 168, 0.1);
+  border: 1px solid rgba(107, 33, 168, 0.18);
   border-radius: 20px;
   padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(26, 63, 160, 0.1);
 }
 
 /* ── Buttons ── */

@@ -42,7 +42,7 @@ export default function AttendanceAdminPage() {
 
   return (
     <DashboardShell role="admin" navItems={NAV}>
-      <h2 className="text-xl font-black text-gray-900 mb-6">Attendance Overview</h2>
+      <h2 className="text-xl font-black text-white mb-6">Attendance Overview</h2>
 
       <div className="flex gap-3 mb-5 flex-wrap">
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)}

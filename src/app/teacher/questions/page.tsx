@@ -169,7 +169,7 @@ export default function TeacherQuestionsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-gray-900">Question Bank</h1>
+            <h1 className="text-2xl font-black text-white">Question Bank</h1>
             <p className="text-sm text-gray-500">
               {quizQuestions.length} total · {myQuestions.length} added by you · PASTCO / BECE practice
             </p>

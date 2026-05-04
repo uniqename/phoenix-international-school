@@ -46,7 +46,7 @@ export default function AnnouncementsPage() {
   return (
     <DashboardShell role="admin" navItems={NAV}>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h2 className="text-xl font-black text-gray-900">Announcements</h2>
+        <h2 className="text-xl font-black text-white">Announcements</h2>
         <button type="button" onClick={() => setShowModal(true)} className="btn-gold text-xs py-2 px-5">
           + New Announcement
         </button>

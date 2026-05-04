@@ -6,14 +6,14 @@ import type { UserRole } from "@/lib/types";
 import toast from "react-hot-toast";
 
 const DEMO_CREDENTIALS: Record<UserRole, { email: string; label: string; icon: string; color: string }> = {
-  admin:   { email: "admin@phoenixgh.edu",   label: "Admin Demo",   icon: "🏛️", color: "#1A3FA0" },
-  teacher: { email: "teacher@phoenixgh.edu", label: "Teacher Demo", icon: "👩‍🏫", color: "#6B21A8" },
-  parent:  { email: "parent@phoenixgh.edu",  label: "Parent Demo",  icon: "👨‍👩‍👧", color: "#2B55C9" },
-  student: { email: "student@phoenixgh.edu", label: "Student Demo", icon: "🎒",  color: "#8B35E0" },
+  admin:   { email: "admin@phoenixgh.edu",   label: "Admin Demo",   icon: "🏛️", color: "#4D78F0" },
+  teacher: { email: "teacher@phoenixgh.edu", label: "Teacher Demo", icon: "👩‍🏫", color: "#A855F7" },
+  parent:  { email: "parent@phoenixgh.edu",  label: "Parent Demo",  icon: "👨‍👩‍👧", color: "#60a5fa" },
+  student: { email: "student@phoenixgh.edu", label: "Student Demo", icon: "🎒",  color: "#c084fc" },
 };
 
 function LoginForm() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { login, loginAsRole, user } = useAuth();
@@ -48,8 +48,10 @@ function LoginForm() {
   return (
     <div className="min-h-screen hero-bg grid-pattern flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
+
+        {/* Logo + title */}
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 animate-float">
+          <div className="mx-auto mb-5 animate-float">
             <img src="/logo.svg" alt="Phoenix International School crest"
               className="w-24 h-28 mx-auto object-contain drop-shadow-2xl" />
           </div>
@@ -62,30 +64,36 @@ function LoginForm() {
           </p>
         </div>
 
-        <div className="glass rounded-3xl p-6 mb-4">
+        {/* Login form — dark glass */}
+        <div className="rounded-3xl p-6 mb-4"
+          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1.5">Email or Phone Number</label>
+              <label className="block text-xs font-bold mb-1.5" style={{ color: "rgba(196,181,253,0.85)" }}>
+                Email or Phone Number
+              </label>
               <input
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@example.com or 024XXXXXXX"
                 required
-                className="w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all"
-                style={{ borderColor: "rgba(0,48,135,0.15)", focusRingColor: "#003087" } as React.CSSProperties}
+                className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)" }}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1.5">Password</label>
+              <label className="block text-xs font-bold mb-1.5" style={{ color: "rgba(196,181,253,0.85)" }}>
+                Password
+              </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all"
-                style={{ borderColor: "rgba(0,48,135,0.15)" } as React.CSSProperties}
+                className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)" }}
               />
             </div>
             <button type="submit" disabled={submitting}
@@ -95,15 +103,19 @@ function LoginForm() {
           </form>
         </div>
 
-        <div className="glass rounded-3xl p-4">
-          <p className="text-xs text-gray-500 text-center mb-3 font-semibold">Quick Demo Access</p>
+        {/* Demo access — dark glass */}
+        <div className="rounded-3xl p-4"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+          <p className="text-xs text-center mb-3 font-semibold" style={{ color: "rgba(196,181,253,0.65)" }}>
+            Quick Demo Access
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {(Object.keys(DEMO_CREDENTIALS) as UserRole[]).map((role) => {
               const d = DEMO_CREDENTIALS[role];
               return (
                 <button key={role} type="button" onClick={() => handleDemo(role)}
-                  className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold card-hover"
-                  style={{ background: d.color + "12", color: d.color, border: `1px solid ${d.color}30` }}>
+                  className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
+                  style={{ background: d.color + "20", color: d.color, border: `1px solid ${d.color}45` }}>
                   <span className="text-base">{d.icon}</span>{d.label}
                 </button>
               );
@@ -111,7 +123,7 @@ function LoginForm() {
           </div>
         </div>
 
-        <p className="text-center text-xs mt-4" style={{ color: "rgba(196,181,253,0.5)" }}>
+        <p className="text-center text-xs mt-4" style={{ color: "rgba(196,181,253,0.4)" }}>
           © 2026 Phoenix International School Ghana
         </p>
       </div>

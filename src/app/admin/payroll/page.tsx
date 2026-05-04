@@ -50,7 +50,7 @@ export default function PayrollPage() {
   return (
     <DashboardShell role="admin" navItems={NAV}>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h2 className="text-xl font-black text-gray-900">Staff Payroll</h2>
+        <h2 className="text-xl font-black text-white">Staff Payroll</h2>
         <div className="flex items-center gap-2">
           <select value={month} onChange={(e) => setMonth(Number(e.target.value))}
             className="px-3 py-2 rounded-xl border border-blue-100 text-sm bg-white focus:outline-none">
@@ -78,7 +78,7 @@ export default function PayrollPage() {
         ].map((s) => (
           <div key={s.label} className="glass rounded-2xl p-4">
             <div className="text-xl mb-1">{s.icon}</div>
-            <div className="text-xl font-black" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-xl font-black text-white" style={{ color: s.color }}>{s.value}</div>
             <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
           </div>
         ))}

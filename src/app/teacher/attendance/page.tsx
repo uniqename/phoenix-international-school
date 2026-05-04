@@ -479,7 +479,7 @@ export default function TeacherAttendancePage() {
     <DashboardShell role="teacher" navItems={NAV}>
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-black text-gray-900">Attendance</h2>
+          <h2 className="text-xl font-black text-white">Attendance</h2>
           <p className="text-xs text-gray-500">
             {new Date(today).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>

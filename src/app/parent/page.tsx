@@ -88,7 +88,7 @@ export default function ParentPortal() {
   if (!child) {
     return (
       <DashboardShell role="parent" navItems={NAV}>
-        <p className="text-gray-500">No child linked to this account. Contact school admin.</p>
+        <p style={{ color: "rgba(196,181,253,0.7)" }}>No child linked to this account. Contact school admin.</p>
       </DashboardShell>
     );
   }
@@ -133,11 +133,11 @@ export default function ParentPortal() {
       {/* ── Announcement ── */}
       {announcements.length > 0 && (
         <div className="rounded-2xl p-4 mb-5 flex gap-3 items-start"
-          style={{ background: "rgba(26,63,160,0.06)", border: "1px solid rgba(26,63,160,0.12)" }}>
+          style={{ background: "rgba(26,63,160,0.35)", border: "1px solid rgba(77,120,240,0.4)" }}>
           <span className="text-xl">📢</span>
           <div>
-            <div className="font-black text-gray-900 text-sm">{announcements[0].title}</div>
-            <div className="text-xs text-gray-600 mt-0.5">{announcements[0].content}</div>
+            <div className="font-black text-white text-sm">{announcements[0].title}</div>
+            <div className="text-xs mt-0.5" style={{ color: "rgba(196,181,253,0.8)" }}>{announcements[0].content}</div>
           </div>
         </div>
       )}

@@ -100,7 +100,7 @@ export default function TeacherPickupPage() {
     <DashboardShell role="teacher" navItems={NAV}>
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <h2 className="text-xl font-black text-gray-900">Pickup Code Verifier</h2>
+          <h2 className="text-xl font-black text-white">Pickup Code Verifier</h2>
           <p className="text-xs text-gray-500 mt-0.5">
             Parents receive a daily code to authorise student pickup. Enter the code below to verify.
           </p>

@@ -40,7 +40,7 @@ export default function TeacherOverview() {
   return (
     <DashboardShell role="teacher" navItems={NAV}>
       <div className="mb-4">
-        <h2 className="text-xl font-black text-gray-900">Welcome, {user?.full_name?.split(" ")[0]}</h2>
+        <h2 className="text-xl font-black text-white">Welcome, {user?.full_name?.split(" ")[0]}</h2>
         <p className="text-sm text-gray-500">{teacher?.subjects?.join(", ")}</p>
       </div>
 
