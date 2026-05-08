@@ -2,8 +2,8 @@
 
 :root {
   /* ── Phoenix School Brand Colors ─── */
-  --background: #F4F2FF;       /* soft purple-white page */
-  --foreground: #0C0A1E;       /* school black */
+  --background: #0C0A1E;       /* dark hero default — pages with light surfaces override locally */
+  --foreground: #F4F2FF;       /* soft purple-white text on dark */
 
   --blue:        #1A3FA0;      /* school royal blue */
   --blue-mid:    #2B55C9;

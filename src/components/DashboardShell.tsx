@@ -72,7 +72,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
   if (loading || !user) {
     return (
       <div className="min-h-screen hero-bg flex items-center justify-center">
-        <img src="/logo.svg" alt="Phoenix" className="w-20 h-24 object-contain animate-float opacity-80" />
+        <img src="/logo.png" alt="Phoenix" className="w-20 h-24 object-contain animate-float opacity-80" />
       </div>
     );
   }
@@ -144,7 +144,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
         style={{ background: "#0C0A1E", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="p-4 border-b border-white/10">
           <Link href="/" className="flex items-center gap-2.5 mb-4">
-            <img src="/logo.svg" alt="Phoenix crest" className="w-9 h-11 object-contain shrink-0" />
+            <img src="/logo.png" alt="Phoenix crest" className="w-9 h-11 object-contain shrink-0" />
             <div>
               <div className="text-white font-black text-xs leading-tight">Phoenix International</div>
               <div className="text-[10px]" style={{ color: "#C4B5FD" }}>School Ghana</div>
@@ -206,7 +206,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4"
         style={{ background: "#0C0A1E", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="Phoenix" className="w-7 h-8 object-contain" />
+          <img src="/logo.png" alt="Phoenix" className="w-7 h-8 object-contain" />
           <span className="text-white font-black text-sm">Phoenix</span>
         </div>
         <div className="flex items-center gap-3">

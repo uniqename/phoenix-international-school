@@ -22,7 +22,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen hero-bg flex items-center justify-center">
-        <img src="/logo.svg" alt="Phoenix" className="w-20 h-24 object-contain animate-float opacity-80" />
+        <img src="/logo.png" alt="Phoenix" className="w-20 h-24 object-contain animate-float opacity-80" />
       </div>
     );
   }
@@ -33,15 +33,15 @@ export default function Home() {
 
         {/* Logo */}
         <div className="animate-float mb-8">
-          <img src="/logo.svg" alt="Phoenix International School Ghana crest"
+          <img src="/logo.png" alt="Phoenix International School Ghana crest"
             className="w-28 h-32 mx-auto object-contain drop-shadow-2xl" />
         </div>
 
         {/* Headline */}
         <div className="text-xs font-bold tracking-widest uppercase mb-3"
           style={{ color: "#C4B5FD" }}>🇬🇭 Accra, Ghana</div>
-        <h1 className="text-5xl md:text-6xl font-black text-white mb-2 leading-tight">
-          Phoenix<br />
+        <h1 className="text-5xl md:text-6xl font-black mb-2 leading-tight">
+          <span style={{ color: "#FFD700" }}>Phoenix</span><br />
           <span className="gradient-text" style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             International
           </span>

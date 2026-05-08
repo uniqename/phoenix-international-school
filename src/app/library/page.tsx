@@ -63,7 +63,7 @@ export default function LibraryPage() {
       {/* ── Top bar ── */}
       <header className="flex items-center justify-between px-8 py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="Phoenix International School crest"
+          <img src="/logo.png" alt="Phoenix International School crest"
             className="w-10 h-12 object-contain" />
           <div>
             <div className="text-white font-black text-sm leading-tight">Phoenix International School Ghana</div>

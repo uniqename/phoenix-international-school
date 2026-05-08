@@ -52,7 +52,7 @@ function LoginForm() {
         {/* Logo + title */}
         <div className="text-center mb-8">
           <div className="mx-auto mb-5 animate-float">
-            <img src="/logo.svg" alt="Phoenix International School crest"
+            <img src="/logo.png" alt="Phoenix International School crest"
               className="w-24 h-28 mx-auto object-contain drop-shadow-2xl" />
           </div>
           <h1 className="text-2xl font-black text-white mb-1">Phoenix International</h1>

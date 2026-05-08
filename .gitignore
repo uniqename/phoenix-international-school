@@ -39,3 +39,29 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Capacitor / Android build outputs
+/android/build/
+/android/.gradle/
+/android/app/build/
+/android/capacitor-cordova-android-plugins/build/
+/android/local.properties
+/android/.idea/
+/android/captures/
+
+# Capacitor / iOS build outputs
+/ios/build/
+/ios/DerivedData/
+/ios/Pods/
+/ios/App/build/
+/ios/App/Pods/
+
+# Backups of the previously-broken git directory
+/.git.broken-backup-*
+
+# Signing credentials — NEVER commit these
+*.jks
+*.keystore
+/android/key.properties
+/android/app/google-services.json
+GoogleService-Info.plist
