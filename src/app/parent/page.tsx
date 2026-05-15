@@ -21,6 +21,7 @@ const NAV = [
 export default function ParentPortal() {
   const { user }              = useAuth();
   const students              = useAppStore((s) => s.students);
+  const families              = useAppStore((s) => s.families);
   const fees                  = useAppStore((s) => s.fees);
   const payments              = useAppStore((s) => s.payments);
   const recordPayment         = useAppStore((s) => s.recordPayment);
@@ -33,8 +34,21 @@ export default function ParentPortal() {
   const likePost              = useAppStore((s) => s.likePost);
   const announcements         = useAppStore((s) => s.announcements);
   const getOrCreatePickupCode = useAppStore((s) => s.getOrCreatePickupCode);
+  const computeFamilyDiscount = useAppStore((s) => s.computeFamilyDiscount);
 
-  const child = students.find((s) => s.parent_name === user?.full_name) ?? students[0];
+  // Find the parent's family by email or phone (either primary or secondary parent)
+  const parentFamily = families.find((f) =>
+    (user?.email && (f.primary_email === user.email || f.secondary_email === user.email)) ||
+    (user?.phone && (f.primary_phone === user.phone || f.secondary_phone === user.phone))
+  );
+  // All children belonging to that family; fall back to legacy parent_name match for un-migrated accounts
+  const familyChildren = parentFamily
+    ? students.filter((s) => s.family_id === parentFamily.id)
+    : students.filter((s) => s.parent_name === user?.full_name);
+  const children = familyChildren.length > 0 ? familyChildren : students.slice(0, 1);
+  const [activeChildIdx, setActiveChildIdx] = useState(0);
+  const child = children[Math.min(activeChildIdx, children.length - 1)];
+  const familyDiscount = parentFamily ? computeFamilyDiscount(parentFamily.id) : 0;
 
   // Pickup code — generated once and stored in Zustand (teachers can verify it)
   const [todayCode, setTodayCode] = useState("------");
@@ -97,6 +111,38 @@ export default function ParentPortal() {
 
   return (
     <DashboardShell role="parent" navItems={NAV}>
+
+      {/* ── Family banner + child selector ── */}
+      {children.length > 1 && (
+        <div className="rounded-2xl p-4 mb-4 flex flex-wrap items-center gap-3"
+          style={{ background: "rgba(26,63,160,0.08)", border: "1px solid rgba(26,63,160,0.15)" }}>
+          <div className="flex-1 min-w-[180px]">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Family</p>
+            <p className="font-bold text-gray-900">{parentFamily?.family_name ?? "Your family"} · {children.length} children</p>
+            {familyDiscount > 0 && (
+              <p className="text-xs text-emerald-700 font-bold mt-0.5">💰 Sibling discount: {familyDiscount}% applied to fees</p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {children.map((c, idx) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setActiveChildIdx(idx)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-full ${idx === activeChildIdx ? "bg-indigo-700 text-white" : "bg-white text-gray-700 border border-gray-300"}`}
+              >
+                {c.full_name.split(" ")[0]} · {c.class_name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {children.length === 1 && parentFamily && familyDiscount > 0 && (
+        <div className="rounded-xl px-4 py-2 mb-4 text-xs font-bold text-emerald-800"
+          style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.25)" }}>
+          💰 Sibling discount: {familyDiscount}% applied to fees
+        </div>
+      )}
 
       {/* ── Child Hero ── */}
       <div className="rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-4"

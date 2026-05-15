@@ -33,6 +33,8 @@ export default function FeesPage() {
   const payments      = useAppStore((s) => s.payments);
   const recordPayment = useAppStore((s) => s.recordPayment);
   const addFee        = useAppStore((s) => s.addFee);
+  const discountPolicy    = useAppStore((s) => s.discountPolicy);
+  const computeFamilyDiscount = useAppStore((s) => s.computeFamilyDiscount);
 
   const [tab, setTab] = useState<Tab>("setup");
 
@@ -101,13 +103,26 @@ export default function FeesPage() {
       toast("All selected students already have this fee for this term", { icon: "ℹ️" });
       return;
     }
+    const discountApplies = discountPolicy.active && discountPolicy.applies_to_fee_types.includes(feeLabel);
     let created = 0;
+    let discountedCount = 0;
+    let totalSaved = 0;
     targetStudents.forEach((student) => {
       const exists = fees.some(
         (f) => f.student_id === student.id && f.fee_type === feeLabel &&
                f.term === sf.term && f.academic_year === sf.academic_year
       );
       if (!exists) {
+        let finalAmount = amount;
+        if (discountApplies && student.family_id) {
+          const pct = computeFamilyDiscount(student.family_id);
+          if (pct > 0) {
+            finalAmount = Math.round((amount * (100 - pct)) * 100) / 10000 * 100;
+            finalAmount = Math.round(amount * (1 - pct / 100) * 100) / 100;
+            discountedCount++;
+            totalSaved += amount - finalAmount;
+          }
+        }
         addFee({
           student_id:    student.id,
           student_name:  student.full_name,
@@ -115,13 +130,16 @@ export default function FeesPage() {
           term:          sf.term,
           academic_year: sf.academic_year,
           fee_type:      feeLabel,
-          amount,
+          amount:        finalAmount,
           due_date:      sf.due_date || undefined,
         });
         created++;
       }
     });
     toast.success(`✅ Created ${created} fee record${created !== 1 ? "s" : ""}`);
+    if (discountedCount > 0) {
+      toast.success(`💰 Sibling discount applied to ${discountedCount} — saved GH₵ ${totalSaved.toFixed(2)} total`, { duration: 5000 });
+    }
     if (alreadyCount > 0) toast(`${alreadyCount} student(s) already had this fee — skipped`, { icon: "ℹ️" });
     setSf((p) => ({ ...p, amount: "", custom_name: "" }));
   };
