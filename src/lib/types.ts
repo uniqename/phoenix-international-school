@@ -45,6 +45,9 @@ export interface Family {
   secondary_phone?: string
   discount_override_percent?: number
   discount_override_note?: string
+  invite_token?: string
+  invite_role?: 'primary' | 'secondary'
+  invite_expires_at?: string
   created_at: string
 }
 

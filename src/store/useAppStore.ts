@@ -67,6 +67,8 @@ interface AppState {
   upsertFamily: (f: Omit<Family, 'id' | 'created_at'> & { id?: string }) => Family
   setFamilyDiscountOverride: (familyId: string, percent: number | undefined, note?: string) => void
   computeFamilyDiscount: (familyId: string) => number
+  generateFamilyInvite: (familyId: string, role: 'primary' | 'secondary') => string
+  consumeFamilyInvite: (token: string, data: { full_name: string; email: string; phone?: string; password: string }) => { ok: true; familyId: string } | { ok: false; reason: string }
 
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
@@ -265,6 +267,67 @@ export const useAppStore = create<AppState>()(
           ? { ...f, discount_override_percent: percent, discount_override_note: note }
           : f),
       })),
+
+      generateFamilyInvite: (familyId, role) => {
+        const token = `inv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+        const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        set((st) => ({
+          families: st.families.map((f) => f.id === familyId
+            ? { ...f, invite_token: token, invite_role: role, invite_expires_at: expires }
+            : f),
+        }))
+        return token
+      },
+
+      consumeFamilyInvite: (token, data) => {
+        const family = get().families.find((f) => f.invite_token === token)
+        if (!family) return { ok: false, reason: 'Invite link is invalid or has been used.' }
+        if (family.invite_expires_at && new Date(family.invite_expires_at) < new Date()) {
+          return { ok: false, reason: 'Invite link has expired. Ask the school to send a new one.' }
+        }
+        if (!data.email.trim() || !data.password || data.password.length < 6) {
+          return { ok: false, reason: 'Email and a password of at least 6 characters are required.' }
+        }
+        // Create UserAccount
+        const accountId = `acc-${Date.now()}`
+        const newAccount: UserAccount = {
+          id: accountId,
+          full_name: data.full_name.trim(),
+          email: data.email.trim().toLowerCase(),
+          role: 'parent',
+          password: data.password,
+          is_active: true,
+          force_password_change: false,
+          created_at: new Date().toISOString(),
+          linked_id: family.id,
+        }
+        // Update family with the new parent contact info and clear invite token
+        const isPrimary = family.invite_role === 'primary'
+        const updatedFamily: Family = isPrimary
+          ? {
+              ...family,
+              primary_parent_id: accountId,
+              primary_email: data.email.trim().toLowerCase(),
+              primary_phone: data.phone?.trim() || family.primary_phone,
+              invite_token: undefined,
+              invite_role: undefined,
+              invite_expires_at: undefined,
+            }
+          : {
+              ...family,
+              secondary_parent_id: accountId,
+              secondary_email: data.email.trim().toLowerCase(),
+              secondary_phone: data.phone?.trim() || family.secondary_phone,
+              invite_token: undefined,
+              invite_role: undefined,
+              invite_expires_at: undefined,
+            }
+        set((st) => ({
+          accounts: [...st.accounts, newAccount],
+          families: st.families.map((f) => f.id === family.id ? updatedFamily : f),
+        }))
+        return { ok: true, familyId: family.id }
+      },
 
       computeFamilyDiscount: (familyId) => {
         const st = get()

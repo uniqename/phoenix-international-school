@@ -32,6 +32,7 @@ export default function FamiliesPage() {
   const computeFamilyDiscount = useAppStore((s) => s.computeFamilyDiscount);
   const setOverride = useAppStore((s) => s.setFamilyDiscountOverride);
   const policy = useAppStore((s) => s.discountPolicy);
+  const generateInvite = useAppStore((s) => s.generateFamilyInvite);
 
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -110,6 +111,19 @@ export default function FamiliesPage() {
 
     setShowModal(false);
     toast.success(editing ? "Family updated" : "Family created");
+  };
+
+  const handleInvite = (familyId: string, role: 'primary' | 'secondary') => {
+    const token = generateInvite(familyId, role);
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/invite?token=${token}`;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(
+        () => toast.success(`Invite link copied to clipboard — share with ${role} parent (expires in 7 days)`, { duration: 6000 }),
+        () => toast.success(`Invite generated. Link: ${url}`, { duration: 12000 }),
+      );
+    } else {
+      toast.success(`Invite generated. Link: ${url}`, { duration: 12000 });
+    }
   };
 
   const handleApplyOverride = (familyId: string) => {
@@ -228,6 +242,20 @@ export default function FamiliesPage() {
                   >
                     {hasOverride ? "Edit override" : "Set discount override"}
                   </button>
+                  <button
+                    className="btn-secondary text-sm"
+                    title="Send the primary parent a link to set their password and log in"
+                    onClick={() => handleInvite(family.id, "primary")}
+                  >
+                    🔗 Invite primary parent
+                  </button>
+                  <button
+                    className="btn-secondary text-sm"
+                    title="Send the second parent a link with their own email — different login from the primary"
+                    onClick={() => handleInvite(family.id, "secondary")}
+                  >
+                    🔗 Invite second parent
+                  </button>
                   {hasOverride && (
                     <button
                       className="text-xs text-red-500 self-center"
@@ -237,6 +265,14 @@ export default function FamiliesPage() {
                     </button>
                   )}
                 </div>
+                {family.invite_token && (
+                  <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                    📨 Pending {family.invite_role} invite — token <span className="font-mono">{family.invite_token.slice(0, 14)}…</span>
+                    {family.invite_expires_at && (
+                      <span> · expires {new Date(family.invite_expires_at).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                )}
 
                 {overrideOpen === family.id && (
                   <div className="mt-3 p-3 rounded-lg bg-gray-50 border space-y-2">
