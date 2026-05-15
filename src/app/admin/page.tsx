@@ -18,7 +18,6 @@ export default function AdminOverview() {
     && settings.sms_credit_balance < settings.sms_alert_threshold;
   const smsZero = settings.sms_provider !== "none" && settings.sms_credit_balance === 0;
   const noHubtelKeys = settings.sms_provider === "hubtel" && (!settings.hubtel_client_id || !settings.hubtel_client_secret);
-  const noPaystackKey = settings.payment_provider === "paystack" && !settings.paystack_public_key;
   const smsDeferred = settings.sms_provider === "none";
 
   const today = new Date().toISOString().split("T")[0];
@@ -43,26 +42,6 @@ export default function AdminOverview() {
   return (
     <DashboardShell role="admin" navItems={NAV}>
       <h2 className="text-xl font-black text-white mb-6">School Overview</h2>
-
-      {/* Critical: Paystack key missing — fees can't be collected online */}
-      {noPaystackKey && (
-        <div className="rounded-2xl p-4 mb-5 flex items-start gap-3"
-          style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.5)" }}>
-          <span className="text-2xl">💳</span>
-          <div className="flex-1">
-            <p className="font-black text-white text-sm">Online fee payments not yet active — Paystack key missing</p>
-            <p className="text-xs text-white/80 mt-1">
-              Add Phoenix&apos;s Paystack <span className="font-mono">public key</span> in Settings so parents can pay via MoMo / card / bank inside the app. Until then, fees can only be recorded as Cash by admin.
-            </p>
-            <p className="text-xs text-white/70 mt-1">
-              ⚠️ Use a <strong>separate Paystack account</strong> for Phoenix (or a subaccount) — don&apos;t reuse HomeLink&apos;s keys, or school fees will land in HomeLink&apos;s settlement bank.
-            </p>
-          </div>
-          <Link href="/admin/settings" className="text-xs font-bold px-3 py-2 rounded-lg bg-white text-gray-900 self-center">
-            Add key
-          </Link>
-        </div>
-      )}
 
       {/* SMS credit alerts — only when a provider is active */}
       {(smsZero || smsBelowThreshold) && (

@@ -135,10 +135,10 @@ export default function SettingsPage() {
                   Use a subaccount if Phoenix shares a Paystack business with another app (e.g. HomeLink). Each fee payment routes its settlement to the subaccount&apos;s bank. Without a subaccount, money lands in whatever bank account the Paystack business is set up with.
                 </p>
               </Field>
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
-                <p className="font-semibold mb-1">⚠️ Don&apos;t reuse another app&apos;s Paystack keys</p>
+              <div className="rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-xs text-indigo-900">
+                <p className="font-semibold mb-1">Shared with HomeLink — same DOXA &amp; CO. LLC Paystack business</p>
                 <p>
-                  HomeLink and Phoenix should have separate Paystack accounts OR Phoenix should use a Subaccount under the existing business. Otherwise school fees settle into HomeLink&apos;s bank account.
+                  Both apps use the same Paystack keys and settle to the same bank account. Each transaction is tagged with <span className="font-mono">metadata.school=&quot;phoenix&quot;</span> so admin can reconcile per-app. To split payouts later, create a Paystack subaccount under DOXA, tie it to a separate Phoenix bank account, and paste its <span className="font-mono">ACCT_…</span> code above.
                 </p>
               </div>
             </div>
@@ -199,55 +199,6 @@ export default function SettingsPage() {
                 : "Balance refreshes after you save the Hubtel keys below."}
             </p>
           </div>
-        </section>
-
-        <section className="rounded-xl border bg-white p-5 space-y-4">
-          <h2 className="font-semibold">Payments</h2>
-          <p className="text-xs text-gray-500">
-            Which gateway parents use to pay fees from inside the app. Paystack works today; Hubtel switches on once your KYC is approved.
-          </p>
-          <Field label="Provider">
-            <select
-              className="input"
-              value={form.payment_provider}
-              onChange={(e) => setForm({ ...form, payment_provider: e.target.value as typeof form.payment_provider })}
-            >
-              <option value="paystack">Paystack (recommended for now)</option>
-              <option value="hubtel">Hubtel (after KYC)</option>
-              <option value="none">None — record payments manually</option>
-            </select>
-          </Field>
-          {form.payment_provider === "paystack" && (
-            <>
-              <Field label="Paystack public key (pk_live_… or pk_test_…)">
-                <input className="input" placeholder="pk_live_…" value={form.paystack_public_key} onChange={(e) => setForm({ ...form, paystack_public_key: e.target.value })} />
-              </Field>
-              <Field label="Paystack secret key (sk_live_… or sk_test_…)">
-                <input className="input" type="password" placeholder="sk_live_…" value={form.paystack_secret_key} onChange={(e) => setForm({ ...form, paystack_secret_key: e.target.value })} />
-              </Field>
-              <Field label="Paystack subaccount code (optional)">
-                <input className="input" placeholder="ACCT_xxxxxxxx" value={form.paystack_subaccount_code} onChange={(e) => setForm({ ...form, paystack_subaccount_code: e.target.value })} />
-                <p className="text-xs text-gray-500 mt-1">
-                  If you share a Paystack business with HomeLink, set up a subaccount for Phoenix and paste its code here so school fees settle into Phoenix&apos;s bank account, not HomeLink&apos;s.
-                </p>
-              </Field>
-              <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-900">
-                <p className="font-semibold mb-1">⚠️ Separate Phoenix from HomeLink</p>
-                <p>
-                  HomeLink already runs on a Paystack account. <strong>Don&apos;t paste those keys here</strong> — fees collected from parents would settle into HomeLink&apos;s bank. Either:
-                </p>
-                <ol className="list-decimal list-inside mt-1 space-y-0.5">
-                  <li>Sign up for a new Paystack business under <span className="font-mono">myphoenixschool@gmail.com</span>, OR</li>
-                  <li>Create a subaccount in your existing Paystack (Dashboard → Settings → Subaccounts), tied to Phoenix&apos;s bank account, and paste the <span className="font-mono">ACCT_…</span> code above.</li>
-                </ol>
-              </div>
-            </>
-          )}
-          {form.payment_provider === "none" && (
-            <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-700">
-              Online payments off. Parents see a &quot;contact school&quot; message; admin records each payment manually on the Fees page.
-            </div>
-          )}
         </section>
 
         <section className="rounded-xl border bg-white p-5 space-y-4">

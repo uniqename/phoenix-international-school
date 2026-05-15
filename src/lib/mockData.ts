@@ -214,10 +214,17 @@ export const PHOENIX_SCHOOL_SETTINGS: SchoolSettings = {
   sms_alert_threshold: 10,
 
   // Payments via Paystack while Hubtel KYC is in progress.
-  // CRITICAL: do NOT reuse HomeLink's Paystack keys — Phoenix needs its own
-  // Paystack account (or a Paystack subaccount under the existing business).
-  // Otherwise school fees settle into HomeLink's bank account.
+  // Phoenix shares the DOXA & CO. LLC Paystack business with HomeLink — both apps
+  // settle to the same bank account, transactions are tagged via metadata.school
+  // so admin can reconcile per-app. Swap to a dedicated subaccount later if the
+  // school wants separate payouts.
   payment_provider: 'paystack',
+  // Public key is designed to ship client-side — paystack inline checkout uses
+  // it directly from the browser. Shared with HomeLink (same DOXA business).
+  paystack_public_key: 'pk_live_b8d1605d6d4607c062f32641133b20719bcc0e6c',
+  // Secret key intentionally NOT seeded here: it must stay server-side. Admin
+  // can paste it into /admin/settings (kept in localStorage only) for future
+  // server-proxy use — never commit it to this public repo.
 }
 
 export const PHOENIX_CLASSES: ClassDef[] = [
