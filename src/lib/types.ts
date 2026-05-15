@@ -65,6 +65,47 @@ export interface SchoolSettings {
   sms_sender_id?: string
   sms_credit_balance: number
   sms_alert_threshold: number
+  hubtel_client_id?: string
+  hubtel_client_secret?: string
+  hubtel_payments_merchant_id?: string
+  hubtel_settlement_bank?: string
+  hubtel_settlement_account?: string
+  hubtel_last_balance_check?: string
+}
+
+export type SmsStatus = 'pending' | 'sent' | 'failed'
+
+export interface SmsLog {
+  id: string
+  to: string[]
+  body: string
+  audience?: string
+  cost_estimate?: number
+  status: SmsStatus
+  provider: 'hubtel' | 'mnotify' | 'arkesel' | 'none'
+  reference?: string
+  error?: string
+  sent_at?: string
+  created_at: string
+}
+
+export type FeePaymentRequestStatus = 'pending' | 'paid' | 'failed' | 'cancelled'
+
+export interface FeePaymentRequest {
+  id: string
+  student_id: string
+  fee_id?: string
+  family_id?: string
+  amount: number
+  method: 'hubtel_momo' | 'hubtel_card' | 'hubtel_bank' | 'cash' | 'manual'
+  channel?: string // e.g. 'mtn-gh', 'vodafone-gh', 'tigo-gh', 'visa', 'mastercard'
+  phone_or_ref?: string
+  hubtel_invoice_id?: string
+  hubtel_checkout_url?: string
+  status: FeePaymentRequestStatus
+  created_at: string
+  paid_at?: string
+  error?: string
 }
 
 export interface ClassDef {

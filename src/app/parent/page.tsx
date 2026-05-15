@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, formatGHS, todayISO } from "@/lib/utils";
 import type { Fee, Payment } from "@/lib/types";
+import { hubtelInitiateCheckout } from "@/lib/hubtel";
 import toast from "react-hot-toast";
 
 const NAV = [
@@ -35,6 +36,9 @@ export default function ParentPortal() {
   const announcements         = useAppStore((s) => s.announcements);
   const getOrCreatePickupCode = useAppStore((s) => s.getOrCreatePickupCode);
   const computeFamilyDiscount = useAppStore((s) => s.computeFamilyDiscount);
+  const settings              = useAppStore((s) => s.schoolSettings);
+  const createPaymentRequest  = useAppStore((s) => s.createPaymentRequest);
+  const markPaymentRequestStatus = useAppStore((s) => s.markPaymentRequestStatus);
 
   // Find the parent's family by email or phone (either primary or secondary parent)
   const parentFamily = families.find((f) =>
@@ -90,12 +94,69 @@ export default function ParentPortal() {
     setPayModal(true);
   }
 
-  function handlePay() {
+  async function handlePay() {
     const amt = parseFloat(payForm.amount);
     if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
     if (!child) return;
+
+    // MoMo / Card / Bank via Hubtel — initiate checkout, open URL, log request.
+    const goesViaHubtel = payForm.method === "mtn_momo"
+      || payForm.method === "telecel"
+      || payForm.method === "at_money"
+      || payForm.method === "bank";
+
+    if (goesViaHubtel && settings.sms_provider === "hubtel") {
+      const reqMethod = (payForm.method === "mtn_momo" || payForm.method === "telecel" || payForm.method === "at_money") ? "hubtel_momo" : "hubtel_bank";
+      const req = createPaymentRequest({
+        student_id: child.id,
+        fee_id: targetFee?.id,
+        family_id: parentFamily?.id,
+        amount: amt,
+        method: reqMethod,
+        channel: payForm.method,
+        phone_or_ref: payForm.reference || undefined,
+        status: "pending",
+      });
+      const result = await hubtelInitiateCheckout(
+        {
+          clientId: settings.hubtel_client_id ?? "",
+          clientSecret: settings.hubtel_client_secret ?? "",
+          merchantId: settings.hubtel_payments_merchant_id,
+        },
+        {
+          amount: amt,
+          description: `${targetFee?.fee_type ?? "Fees"} — ${child.full_name} (${child.class_name})`,
+          clientReference: req.id,
+          customer: {
+            name: parentFamily?.family_name ?? user?.full_name ?? "Parent",
+            email: user?.email,
+            phone: parentFamily?.primary_phone ?? parentFamily?.secondary_phone ?? user?.phone,
+          },
+          callbackUrl: typeof window !== "undefined" ? `${window.location.origin}/parent?paid=${req.id}` : "",
+          returnUrl: typeof window !== "undefined" ? `${window.location.origin}/parent?ref=${req.id}` : "",
+        },
+      );
+      if (!result.ok) {
+        markPaymentRequestStatus(req.id, "failed", { error: result.error });
+        toast.error(`Could not start payment: ${result.error ?? "Hubtel checkout unavailable"}`);
+        return;
+      }
+      markPaymentRequestStatus(req.id, "pending", {
+        hubtel_invoice_id: result.invoiceId,
+        hubtel_checkout_url: result.checkoutUrl,
+      });
+      // For MoMo, Hubtel pushes a prompt to the customer's phone; for card/bank it opens a checkout page.
+      if (result.checkoutUrl && typeof window !== "undefined") {
+        window.open(result.checkoutUrl, "_blank", "noopener");
+      }
+      toast.success(`📲 Payment request sent. Approve the MoMo prompt on your phone, or complete checkout in the new tab. We'll confirm here when it clears.`, { duration: 8000 });
+      setPayModal(false);
+      return;
+    }
+
+    // Cash / fallback path — admin will reconcile and confirm.
     recordPayment(child.id, amt, payForm.method, payForm.reference || undefined);
-    toast.success(`Payment of ${formatGHS(amt)} recorded!`);
+    toast.success(`Payment of ${formatGHS(amt)} recorded — admin will confirm receipt.`);
     setPayModal(false);
   }
 

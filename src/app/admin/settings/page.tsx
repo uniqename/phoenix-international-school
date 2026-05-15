@@ -19,6 +19,11 @@ export default function SettingsPage() {
     sms_provider: settings.sms_provider,
     sms_sender_id: settings.sms_sender_id ?? "",
     sms_alert_threshold: settings.sms_alert_threshold,
+    hubtel_client_id: settings.hubtel_client_id ?? "",
+    hubtel_client_secret: settings.hubtel_client_secret ?? "",
+    hubtel_payments_merchant_id: settings.hubtel_payments_merchant_id ?? "",
+    hubtel_settlement_bank: settings.hubtel_settlement_bank ?? "",
+    hubtel_settlement_account: settings.hubtel_settlement_account ?? "",
   });
 
   const onSave = () => {
@@ -44,6 +49,11 @@ export default function SettingsPage() {
       sms_provider: form.sms_provider,
       sms_sender_id: form.sms_sender_id.trim() || undefined,
       sms_alert_threshold: Number(form.sms_alert_threshold) || 10,
+      hubtel_client_id: form.hubtel_client_id.trim() || undefined,
+      hubtel_client_secret: form.hubtel_client_secret.trim() || undefined,
+      hubtel_payments_merchant_id: form.hubtel_payments_merchant_id.trim() || undefined,
+      hubtel_settlement_bank: form.hubtel_settlement_bank.trim() || undefined,
+      hubtel_settlement_account: form.hubtel_settlement_account.trim() || undefined,
     });
     toast.success("School settings saved");
   };
@@ -116,7 +126,39 @@ export default function SettingsPage() {
           <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm">
             <p className="font-medium text-amber-800">Current SMS balance: GHS {settings.sms_credit_balance.toFixed(2)}</p>
             <p className="text-xs text-amber-700 mt-1">
-              Balance is read live from the provider once API keys are saved. Add Hubtel credentials in Accounts → API keys.
+              {settings.hubtel_last_balance_check
+                ? `Last checked ${new Date(settings.hubtel_last_balance_check).toLocaleString()}.`
+                : "Balance refreshes after you save the Hubtel keys below."}
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-xl border bg-white p-5 space-y-4">
+          <h2 className="font-semibold">Hubtel API credentials</h2>
+          <p className="text-xs text-gray-500">
+            Get these from <span className="font-mono">unity.hubtel.com</span> → API → API Keys. The same Client ID + Secret unlocks both SMS and Receive Money payments. Never share them — they let anyone send SMS or collect funds on your account.
+          </p>
+          <Field label="Client ID">
+            <input className="input" placeholder="hbtl_..." value={form.hubtel_client_id} onChange={(e) => setForm({ ...form, hubtel_client_id: e.target.value })} />
+          </Field>
+          <Field label="Client Secret">
+            <input className="input" type="password" placeholder="••••••••" value={form.hubtel_client_secret} onChange={(e) => setForm({ ...form, hubtel_client_secret: e.target.value })} />
+          </Field>
+          <Field label="Payments Merchant Account Number (POS Sales)">
+            <input className="input" placeholder="e.g. 2017557" value={form.hubtel_payments_merchant_id} onChange={(e) => setForm({ ...form, hubtel_payments_merchant_id: e.target.value })} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Settlement bank">
+              <input className="input" placeholder="GCB Bank Ghana" value={form.hubtel_settlement_bank} onChange={(e) => setForm({ ...form, hubtel_settlement_bank: e.target.value })} />
+            </Field>
+            <Field label="Settlement account">
+              <input className="input" placeholder="1024567890" value={form.hubtel_settlement_account} onChange={(e) => setForm({ ...form, hubtel_settlement_account: e.target.value })} />
+            </Field>
+          </div>
+          <div className="rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-xs text-indigo-900">
+            <p className="font-semibold mb-1">🔒 Production note</p>
+            <p>
+              For production apps, store these keys on a small server proxy (Cloudflare Worker or similar) rather than in this settings form — the keys would otherwise ship inside the bundled APK/IPA. The Hubtel API calls from this app should route through that proxy. For now, these keys are stored locally in browser state and used in dev / staging only.
             </p>
           </div>
         </section>

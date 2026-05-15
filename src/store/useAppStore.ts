@@ -9,6 +9,7 @@ import type {
   SchoolSettings, ClassDef, Subject, AcademicYear, AcademicHoliday,
   Family, DiscountPolicy, DiscountTier,
   AssessmentTemplate, AssessmentMarker, AssessmentResult, AssessmentScoreEntry,
+  SmsLog, FeePaymentRequest, FeePaymentRequestStatus,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -52,6 +53,8 @@ interface AppState {
   discountPolicy: DiscountPolicy
   assessmentTemplates: AssessmentTemplate[]
   assessmentResults: AssessmentResult[]
+  smsLogs: SmsLog[]
+  feePaymentRequests: FeePaymentRequest[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -85,6 +88,13 @@ interface AppState {
   setTeacherRemark: (resultId: string, remark: string, byName?: string) => void
   setHeadmasterRemark: (resultId: string, remark: string, byName?: string) => void
   finalizeResult: (resultId: string, finalized: boolean) => void
+
+  // Messaging + payments
+  logSms: (s: Omit<SmsLog, 'id' | 'created_at'>) => SmsLog
+  updateSmsStatus: (id: string, patch: Partial<SmsLog>) => void
+  setSmsBalance: (balance: number) => void
+  createPaymentRequest: (r: Omit<FeePaymentRequest, 'id' | 'created_at'>) => FeePaymentRequest
+  markPaymentRequestStatus: (id: string, status: FeePaymentRequestStatus, patch?: Partial<FeePaymentRequest>) => void
 
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
@@ -180,6 +190,8 @@ export const useAppStore = create<AppState>()(
       discountPolicy: PHOENIX_DISCOUNT_POLICY,
       assessmentTemplates: PHOENIX_ASSESSMENT_TEMPLATES,
       assessmentResults: [],
+      smsLogs: [],
+      feePaymentRequests: [],
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -445,6 +457,38 @@ export const useAppStore = create<AppState>()(
       finalizeResult: (resultId, finalized) => set((st) => ({
         assessmentResults: st.assessmentResults.map((r) => r.id === resultId
           ? { ...r, finalized, updated_at: new Date().toISOString() }
+          : r),
+      })),
+
+      logSms: (s) => {
+        const id = `sms-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const entry: SmsLog = { ...s, id, created_at: new Date().toISOString() }
+        set((st) => ({ smsLogs: [entry, ...st.smsLogs] }))
+        return entry
+      },
+
+      updateSmsStatus: (id, patch) => set((st) => ({
+        smsLogs: st.smsLogs.map((s) => s.id === id ? { ...s, ...patch } : s),
+      })),
+
+      setSmsBalance: (balance) => set((st) => ({
+        schoolSettings: {
+          ...st.schoolSettings,
+          sms_credit_balance: balance,
+          hubtel_last_balance_check: new Date().toISOString(),
+        },
+      })),
+
+      createPaymentRequest: (r) => {
+        const id = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const req: FeePaymentRequest = { ...r, id, created_at: new Date().toISOString() }
+        set((st) => ({ feePaymentRequests: [req, ...st.feePaymentRequests] }))
+        return req
+      },
+
+      markPaymentRequestStatus: (id, status, patch) => set((st) => ({
+        feePaymentRequests: st.feePaymentRequests.map((r) => r.id === id
+          ? { ...r, status, ...(patch ?? {}), paid_at: status === 'paid' ? new Date().toISOString() : r.paid_at }
           : r),
       })),
 
