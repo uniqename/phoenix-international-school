@@ -1,21 +1,12 @@
 "use client";
 import DashboardShell from "@/components/DashboardShell";
+import { TEACHER_NAV as NAV } from "@/lib/teacherNav";
 import Link from "next/link";
 import React from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, todayISO, CLASSES } from "@/lib/utils";
 
-const NAV = [
-  { icon: "📊", label: "Overview",      href: "/teacher" },
-  { icon: "📡", label: "Attendance",     href: "/teacher/attendance" },
-  { icon: "📋", label: "Gradebook",      href: "/teacher/gradebook" },
-  { icon: "📝", label: "Lesson Planner", href: "/teacher/lessons" },
-  { icon: "📚", label: "Homework",       href: "/teacher/homework" },
-  { icon: "📸", label: "School Feed",    href: "/teacher/feed" },
-  { icon: "❓", label: "Question Bank", href: "/teacher/questions" },
-  { icon: "🔐", label: "Pickup Verify",  href: "/teacher/pickup" },
-];
 
 export default function TeacherOverview() {
   const { user }   = useAuth();

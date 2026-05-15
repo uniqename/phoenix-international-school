@@ -1,21 +1,12 @@
 "use client";
 import { useState, useRef } from "react";
 import DashboardShell from "@/components/DashboardShell";
+import { TEACHER_NAV as NAV } from "@/lib/teacherNav";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import type { QuizQuestion } from "@/lib/types";
 
-const NAV = [
-  { icon: "📊", label: "Overview",      href: "/teacher" },
-  { icon: "📡", label: "Attendance",     href: "/teacher/attendance" },
-  { icon: "📋", label: "Gradebook",      href: "/teacher/gradebook" },
-  { icon: "📝", label: "Lesson Planner", href: "/teacher/lessons" },
-  { icon: "📚", label: "Homework",       href: "/teacher/homework" },
-  { icon: "📸", label: "School Feed",    href: "/teacher/feed" },
-  { icon: "❓", label: "Question Bank", href: "/teacher/questions" },
-  { icon: "🔐", label: "Pickup Verify",  href: "/teacher/pickup" },
-];
 
 const SUBJECTS = ["Mathematics", "English Language", "Integrated Science", "Social Studies", "French", "RME", "ICT", "Ghanaian Language", "Other"];
 

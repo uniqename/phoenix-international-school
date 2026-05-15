@@ -8,6 +8,7 @@ import type {
   HomeworkSubmission, UserAccount, UserRole, QuizQuestion,
   SchoolSettings, ClassDef, Subject, AcademicYear, AcademicHoliday,
   Family, DiscountPolicy, DiscountTier,
+  AssessmentTemplate, AssessmentMarker, AssessmentResult, AssessmentScoreEntry,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -16,6 +17,7 @@ import {
   MOCK_FEED_POSTS, MOCK_PAYROLL, MOCK_QUIZ_QUESTIONS,
   PHOENIX_SCHOOL_SETTINGS, PHOENIX_CLASSES, PHOENIX_SUBJECTS,
   PHOENIX_ACADEMIC_YEAR, PHOENIX_DISCOUNT_POLICY, MOCK_FAMILIES,
+  PHOENIX_ASSESSMENT_TEMPLATES,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -48,6 +50,8 @@ interface AppState {
   academicYears: AcademicYear[]
   families: Family[]
   discountPolicy: DiscountPolicy
+  assessmentTemplates: AssessmentTemplate[]
+  assessmentResults: AssessmentResult[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -69,6 +73,18 @@ interface AppState {
   computeFamilyDiscount: (familyId: string) => number
   generateFamilyInvite: (familyId: string, role: 'primary' | 'secondary') => string
   consumeFamilyInvite: (token: string, data: { full_name: string; email: string; phone?: string; password: string }) => { ok: true; familyId: string } | { ok: false; reason: string }
+
+  // Assessments
+  upsertAssessmentTemplate: (t: Omit<AssessmentTemplate, 'id' | 'created_at'> & { id?: string }) => AssessmentTemplate
+  deleteAssessmentTemplate: (id: string) => void
+  addMarker: (templateId: string, marker: Omit<AssessmentMarker, 'id'>) => void
+  updateMarker: (templateId: string, markerId: string, data: Partial<AssessmentMarker>) => void
+  removeMarker: (templateId: string, markerId: string) => void
+  upsertAssessmentResult: (r: Omit<AssessmentResult, 'id' | 'created_at' | 'updated_at'> & { id?: string }) => AssessmentResult
+  setAssessmentEntry: (resultId: string, entry: AssessmentScoreEntry) => void
+  setTeacherRemark: (resultId: string, remark: string, byName?: string) => void
+  setHeadmasterRemark: (resultId: string, remark: string, byName?: string) => void
+  finalizeResult: (resultId: string, finalized: boolean) => void
 
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
@@ -162,6 +178,8 @@ export const useAppStore = create<AppState>()(
       academicYears: [PHOENIX_ACADEMIC_YEAR],
       families: MOCK_FAMILIES,
       discountPolicy: PHOENIX_DISCOUNT_POLICY,
+      assessmentTemplates: PHOENIX_ASSESSMENT_TEMPLATES,
+      assessmentResults: [],
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -328,6 +346,107 @@ export const useAppStore = create<AppState>()(
         }))
         return { ok: true, familyId: family.id }
       },
+
+      upsertAssessmentTemplate: (t) => {
+        const id = t.id ?? `tmpl-${Date.now()}`
+        const existing = get().assessmentTemplates.find((x) => x.id === id)
+        const tmpl: AssessmentTemplate = {
+          id,
+          class_id: t.class_id,
+          name: t.name,
+          scope: t.scope,
+          scale: t.scale,
+          markers: t.markers,
+          description: t.description,
+          active: t.active,
+          created_at: existing?.created_at ?? new Date().toISOString(),
+        }
+        set((st) => ({
+          assessmentTemplates: existing
+            ? st.assessmentTemplates.map((x) => x.id === id ? tmpl : x)
+            : [...st.assessmentTemplates, tmpl],
+        }))
+        return tmpl
+      },
+
+      deleteAssessmentTemplate: (id) => set((st) => ({
+        assessmentTemplates: st.assessmentTemplates.filter((t) => t.id !== id),
+        assessmentResults: st.assessmentResults.filter((r) => r.template_id !== id),
+      })),
+
+      addMarker: (templateId, marker) => set((st) => ({
+        assessmentTemplates: st.assessmentTemplates.map((t) => t.id !== templateId ? t : {
+          ...t,
+          markers: [...t.markers, { ...marker, id: `mk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }],
+        }),
+      })),
+
+      updateMarker: (templateId, markerId, data) => set((st) => ({
+        assessmentTemplates: st.assessmentTemplates.map((t) => t.id !== templateId ? t : {
+          ...t,
+          markers: t.markers.map((m) => m.id === markerId ? { ...m, ...data } : m),
+        }),
+      })),
+
+      removeMarker: (templateId, markerId) => set((st) => ({
+        assessmentTemplates: st.assessmentTemplates.map((t) => t.id !== templateId ? t : {
+          ...t,
+          markers: t.markers.filter((m) => m.id !== markerId),
+        }),
+      })),
+
+      upsertAssessmentResult: (r) => {
+        const id = r.id ?? `res-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const existing = get().assessmentResults.find((x) => x.id === id)
+        const now = new Date().toISOString()
+        const result: AssessmentResult = {
+          id,
+          template_id: r.template_id,
+          student_id: r.student_id,
+          term: r.term,
+          academic_year: r.academic_year,
+          entries: r.entries,
+          teacher_remark: r.teacher_remark,
+          teacher_remark_by: r.teacher_remark_by,
+          headmaster_remark: r.headmaster_remark,
+          headmaster_remark_by: r.headmaster_remark_by,
+          finalized: r.finalized,
+          created_at: existing?.created_at ?? now,
+          updated_at: now,
+        }
+        set((st) => ({
+          assessmentResults: existing
+            ? st.assessmentResults.map((x) => x.id === id ? result : x)
+            : [...st.assessmentResults, result],
+        }))
+        return result
+      },
+
+      setAssessmentEntry: (resultId, entry) => set((st) => ({
+        assessmentResults: st.assessmentResults.map((r) => {
+          if (r.id !== resultId) return r
+          const others = r.entries.filter((e) => e.marker_id !== entry.marker_id)
+          return { ...r, entries: [...others, entry], updated_at: new Date().toISOString() }
+        }),
+      })),
+
+      setTeacherRemark: (resultId, remark, byName) => set((st) => ({
+        assessmentResults: st.assessmentResults.map((r) => r.id === resultId
+          ? { ...r, teacher_remark: remark, teacher_remark_by: byName, updated_at: new Date().toISOString() }
+          : r),
+      })),
+
+      setHeadmasterRemark: (resultId, remark, byName) => set((st) => ({
+        assessmentResults: st.assessmentResults.map((r) => r.id === resultId
+          ? { ...r, headmaster_remark: remark, headmaster_remark_by: byName, updated_at: new Date().toISOString() }
+          : r),
+      })),
+
+      finalizeResult: (resultId, finalized) => set((st) => ({
+        assessmentResults: st.assessmentResults.map((r) => r.id === resultId
+          ? { ...r, finalized, updated_at: new Date().toISOString() }
+          : r),
+      })),
 
       computeFamilyDiscount: (familyId) => {
         const st = get()

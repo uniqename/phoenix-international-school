@@ -11,6 +11,7 @@ export const ADMIN_NAV = [
   { icon: "🏫", label: "Classes & Subjects", href: "/admin/classes" },
   { icon: "📅", label: "Academic Calendar", href: "/admin/calendar" },
   { icon: "📋", label: "Assessments",     href: "/admin/assessments" },
+  { icon: "📄", label: "Reports & Remarks", href: "/admin/reports" },
   { icon: "📢", label: "Announcements",   href: "/admin/announcements" },
   { icon: "📸", label: "School Feed",     href: "/admin/feed" },
   { icon: "🔑", label: "Accounts",        href: "/admin/accounts" },

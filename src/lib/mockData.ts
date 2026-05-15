@@ -3,6 +3,7 @@ import type {
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
   CanteenWallet, FeedPost, Payroll, UserProfile, QuizQuestion,
   SchoolSettings, ClassDef, Subject, AcademicYear, Family, DiscountPolicy,
+  AssessmentTemplate,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -283,4 +284,46 @@ export const PHOENIX_DISCOUNT_POLICY: DiscountPolicy = {
 }
 
 export const MOCK_FAMILIES: Family[] = []
+
+// Seed templates — Preschool admission as starter (the principal's example use case).
+// Admin can edit / add more per class.
+export const PHOENIX_ASSESSMENT_TEMPLATES: AssessmentTemplate[] = [
+  {
+    id: 'tmpl-creche-admission',
+    class_id: 'cls-creche',
+    name: 'Crèche Admission Readiness',
+    scope: 'admission',
+    scale: 'abcd',
+    description: 'Baseline readiness check for children joining Crèche. Score each marker A (excellent) → D (needs support).',
+    active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    markers: [
+      { id: 'mk-creche-1', name: 'Responds to name', description: 'Looks up or turns when called', order: 1 },
+      { id: 'mk-creche-2', name: 'Separates from parent', description: 'Calms within 10 minutes of drop-off', order: 2 },
+      { id: 'mk-creche-3', name: 'Plays alongside peers', description: 'Engages in parallel play', order: 3 },
+      { id: 'mk-creche-4', name: 'Communicates basic needs', description: 'Indicates hungry, sleepy, toilet', order: 4 },
+      { id: 'mk-creche-5', name: 'Eats independently', description: 'Can feed themselves with hands or spoon', order: 5 },
+    ],
+  },
+  {
+    id: 'tmpl-kg1-admission',
+    class_id: 'cls-kg1',
+    name: 'KG 1 Admission Readiness',
+    scope: 'admission',
+    scale: 'abcd',
+    description: 'Pre-literacy and pre-numeracy markers for entry to KG 1.',
+    active: true,
+    created_at: '2026-01-01T00:00:00Z',
+    markers: [
+      { id: 'mk-kg1-1', name: 'Can child read simple words', description: 'Recognizes "cat", "mat", "sun", etc.', order: 1 },
+      { id: 'mk-kg1-2', name: 'Can child recognize numbers', description: 'Identifies numerals 1–10', order: 2 },
+      { id: 'mk-kg1-3', name: 'Recognizes letters', description: 'Identifies upper- and lower-case letters', order: 3 },
+      { id: 'mk-kg1-4', name: 'Holds pencil correctly', description: 'Tripod or quadrupod grasp', order: 4 },
+      { id: 'mk-kg1-5', name: 'Follows two-step instructions', description: 'e.g. "Pick up the book and bring it to me"', order: 5 },
+      { id: 'mk-kg1-6', name: 'Recognizes basic colors', description: 'Red, blue, yellow, green', order: 6 },
+      { id: 'mk-kg1-7', name: 'Recognizes basic shapes', description: 'Circle, square, triangle', order: 7 },
+    ],
+  },
+]
+
 

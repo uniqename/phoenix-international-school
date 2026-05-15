@@ -121,6 +121,54 @@ export interface DiscountPolicy {
   active: boolean
 }
 
+// ── Assessments ────────────────────────────────────────────────
+export type AssessmentMarkerScale = 'abcd' | 'percent' | 'letter5' | 'narrative'
+export type AssessmentScope = 'admission' | 'term' | 'mid-term' | 'project'
+export type AssessmentGrade = 'A' | 'B' | 'C' | 'D'
+
+export interface AssessmentMarker {
+  id: string
+  name: string
+  description?: string
+  weight?: number
+  order: number
+}
+
+export interface AssessmentTemplate {
+  id: string
+  class_id: string
+  name: string
+  scope: AssessmentScope
+  scale: AssessmentMarkerScale
+  markers: AssessmentMarker[]
+  description?: string
+  active: boolean
+  created_at: string
+}
+
+export interface AssessmentScoreEntry {
+  marker_id: string
+  grade?: AssessmentGrade
+  raw_score?: number
+  note?: string
+}
+
+export interface AssessmentResult {
+  id: string
+  template_id: string
+  student_id: string
+  term?: 1 | 2 | 3
+  academic_year?: string
+  entries: AssessmentScoreEntry[]
+  teacher_remark?: string
+  teacher_remark_by?: string
+  headmaster_remark?: string
+  headmaster_remark_by?: string
+  finalized: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface Teacher {
   id: string
   profile_id?: string
