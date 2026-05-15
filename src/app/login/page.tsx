@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 
 const DEMO_CREDENTIALS: Record<UserRole, { email: string; label: string; icon: string; color: string }> = {
   admin:     { email: "admin@phoenixgh.edu",     label: "Admin Demo",     icon: "🏛️", color: "#4D78F0" },
-  principal: { email: "principal@phoenixgh.edu", label: "Principal Demo", icon: "👔", color: "#1A0E4D" },
+  principal: { email: "principal@phoenixgh.edu", label: "Principal Demo", icon: "👔", color: "#F59E0B" },
   teacher:   { email: "teacher@phoenixgh.edu",   label: "Teacher Demo",   icon: "👩‍🏫", color: "#A855F7" },
   parent:    { email: "parent@phoenixgh.edu",    label: "Parent Demo",    icon: "👨‍👩‍👧", color: "#60a5fa" },
   student:   { email: "student@phoenixgh.edu",   label: "Student Demo",   icon: "🎒",  color: "#c084fc" },

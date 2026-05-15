@@ -419,8 +419,8 @@ export default function ParentPortal() {
           <div className="space-y-2">
             {totalBalance > 0 && (
               <div className="text-xs p-2.5 rounded-xl flex items-center justify-between gap-2"
-                style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.1)" }}>
-                <span>⚠️ {formatGHS(totalBalance)} fee balance outstanding</span>
+                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#991b1b" }}>
+                <span className="font-medium">⚠️ {formatGHS(totalBalance)} fee balance outstanding</span>
                 <button type="button" onClick={() => openPay()}
                   className="text-[11px] font-bold px-2 py-1 rounded-lg shrink-0"
                   style={{ background: "linear-gradient(135deg,#1A3FA0,#6B21A8)", color: "white" }}>
@@ -429,17 +429,20 @@ export default function ParentPortal() {
               </div>
             )}
             {childAttendance.filter((a) => a.status === "absent").slice(0, 2).map((a) => (
-              <div key={a.id} className="text-xs p-2.5 rounded-xl"
-                style={{ background: "rgba(239,68,68,0.04)" }}>
+              <div key={a.id} className="text-xs p-2.5 rounded-xl font-medium"
+                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#991b1b" }}>
                 ❌ Absent on {new Date(a.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
               </div>
             ))}
             {announcements.slice(0, 3).map((a) => (
-              <div key={a.id} className="text-xs p-2.5 rounded-xl"
-                style={{ background: "rgba(26,63,160,0.05)" }}>
+              <div key={a.id} className="text-xs p-2.5 rounded-xl font-medium"
+                style={{ background: "rgba(26,63,160,0.08)", border: "1px solid rgba(26,63,160,0.2)", color: "#1e3a8a" }}>
                 📢 {a.title}
               </div>
             ))}
+            {totalBalance <= 0 && childAttendance.filter((a) => a.status === "absent").length === 0 && announcements.length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-3">No new notifications.</p>
+            )}
           </div>
         </div>
       </div>

@@ -203,27 +203,42 @@ export default function DashboardShell({ role, navItems, children }: Props) {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4"
-        style={{ background: "#0C0A1E", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      {/* Mobile top bar — clears iPhone notch / Dynamic Island via safe-area inset */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4"
+        style={{
+          background: "#0C0A1E",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)",
+          paddingBottom: "0.5rem",
+        }}>
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt="Phoenix" className="w-7 h-8 object-contain" />
           <span className="text-white font-black text-sm">Phoenix</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: meta.color + "25", color: meta.color }}>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: meta.color + "30", color: "#fff", border: `1px solid ${meta.color}` }}>
             {meta.icon} {role}
           </span>
           {isLibraryMode && (
-            <button type="button" onClick={handleEndLibrarySession} className="text-yellow-400 text-xs font-bold">End</button>
+            <button type="button" onClick={handleEndLibrarySession} aria-label="End library session"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold"
+              style={{ background: "rgba(255,215,0,0.18)", color: "#FFD700", border: "1px solid rgba(255,215,0,0.5)" }}>
+              End
+            </button>
           )}
-          <button type="button" onClick={handleLogout} className="text-red-400 text-xs font-bold">Out</button>
+          <button type="button" onClick={handleLogout} aria-label="Sign out"
+            className="px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
+            style={{ background: "rgba(239,68,68,0.18)", color: "#fff", border: "1px solid rgba(239,68,68,0.6)" }}>
+            🚪 Sign Out
+          </button>
         </div>
       </div>
 
-      {/* Main */}
+      {/* Main — mobile clears notch + mobile top bar; desktop uses normal padding */}
       <div className="flex-1 min-w-0 min-h-screen">
-        <main className="p-4 md:p-6 pt-20 md:pt-6 max-w-7xl mx-auto">{children}</main>
+        <main className="px-4 md:px-6 md:py-6 max-w-7xl mx-auto pt-[calc(env(safe-area-inset-top,0px)+4.5rem)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] md:pt-6 md:pb-6">
+          {children}
+        </main>
       </div>
     </div>
   );
