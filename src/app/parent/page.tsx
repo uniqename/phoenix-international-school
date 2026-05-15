@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, formatGHS, todayISO } from "@/lib/utils";
 import type { Fee, Payment } from "@/lib/types";
 import { hubtelInitiateCheckout } from "@/lib/hubtel";
+import { paystackInlineCheckout } from "@/lib/paystack";
 import toast from "react-hot-toast";
 
 const NAV = [
@@ -99,13 +100,60 @@ export default function ParentPortal() {
     if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
     if (!child) return;
 
-    // MoMo / Card / Bank via Hubtel — initiate checkout, open URL, log request.
-    const goesViaHubtel = payForm.method === "mtn_momo"
+    const goesViaGateway = payForm.method === "mtn_momo"
       || payForm.method === "telecel"
       || payForm.method === "at_money"
       || payForm.method === "bank";
 
-    if (goesViaHubtel && settings.sms_provider === "hubtel") {
+    // Paystack — primary gateway while Hubtel KYC is in progress.
+    if (goesViaGateway && settings.payment_provider === "paystack") {
+      if (!settings.paystack_public_key) {
+        toast.error("Payments aren't configured yet — ask the school admin to add the Paystack public key in Settings.");
+        return;
+      }
+      const req = createPaymentRequest({
+        student_id: child.id,
+        fee_id: targetFee?.id,
+        family_id: parentFamily?.id,
+        amount: amt,
+        method: "paystack",
+        channel: payForm.method,
+        phone_or_ref: payForm.reference || undefined,
+        status: "pending",
+      });
+      const result = await paystackInlineCheckout({
+        publicKey: settings.paystack_public_key,
+        amountGhs: amt,
+        email: user?.email ?? parentFamily?.primary_email ?? "parent@phoenixintl.school",
+        reference: req.id,
+        subaccount: settings.paystack_subaccount_code,
+        metadata: {
+          student_name: child.full_name,
+          student_id: child.student_id,
+          class_name: child.class_name,
+          fee_type: targetFee?.fee_type ?? "Fees",
+          term: targetFee?.term,
+          academic_year: targetFee?.academic_year,
+        },
+      });
+      if (!result.ok) {
+        if (result.closed) {
+          markPaymentRequestStatus(req.id, "cancelled");
+          toast("Payment cancelled.", { icon: "ℹ️" });
+        } else {
+          markPaymentRequestStatus(req.id, "failed", { error: result.error });
+          toast.error(result.error ?? "Payment failed");
+        }
+        return;
+      }
+      markPaymentRequestStatus(req.id, "paid", { paystack_reference: result.reference });
+      recordPayment(child.id, amt, payForm.method, result.reference ?? req.id);
+      toast.success(`✅ Payment of ${formatGHS(amt)} confirmed (ref ${result.reference?.slice(-8) ?? req.id.slice(-8)})`);
+      setPayModal(false);
+      return;
+    }
+
+    if (goesViaGateway && settings.payment_provider === "hubtel") {
       const reqMethod = (payForm.method === "mtn_momo" || payForm.method === "telecel" || payForm.method === "at_money") ? "hubtel_momo" : "hubtel_bank";
       const req = createPaymentRequest({
         student_id: child.id,

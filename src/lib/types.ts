@@ -61,16 +61,24 @@ export interface SchoolSettings {
   logo_url?: string
   current_academic_year: string
   current_term: 1 | 2 | 3
+
+  // SMS / messaging
   sms_provider: 'hubtel' | 'mnotify' | 'arkesel' | 'none'
   sms_sender_id?: string
   sms_credit_balance: number
   sms_alert_threshold: number
   hubtel_client_id?: string
   hubtel_client_secret?: string
+  hubtel_last_balance_check?: string
+
+  // Payments
+  payment_provider: 'paystack' | 'hubtel' | 'none'
+  paystack_public_key?: string
+  paystack_secret_key?: string
+  paystack_subaccount_code?: string
   hubtel_payments_merchant_id?: string
   hubtel_settlement_bank?: string
   hubtel_settlement_account?: string
-  hubtel_last_balance_check?: string
 }
 
 export type SmsStatus = 'pending' | 'sent' | 'failed'
@@ -97,11 +105,12 @@ export interface FeePaymentRequest {
   fee_id?: string
   family_id?: string
   amount: number
-  method: 'hubtel_momo' | 'hubtel_card' | 'hubtel_bank' | 'cash' | 'manual'
+  method: 'paystack' | 'hubtel_momo' | 'hubtel_card' | 'hubtel_bank' | 'cash' | 'manual'
   channel?: string // e.g. 'mtn-gh', 'vodafone-gh', 'tigo-gh', 'visa', 'mastercard'
   phone_or_ref?: string
   hubtel_invoice_id?: string
   hubtel_checkout_url?: string
+  paystack_reference?: string
   status: FeePaymentRequestStatus
   created_at: string
   paid_at?: string

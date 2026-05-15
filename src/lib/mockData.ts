@@ -204,10 +204,20 @@ export const PHOENIX_SCHOOL_SETTINGS: SchoolSettings = {
   email: 'myphoenixschool@gmail.com',
   current_academic_year: '2025/2026',
   current_term: 2,
-  sms_provider: 'hubtel',
+
+  // SMS deferred until Hubtel onboarding clears (they need: cert of incorporation,
+  // business logo, Ghana Card IDs of directors). Switch to 'hubtel' + paste keys
+  // once approved. Until then notices stay in-app + email.
+  sms_provider: 'none',
   sms_sender_id: 'PHOENIX',
   sms_credit_balance: 0,
   sms_alert_threshold: 10,
+
+  // Payments via Paystack while Hubtel KYC is in progress.
+  // CRITICAL: do NOT reuse HomeLink's Paystack keys — Phoenix needs its own
+  // Paystack account (or a Paystack subaccount under the existing business).
+  // Otherwise school fees settle into HomeLink's bank account.
+  payment_provider: 'paystack',
 }
 
 export const PHOENIX_CLASSES: ClassDef[] = [
