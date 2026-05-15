@@ -2,6 +2,7 @@ import type {
   Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
   CanteenWallet, FeedPost, Payroll, UserProfile, QuizQuestion,
+  SchoolSettings, ClassDef, Subject, AcademicYear, Family, DiscountPolicy,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -188,3 +189,98 @@ export const MOCK_QUIZ_QUESTIONS: QuizQuestion[] = [
   { id:"qq-r4", subject:"RME", question:"The pillar of Islam that requires fasting is called:",                             options:["Salah","Zakat","Sawm","Hajj"],                                                answer:2, explanation:"Sawm is the Islamic practice of fasting, particularly during the month of Ramadan.", source:"BECE Sample", created_at:D },
   { id:"qq-r5", subject:"RME", question:"The Ten Commandments were given to which prophet?",                                options:["Abraham","David","Jesus","Moses"],                                            answer:3, explanation:"According to the Bible, God gave the Ten Commandments to Moses on Mount Sinai.", source:"BECE Sample", created_at:D },
 ]
+
+// ──────────────────────────────────────────────────────────────────────────────
+// School configuration (settings, classes, subjects, calendar, discount policy)
+// Sourced from principal's brief 2026-05-07.
+// ──────────────────────────────────────────────────────────────────────────────
+
+export const PHOENIX_SCHOOL_SETTINGS: SchoolSettings = {
+  name: 'Phoenix International School',
+  motto: 'Rising to Excellence',
+  location: 'AGAPE',
+  phones: ['0508923445', '0545307614'],
+  email: 'myphoenixschool@gmail.com',
+  current_academic_year: '2025/2026',
+  current_term: 2,
+  sms_provider: 'hubtel',
+  sms_sender_id: 'PHOENIX',
+  sms_credit_balance: 0,
+  sms_alert_threshold: 10,
+}
+
+export const PHOENIX_CLASSES: ClassDef[] = [
+  { id: 'cls-creche',   name: 'Crèche',     section: 'preschool', level: 'creche',  order: 1 },
+  { id: 'cls-nur1',     name: 'Nursery 1',  section: 'preschool', level: 'nursery', order: 2 },
+  { id: 'cls-nur2',     name: 'Nursery 2',  section: 'preschool', level: 'nursery', order: 3 },
+  { id: 'cls-kg1',      name: 'KG 1',       section: 'preschool', level: 'kg',      order: 4 },
+  { id: 'cls-kg2',      name: 'KG 2',       section: 'preschool', level: 'kg',      order: 5 },
+  { id: 'cls-p1',       name: 'Class 1',    section: 'primary',   level: 'primary', order: 6 },
+  { id: 'cls-p2',       name: 'Class 2',    section: 'primary',   level: 'primary', order: 7 },
+  { id: 'cls-p3',       name: 'Class 3',    section: 'primary',   level: 'primary', order: 8 },
+  { id: 'cls-p4',       name: 'Class 4',    section: 'primary',   level: 'primary', order: 9 },
+  { id: 'cls-p5',       name: 'Class 5',    section: 'primary',   level: 'primary', order: 10 },
+  { id: 'cls-p6',       name: 'Class 6',    section: 'primary',   level: 'primary', order: 11 },
+  { id: 'cls-jhs1',     name: 'JHS 1',      section: 'jhs',       level: 'jhs',     order: 12 },
+  { id: 'cls-jhs2',     name: 'JHS 2',      section: 'jhs',       level: 'jhs',     order: 13 },
+  { id: 'cls-jhs3',     name: 'JHS 3',      section: 'jhs',       level: 'jhs',     order: 14 },
+]
+
+export const PHOENIX_SUBJECTS: Subject[] = [
+  // Preschool — Co-Scholastic
+  { id: 'sub-ps-play',  name: 'Learning Through Play', section: 'preschool', category: 'co-scholastic' },
+  { id: 'sub-ps-lang',  name: 'Language Development',  section: 'preschool', category: 'co-scholastic' },
+  { id: 'sub-ps-num',   name: 'Numeracy',              section: 'preschool', category: 'co-scholastic' },
+  { id: 'sub-ps-arts',  name: 'Creative Arts',         section: 'preschool', category: 'co-scholastic' },
+  { id: 'sub-ps-pe',    name: 'Physical Education',    section: 'preschool', category: 'co-scholastic' },
+  { id: 'sub-ps-rme',   name: 'RME',                   section: 'preschool', category: 'co-scholastic' },
+  // Primary — Core
+  { id: 'sub-pr-eng',   name: 'English Language',      section: 'primary',   category: 'core' },
+  { id: 'sub-pr-math',  name: 'Mathematics',           section: 'primary',   category: 'core' },
+  { id: 'sub-pr-sci',   name: 'Science',               section: 'primary',   category: 'core' },
+  { id: 'sub-pr-soc',   name: 'Social Studies',        section: 'primary',   category: 'core' },
+  { id: 'sub-pr-rme',   name: 'RME',                   section: 'primary',   category: 'core' },
+  { id: 'sub-pr-fre',   name: 'French',                section: 'primary',   category: 'core' },
+  { id: 'sub-pr-ict',   name: 'ICT',                   section: 'primary',   category: 'core' },
+  { id: 'sub-pr-arts',  name: 'Creative Arts',         section: 'primary',   category: 'core' },
+  // JHS — Core
+  { id: 'sub-jhs-eng',  name: 'English Language',      section: 'jhs', category: 'core' },
+  { id: 'sub-jhs-math', name: 'Mathematics',           section: 'jhs', category: 'core' },
+  { id: 'sub-jhs-sci',  name: 'Integrated Science',    section: 'jhs', category: 'core' },
+  { id: 'sub-jhs-soc',  name: 'Social Studies',        section: 'jhs', category: 'core' },
+  { id: 'sub-jhs-rme',  name: 'RME',                   section: 'jhs', category: 'core' },
+  { id: 'sub-jhs-fre',  name: 'French',                section: 'jhs', category: 'core' },
+  { id: 'sub-jhs-ict',  name: 'ICT',                   section: 'jhs', category: 'core' },
+  // JHS — Elective
+  { id: 'sub-jhs-ct',   name: 'Career Technology',     section: 'jhs', category: 'elective' },
+  { id: 'sub-jhs-arts', name: 'Creative Arts & Design',section: 'jhs', category: 'elective' },
+  { id: 'sub-jhs-gha',  name: 'Ghanaian Language',     section: 'jhs', category: 'elective' },
+]
+
+export const PHOENIX_ACADEMIC_YEAR: AcademicYear = {
+  id: 'ay-2025-2026',
+  name: '2025/2026',
+  start_date: '2025-09-09',
+  end_date: '2026-07-31',
+  is_current: true,
+  terms: [
+    { number: 1, start_date: '2025-09-09', end_date: '2025-12-19', is_current: false },
+    { number: 2, start_date: '2026-01-13', end_date: '2026-04-03', is_current: true },
+    { number: 3, start_date: '2026-04-28', end_date: '2026-07-31', is_current: false },
+  ],
+}
+
+export const PHOENIX_DISCOUNT_POLICY: DiscountPolicy = {
+  active: true,
+  applies_to_fee_types: ['School Fees'],
+  tiers: [
+    { sibling_count: 1, percent: 0 },
+    { sibling_count: 2, percent: 5 },
+    { sibling_count: 3, percent: 8 },
+    { sibling_count: 4, percent: 11 },
+    { sibling_count: 5, percent: 14 },
+  ],
+}
+
+export const MOCK_FAMILIES: Family[] = []
+

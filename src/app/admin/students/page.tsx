@@ -1,31 +1,19 @@
 "use client";
 import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
+import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
 import { CLASSES, LEVEL_NAMES, generateStudentId } from "@/lib/utils";
 import type { Student, StudentLevel } from "@/lib/types";
 import toast from "react-hot-toast";
 
-const NAV = [
-  { icon: "📊", label: "Overview",       href: "/admin" },
-  { icon: "🎒", label: "Students",       href: "/admin/students" },
-  { icon: "💳", label: "Fee Management", href: "/admin/fees" },
-  { icon: "👩‍🏫", label: "Staff",         href: "/admin/staff" },
-  { icon: "💼", label: "Payroll",         href: "/admin/payroll" },
-  { icon: "📡", label: "Attendance",      href: "/admin/attendance" },
-  { icon: "🏦", label: "Canteen Wallet",  href: "/admin/canteen" },
-  { icon: "📢", label: "Announcements",   href: "/admin/announcements" },
-  { icon: "📸", label: "School Feed",     href: "/admin/feed" },
-  { icon: "🔑", label: "Accounts",        href: "/admin/accounts" },
-  { icon: "❓", label: "Question Bank", href: "/admin/questions" },
-  { icon: "📥", label: "Data Import",    href: "/admin/import" },
-];
 
 const LEVELS: StudentLevel[] = ["creche","nursery","kg","primary","jhs"];
 
 const blank = (): Omit<Student,"id"|"created_at"|"fee_status"> => ({
   student_id: "", full_name: "", gender: "male", level: "primary",
   class_name: "Primary 1", dob: "", parent_name: "", parent_phone: "",
+  category: "new",
 });
 
 export default function StudentsPage() {
@@ -58,7 +46,8 @@ export default function StudentsPage() {
     setEditing(s);
     setForm({ student_id: s.student_id, full_name: s.full_name, gender: s.gender ?? "male",
       level: s.level, class_name: s.class_name, dob: s.dob ?? "",
-      parent_name: s.parent_name ?? "", parent_phone: s.parent_phone ?? "" });
+      parent_name: s.parent_name ?? "", parent_phone: s.parent_phone ?? "",
+      category: s.category ?? "new", family_id: s.family_id });
     setShowModal(true);
   };
 
@@ -213,6 +202,14 @@ export default function StudentsPage() {
                 <select value={form.class_name} onChange={(e) => setForm((p) => ({ ...p, class_name: e.target.value }))}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none">
                   {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Student Category</label>
+                <select value={form.category ?? "new"} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value as "new" | "continuing" }))}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none">
+                  <option value="new">New Student</option>
+                  <option value="continuing">Continuing Student</option>
                 </select>
               </div>
             </div>

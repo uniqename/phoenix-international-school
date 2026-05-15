@@ -1,24 +1,11 @@
 "use client";
 import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
+import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
 import toast from "react-hot-toast";
 import type { UserRole } from "@/lib/types";
 
-const NAV = [
-  { icon: "📊", label: "Overview",       href: "/admin" },
-  { icon: "🎒", label: "Students",       href: "/admin/students" },
-  { icon: "💳", label: "Fee Management", href: "/admin/fees" },
-  { icon: "👩‍🏫", label: "Staff",         href: "/admin/staff" },
-  { icon: "💼", label: "Payroll",         href: "/admin/payroll" },
-  { icon: "📡", label: "Attendance",      href: "/admin/attendance" },
-  { icon: "🏦", label: "Canteen Wallet",  href: "/admin/canteen" },
-  { icon: "📢", label: "Announcements",   href: "/admin/announcements" },
-  { icon: "📸", label: "School Feed",     href: "/admin/feed" },
-  { icon: "🔑", label: "Accounts",        href: "/admin/accounts" },
-  { icon: "❓", label: "Question Bank", href: "/admin/questions" },
-  { icon: "📥", label: "Data Import",    href: "/admin/import" },
-];
 
 type Tab = "teachers" | "parents";
 

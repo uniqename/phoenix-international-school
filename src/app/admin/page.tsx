@@ -1,22 +1,9 @@
 "use client";
 import DashboardShell from "@/components/DashboardShell";
+import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import Link from "next/link";
 import { useAppStore } from "@/store/useAppStore";
 
-const NAV = [
-  { icon: "📊", label: "Overview",      href: "/admin" },
-  { icon: "🎒", label: "Students",      href: "/admin/students" },
-  { icon: "💳", label: "Fee Management",href: "/admin/fees" },
-  { icon: "👩‍🏫", label: "Staff",        href: "/admin/staff" },
-  { icon: "💼", label: "Payroll",        href: "/admin/payroll" },
-  { icon: "📡", label: "Attendance",     href: "/admin/attendance" },
-  { icon: "🏦", label: "Canteen Wallet", href: "/admin/canteen" },
-  { icon: "📢", label: "Announcements",  href: "/admin/announcements" },
-  { icon: "📸", label: "School Feed",    href: "/admin/feed" },
-  { icon: "🔑", label: "Accounts",       href: "/admin/accounts" },
-  { icon: "❓", label: "Question Bank", href: "/admin/questions" },
-  { icon: "📥", label: "Data Import",    href: "/admin/import" },
-];
 
 export default function AdminOverview() {
   const students  = useAppStore((s) => s.students);

@@ -16,10 +16,11 @@ interface Props {
 }
 
 const ROLE_META: Record<UserRole, { title: string; color: string; icon: string }> = {
-  admin:   { title: "Admin Portal",   color: "#1A3FA0", icon: "🏛️" },
-  teacher: { title: "Teacher Portal", color: "#6B21A8", icon: "👩‍🏫" },
-  parent:  { title: "Parent Portal",  color: "#2B55C9", icon: "👨‍👩‍👧" },
-  student: { title: "Student Portal", color: "#8B35E0", icon: "🎒" },
+  admin:     { title: "Admin Portal",     color: "#1A3FA0", icon: "🏛️" },
+  principal: { title: "Principal Portal", color: "#1A0E4D", icon: "👔" },
+  teacher:   { title: "Teacher Portal",   color: "#6B21A8", icon: "👩‍🏫" },
+  parent:    { title: "Parent Portal",    color: "#2B55C9", icon: "👨‍👩‍👧" },
+  student:   { title: "Student Portal",   color: "#8B35E0", icon: "🎒" },
 }
 
 export default function DashboardShell({ role, navItems, children }: Props) {

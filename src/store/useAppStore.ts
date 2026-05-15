@@ -6,12 +6,16 @@ import type {
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
   CanteenWallet, CanteenTransaction, FeedPost, Payroll, BECEAttempt, PickupCode,
   HomeworkSubmission, UserAccount, UserRole, QuizQuestion,
+  SchoolSettings, ClassDef, Subject, AcademicYear, AcademicHoliday,
+  Family, DiscountPolicy, DiscountTier,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
   MOCK_ATTENDANCE, MOCK_GRADES, MOCK_HOMEWORK, MOCK_LESSON_PLANS,
   MOCK_ANNOUNCEMENTS, MOCK_CRECHE_LOG, MOCK_CANTEEN_WALLETS,
   MOCK_FEED_POSTS, MOCK_PAYROLL, MOCK_QUIZ_QUESTIONS,
+  PHOENIX_SCHOOL_SETTINGS, PHOENIX_CLASSES, PHOENIX_SUBJECTS,
+  PHOENIX_ACADEMIC_YEAR, PHOENIX_DISCOUNT_POLICY, MOCK_FAMILIES,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -38,6 +42,31 @@ interface AppState {
   homeworkSubmissions: HomeworkSubmission[]
   accounts: UserAccount[]
   quizQuestions: QuizQuestion[]
+  schoolSettings: SchoolSettings
+  classes: ClassDef[]
+  subjects: Subject[]
+  academicYears: AcademicYear[]
+  families: Family[]
+  discountPolicy: DiscountPolicy
+
+  // School configuration
+  updateSchoolSettings: (data: Partial<SchoolSettings>) => void
+  addClass: (c: Omit<ClassDef, 'id'>) => void
+  updateClass: (id: string, data: Partial<ClassDef>) => void
+  deleteClass: (id: string) => void
+  addSubject: (s: Omit<Subject, 'id'>) => void
+  updateSubject: (id: string, data: Partial<Subject>) => void
+  deleteSubject: (id: string) => void
+  updateAcademicYear: (id: string, data: Partial<AcademicYear>) => void
+  addAcademicYear: (y: Omit<AcademicYear, 'id'>) => void
+  setCurrentAcademicYear: (id: string) => void
+  addHoliday: (yearId: string, termNumber: 1 | 2 | 3, holiday: Omit<AcademicHoliday, 'id'>) => void
+  removeHoliday: (yearId: string, termNumber: 1 | 2 | 3, holidayId: string) => void
+  updateDiscountPolicy: (data: Partial<DiscountPolicy>) => void
+  setDiscountTiers: (tiers: DiscountTier[]) => void
+  upsertFamily: (f: Omit<Family, 'id' | 'created_at'> & { id?: string }) => Family
+  setFamilyDiscountOverride: (familyId: string, percent: number | undefined, note?: string) => void
+  computeFamilyDiscount: (familyId: string) => number
 
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
@@ -125,6 +154,130 @@ export const useAppStore = create<AppState>()(
       homeworkSubmissions: [],
       accounts: [],
       quizQuestions: MOCK_QUIZ_QUESTIONS,
+      schoolSettings: PHOENIX_SCHOOL_SETTINGS,
+      classes: PHOENIX_CLASSES,
+      subjects: PHOENIX_SUBJECTS,
+      academicYears: [PHOENIX_ACADEMIC_YEAR],
+      families: MOCK_FAMILIES,
+      discountPolicy: PHOENIX_DISCOUNT_POLICY,
+
+      updateSchoolSettings: (data) => set((st) => ({
+        schoolSettings: { ...st.schoolSettings, ...data },
+      })),
+
+      addClass: (c) => set((st) => ({
+        classes: [...st.classes, { ...c, id: `cls-${Date.now()}` }],
+      })),
+
+      updateClass: (id, data) => set((st) => ({
+        classes: st.classes.map((c) => c.id === id ? { ...c, ...data } : c),
+      })),
+
+      deleteClass: (id) => set((st) => ({
+        classes: st.classes.filter((c) => c.id !== id),
+      })),
+
+      addSubject: (s) => set((st) => ({
+        subjects: [...st.subjects, { ...s, id: `sub-${Date.now()}` }],
+      })),
+
+      updateSubject: (id, data) => set((st) => ({
+        subjects: st.subjects.map((s) => s.id === id ? { ...s, ...data } : s),
+      })),
+
+      deleteSubject: (id) => set((st) => ({
+        subjects: st.subjects.filter((s) => s.id !== id),
+      })),
+
+      updateAcademicYear: (id, data) => set((st) => ({
+        academicYears: st.academicYears.map((y) => y.id === id ? { ...y, ...data } : y),
+      })),
+
+      addAcademicYear: (y) => set((st) => ({
+        academicYears: [...st.academicYears, { ...y, id: `ay-${Date.now()}` }],
+      })),
+
+      setCurrentAcademicYear: (id) => set((st) => ({
+        academicYears: st.academicYears.map((y) => ({ ...y, is_current: y.id === id })),
+        schoolSettings: {
+          ...st.schoolSettings,
+          current_academic_year: st.academicYears.find((y) => y.id === id)?.name ?? st.schoolSettings.current_academic_year,
+        },
+      })),
+
+      addHoliday: (yearId, termNumber, holiday) => set((st) => ({
+        academicYears: st.academicYears.map((y) => y.id !== yearId ? y : {
+          ...y,
+          terms: y.terms.map((t) => t.number !== termNumber ? t : {
+            ...t,
+            holidays: [...(t.holidays ?? []), { ...holiday, id: `hol-${Date.now()}` }],
+          }),
+        }),
+      })),
+
+      removeHoliday: (yearId, termNumber, holidayId) => set((st) => ({
+        academicYears: st.academicYears.map((y) => y.id !== yearId ? y : {
+          ...y,
+          terms: y.terms.map((t) => t.number !== termNumber ? t : {
+            ...t,
+            holidays: (t.holidays ?? []).filter((h) => h.id !== holidayId),
+          }),
+        }),
+      })),
+
+      updateDiscountPolicy: (data) => set((st) => ({
+        discountPolicy: { ...st.discountPolicy, ...data },
+      })),
+
+      setDiscountTiers: (tiers) => set((st) => ({
+        discountPolicy: {
+          ...st.discountPolicy,
+          tiers: [...tiers].sort((a, b) => a.sibling_count - b.sibling_count),
+        },
+      })),
+
+      upsertFamily: (f) => {
+        const id = f.id ?? `fam-${Date.now()}`
+        const existing = get().families.find((x) => x.id === id)
+        const family: Family = {
+          id,
+          family_name: f.family_name,
+          primary_parent_id: f.primary_parent_id,
+          secondary_parent_id: f.secondary_parent_id,
+          primary_email: f.primary_email,
+          primary_phone: f.primary_phone,
+          secondary_email: f.secondary_email,
+          secondary_phone: f.secondary_phone,
+          discount_override_percent: f.discount_override_percent,
+          discount_override_note: f.discount_override_note,
+          created_at: existing?.created_at ?? new Date().toISOString(),
+        }
+        set((st) => ({
+          families: existing
+            ? st.families.map((x) => x.id === id ? family : x)
+            : [...st.families, family],
+        }))
+        return family
+      },
+
+      setFamilyDiscountOverride: (familyId, percent, note) => set((st) => ({
+        families: st.families.map((f) => f.id === familyId
+          ? { ...f, discount_override_percent: percent, discount_override_note: note }
+          : f),
+      })),
+
+      computeFamilyDiscount: (familyId) => {
+        const st = get()
+        const family = st.families.find((f) => f.id === familyId)
+        if (!family) return 0
+        if (typeof family.discount_override_percent === 'number') return family.discount_override_percent
+        if (!st.discountPolicy.active) return 0
+        const siblingCount = st.students.filter((s) => s.family_id === familyId).length
+        if (siblingCount < 1) return 0
+        const tiers = [...st.discountPolicy.tiers].sort((a, b) => b.sibling_count - a.sibling_count)
+        const tier = tiers.find((t) => siblingCount >= t.sibling_count)
+        return tier?.percent ?? 0
+      },
 
       addStudent: (s) => set((st) => ({
         students: [...st.students, { ...s, id: `s${Date.now()}`, created_at: new Date().toISOString() }],

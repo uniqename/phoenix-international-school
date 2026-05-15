@@ -1,8 +1,11 @@
-export type UserRole = 'admin' | 'teacher' | 'parent' | 'student'
+export type UserRole = 'admin' | 'teacher' | 'parent' | 'student' | 'principal'
 export type FeeStatus = 'cleared' | 'partial' | 'outstanding'
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
 export type PaymentMethod = 'mtn_momo' | 'telecel' | 'at_money' | 'cash' | 'bank'
 export type StudentLevel = 'creche' | 'nursery' | 'kg' | 'primary' | 'jhs'
+export type StudentCategory = 'new' | 'continuing'
+export type SchoolSection = 'preschool' | 'primary' | 'jhs'
+export type SubjectCategory = 'core' | 'elective' | 'co-scholastic'
 export type Mood = 'happy' | 'tired' | 'sad' | 'active' | 'sick'
 
 export interface UserProfile {
@@ -21,12 +24,98 @@ export interface Student {
   gender?: 'male' | 'female'
   level: StudentLevel
   class_name: string
+  category?: StudentCategory
+  family_id?: string
   parent_id?: string
   parent_name?: string
   parent_phone?: string
   fee_status: FeeStatus
   photo_url?: string
   created_at: string
+}
+
+export interface Family {
+  id: string
+  family_name: string
+  primary_parent_id?: string
+  secondary_parent_id?: string
+  primary_email?: string
+  primary_phone?: string
+  secondary_email?: string
+  secondary_phone?: string
+  discount_override_percent?: number
+  discount_override_note?: string
+  created_at: string
+}
+
+export interface SchoolSettings {
+  name: string
+  motto?: string
+  location: string
+  phones: string[]
+  email: string
+  website?: string
+  logo_url?: string
+  current_academic_year: string
+  current_term: 1 | 2 | 3
+  sms_provider: 'hubtel' | 'mnotify' | 'arkesel' | 'none'
+  sms_sender_id?: string
+  sms_credit_balance: number
+  sms_alert_threshold: number
+}
+
+export interface ClassDef {
+  id: string
+  name: string
+  section: SchoolSection
+  level: StudentLevel
+  capacity?: number
+  head_teacher_id?: string
+  order: number
+}
+
+export interface Subject {
+  id: string
+  name: string
+  section: SchoolSection
+  category: SubjectCategory
+  level?: StudentLevel
+  code?: string
+}
+
+export interface AcademicYear {
+  id: string
+  name: string
+  start_date: string
+  end_date: string
+  is_current: boolean
+  terms: AcademicTerm[]
+}
+
+export interface AcademicTerm {
+  number: 1 | 2 | 3
+  start_date: string
+  end_date: string
+  holidays?: AcademicHoliday[]
+  is_current?: boolean
+}
+
+export interface AcademicHoliday {
+  id: string
+  name: string
+  start_date: string
+  end_date: string
+}
+
+export interface DiscountTier {
+  sibling_count: number
+  percent: number
+}
+
+export interface DiscountPolicy {
+  tiers: DiscountTier[]
+  applies_to_fee_types: string[]
+  active: boolean
 }
 
 export interface Teacher {
