@@ -5,7 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
 const PORTALS = [
-  { label: "Admin Portal",   sub: "Headteacher · Accountant",    href: "/login?role=admin",   icon: "🏛️", from: "#0C0A1E", to: "#1A3FA0" },
+  { label: "Principal Portal", sub: "Headmaster · Oversight",     href: "/login?role=principal", icon: "👔", from: "#2A1A05", to: "#F59E0B" },
+  { label: "Admin Portal",   sub: "School Office · Accountant",   href: "/login?role=admin",   icon: "🏛️", from: "#0C0A1E", to: "#1A3FA0" },
   { label: "Teacher Portal", sub: "Class & Subject Teachers",     href: "/login?role=teacher", icon: "👩‍🏫", from: "#1E0B42", to: "#6B21A8" },
   { label: "Parent Portal",  sub: "Parents & Guardians",          href: "/login?role=parent",  icon: "👨‍👩‍👧", from: "#0D1E5C", to: "#2B55C9" },
   { label: "Student Portal", sub: "Primary through JHS 3",        href: "/login?role=student", icon: "🎒",  from: "#2D0F5C", to: "#8B35E0" },

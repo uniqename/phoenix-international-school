@@ -124,7 +124,10 @@ function LoginForm() {
           </div>
         </div>
 
-        <p className="text-center text-xs mt-4" style={{ color: "rgba(196,181,253,0.4)" }}>
+        <p className="text-center text-xs mt-4" style={{ color: "rgba(196,181,253,0.6)" }}>
+          First time? Ask the school office for your account — they create it from <span className="font-mono">/admin/accounts</span> and hand you a credential slip.
+        </p>
+        <p className="text-center text-[10px] mt-2" style={{ color: "rgba(196,181,253,0.4)" }}>
           © 2026 Phoenix International School Ghana
         </p>
       </div>

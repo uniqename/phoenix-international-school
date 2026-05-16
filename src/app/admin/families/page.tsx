@@ -334,7 +334,7 @@ export default function FamiliesPage() {
                     </Field>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Both parents log in separately and see the same children, fees, attendance, and reports. Invite link generation coming in Phase 2d.
+                    Both parents log in separately and see the same children, fees, attendance, and reports. After saving, use the &quot;Invite primary parent&quot; / &quot;Invite second parent&quot; buttons on the family card to generate a 7-day invite link.
                   </p>
                 </div>
 
