@@ -150,6 +150,100 @@ export type TransactionKind = 'payment' | 'receipt' | 'bank_transfer'
 export type TransactionStatus = 'pending' | 'pre_approved' | 'approved' | 'paid' | 'rejected'
 export type FinancePaymentMode = 'cash' | 'momo' | 'cheque' | 'bank_transfer' | 'card' | 'pos'
 
+// ── Phase 11: LMS ─────────────────────────────────────────────
+export interface TimetablePeriod {
+  id: string
+  start_time: string                    // HH:MM
+  end_time: string
+  subject_id?: string
+  teacher_id?: string                   // Employee.id
+  room?: string
+  notes?: string
+}
+
+export type WeekDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface ClassTimetableDay {
+  day: WeekDay
+  periods: TimetablePeriod[]
+}
+
+export interface ClassTimetable {
+  id: string                            // = class_id
+  class_id: string
+  days: ClassTimetableDay[]
+  updated_at: string
+}
+
+export type ExamFormat = 'objective_only' | 'essay_only' | 'objective_and_essay'
+export type ExamDeliveryStatus = 'draft' | 'published' | 'closed'
+
+export interface OnlineExam {
+  id: string
+  name: string
+  code: string                          // short code, e.g. "MATH-T2-2025"
+  subject_id?: string
+  class_ids: string[]
+  starts_on: string                     // ISO datetime
+  ends_on: string
+  duration_minutes: number
+  exam_format: ExamFormat
+  status: ExamDeliveryStatus
+  created_by_employee_id?: string
+  total_marks?: number
+  created_at: string
+}
+
+export type AssignmentQuestionKind = 'multiple_choice' | 'short_answer' | 'essay' | 'file_upload'
+
+export interface AssignmentQuestion {
+  id: string
+  order: number
+  kind: AssignmentQuestionKind
+  prompt: string                        // markdown / rich text content
+  marks: number
+  // Multiple choice
+  choices?: string[]
+  correct_choice_index?: number
+  // Media attachments — references kept generic so we can swap storage backend
+  image_url?: string
+  attachment_urls?: string[]
+}
+
+export type AssignmentStatus = 'draft' | 'published' | 'closed'
+
+export interface OnlineAssignment {
+  id: string
+  title: string
+  subject_id?: string
+  class_ids: string[]
+  due_date?: string
+  instructions?: string
+  questions: AssignmentQuestion[]
+  status: AssignmentStatus
+  created_by_employee_id?: string
+  total_marks?: number
+  created_at: string
+}
+
+export type ClassroomSessionKind = 'live' | 'recorded' | 'discussion'
+
+export interface OnlineClassroomSession {
+  id: string
+  title: string
+  description?: string
+  kind: ClassroomSessionKind
+  subject_id?: string
+  class_ids: string[]
+  scheduled_at?: string                 // ISO datetime for live sessions
+  duration_minutes?: number
+  meeting_url?: string                  // Jitsi / Zoom / Google Meet
+  recording_url?: string
+  teacher_id?: string                   // Employee.id
+  is_active: boolean
+  created_at: string
+}
+
 export interface FinanceTransaction {
   id: string
   kind: TransactionKind

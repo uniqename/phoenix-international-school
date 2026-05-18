@@ -17,6 +17,8 @@ import type {
   ReportSignatory, StudentInterest,
   EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
   AccountGroup, ChartAccount, BankAccount, BankBranch, FinanceTransaction, TransactionStatus,
+  ClassTimetable, OnlineExam, OnlineAssignment, OnlineClassroomSession,
+  TimetablePeriod, AssignmentQuestion,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -92,6 +94,10 @@ interface AppState {
   chartAccounts: ChartAccount[]
   bankAccounts: BankAccount[]
   financeTransactions: FinanceTransaction[]
+  classTimetables: ClassTimetable[]
+  onlineExams: OnlineExam[]
+  onlineAssignments: OnlineAssignment[]
+  classroomSessions: OnlineClassroomSession[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -243,6 +249,23 @@ interface AppState {
   rejectFinanceTransaction: (id: string) => void
   payFinanceTransaction: (id: string, employeeId?: string) => void
 
+  // LMS
+  upsertClassTimetable: (classId: string, days: ClassTimetable['days']) => ClassTimetable
+  addTimetablePeriod: (classId: string, day: ClassTimetable['days'][number]['day'], period: Omit<TimetablePeriod, 'id'>) => void
+  removeTimetablePeriod: (classId: string, day: ClassTimetable['days'][number]['day'], periodId: string) => void
+  addOnlineExam: (e: Omit<OnlineExam, 'id' | 'created_at'>) => OnlineExam
+  updateOnlineExam: (id: string, data: Partial<OnlineExam>) => void
+  deleteOnlineExam: (id: string) => void
+  addOnlineAssignment: (a: Omit<OnlineAssignment, 'id' | 'created_at'>) => OnlineAssignment
+  updateOnlineAssignment: (id: string, data: Partial<OnlineAssignment>) => void
+  deleteOnlineAssignment: (id: string) => void
+  addQuestionToAssignment: (assignmentId: string, q: Omit<AssignmentQuestion, 'id'>) => void
+  updateQuestionInAssignment: (assignmentId: string, questionId: string, data: Partial<AssignmentQuestion>) => void
+  removeQuestionFromAssignment: (assignmentId: string, questionId: string) => void
+  addClassroomSession: (s: Omit<OnlineClassroomSession, 'id' | 'created_at'>) => OnlineClassroomSession
+  updateClassroomSession: (id: string, data: Partial<OnlineClassroomSession>) => void
+  deleteClassroomSession: (id: string) => void
+
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
   updateStudent: (id: string, data: Partial<Student>) => void
@@ -360,6 +383,10 @@ export const useAppStore = create<AppState>()(
       chartAccounts: PHOENIX_CHART_ACCOUNTS,
       bankAccounts: PHOENIX_BANK_ACCOUNTS,
       financeTransactions: MOCK_FINANCE_TRANSACTIONS,
+      classTimetables: [],
+      onlineExams: [],
+      onlineAssignments: [],
+      classroomSessions: [],
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -1200,6 +1227,108 @@ export const useAppStore = create<AppState>()(
         financeTransactions: st.financeTransactions.map((t) => t.id === id
           ? { ...t, status: 'paid', paid_by_employee_id: employeeId, paid_at: new Date().toISOString() }
           : t),
+      })),
+
+      upsertClassTimetable: (classId, days) => {
+        const existing = get().classTimetables.find((t) => t.id === classId)
+        const item: ClassTimetable = {
+          id: classId,
+          class_id: classId,
+          days,
+          updated_at: new Date().toISOString(),
+        }
+        set((st) => ({
+          classTimetables: existing
+            ? st.classTimetables.map((t) => t.id === classId ? item : t)
+            : [...st.classTimetables, item],
+        }))
+        return item
+      },
+      addTimetablePeriod: (classId, day, period) => set((st) => {
+        const existing = st.classTimetables.find((t) => t.id === classId)
+        const newPeriod: TimetablePeriod = { ...period, id: `tp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }
+        if (!existing) {
+          const item: ClassTimetable = {
+            id: classId,
+            class_id: classId,
+            days: [{ day, periods: [newPeriod] }],
+            updated_at: new Date().toISOString(),
+          }
+          return { classTimetables: [...st.classTimetables, item] }
+        }
+        const dayExists = existing.days.some((d) => d.day === day)
+        const updatedDays = dayExists
+          ? existing.days.map((d) => d.day === day ? { ...d, periods: [...d.periods, newPeriod] } : d)
+          : [...existing.days, { day, periods: [newPeriod] }]
+        return {
+          classTimetables: st.classTimetables.map((t) => t.id === classId
+            ? { ...t, days: updatedDays, updated_at: new Date().toISOString() }
+            : t),
+        }
+      }),
+      removeTimetablePeriod: (classId, day, periodId) => set((st) => ({
+        classTimetables: st.classTimetables.map((t) => t.id !== classId ? t : {
+          ...t,
+          days: t.days.map((d) => d.day !== day ? d : { ...d, periods: d.periods.filter((p) => p.id !== periodId) }),
+          updated_at: new Date().toISOString(),
+        }),
+      })),
+
+      addOnlineExam: (e) => {
+        const id = `exam-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: OnlineExam = { ...e, id, created_at: new Date().toISOString() }
+        set((st) => ({ onlineExams: [item, ...st.onlineExams] }))
+        return item
+      },
+      updateOnlineExam: (id, data) => set((st) => ({
+        onlineExams: st.onlineExams.map((e) => e.id === id ? { ...e, ...data } : e),
+      })),
+      deleteOnlineExam: (id) => set((st) => ({
+        onlineExams: st.onlineExams.filter((e) => e.id !== id),
+      })),
+
+      addOnlineAssignment: (a) => {
+        const id = `as-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: OnlineAssignment = { ...a, id, created_at: new Date().toISOString() }
+        set((st) => ({ onlineAssignments: [item, ...st.onlineAssignments] }))
+        return item
+      },
+      updateOnlineAssignment: (id, data) => set((st) => ({
+        onlineAssignments: st.onlineAssignments.map((a) => a.id === id ? { ...a, ...data } : a),
+      })),
+      deleteOnlineAssignment: (id) => set((st) => ({
+        onlineAssignments: st.onlineAssignments.filter((a) => a.id !== id),
+      })),
+      addQuestionToAssignment: (assignmentId, q) => set((st) => ({
+        onlineAssignments: st.onlineAssignments.map((a) => a.id !== assignmentId ? a : {
+          ...a,
+          questions: [...a.questions, { ...q, id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }],
+        }),
+      })),
+      updateQuestionInAssignment: (assignmentId, questionId, data) => set((st) => ({
+        onlineAssignments: st.onlineAssignments.map((a) => a.id !== assignmentId ? a : {
+          ...a,
+          questions: a.questions.map((q) => q.id === questionId ? { ...q, ...data } : q),
+        }),
+      })),
+      removeQuestionFromAssignment: (assignmentId, questionId) => set((st) => ({
+        onlineAssignments: st.onlineAssignments.map((a) => a.id !== assignmentId ? a : {
+          ...a,
+          questions: a.questions.filter((q) => q.id !== questionId),
+        }),
+      })),
+
+      addClassroomSession: (s) => {
+        const id = `cs-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: OnlineClassroomSession = { ...s, id, created_at: new Date().toISOString() }
+        set((st) => ({ classroomSessions: [item, ...st.classroomSessions] }))
+        return item
+      },
+      updateClassroomSession: (id, data) => set((st) => ({
+        classroomSessions: st.classroomSessions.map((s) => s.id === id ? { ...s, ...data } : s),
+      })),
+      deleteClassroomSession: (id) => set((st) => ({
+        classroomSessions: st.classroomSessions.filter((s) => s.id !== id),
       })),
 
       nextAdmissionNumber: () => {

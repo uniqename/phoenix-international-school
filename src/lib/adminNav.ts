@@ -21,6 +21,8 @@ export const ADMIN_NAV = [
   { icon: "🏦", label: "Canteen Wallet", href: "/admin/canteen" },
   { icon: "🏫", label: "Classes & Subjects", href: "/admin/classes" },
   { icon: "📅", label: "Academic Calendar", href: "/admin/calendar" },
+  { icon: "🕘", label: "Timetable",         href: "/admin/timetable" },
+  { icon: "💻", label: "Online Learning",   href: "/admin/online-learning" },
   { icon: "📋", label: "Assessments",     href: "/admin/assessments" },
   { icon: "📐", label: "Grading & Remarks", href: "/admin/grading" },
   { icon: "💗", label: "Student Interests", href: "/admin/interests" },
