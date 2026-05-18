@@ -16,6 +16,7 @@ import type {
   GradingGroup, GradeLevel, RemarkBank, RemarkEntry, AcademicAssessment,
   ReportSignatory, StudentInterest,
   EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
+  AccountGroup, ChartAccount, BankAccount, BankBranch, FinanceTransaction, TransactionStatus,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -32,6 +33,8 @@ import {
   PHOENIX_SIGNATORIES, MOCK_STUDENT_INTERESTS,
   PHOENIX_EMPLOYEE_CATEGORIES, PHOENIX_EMPLOYEE_DEPARTMENTS,
   PHOENIX_EMPLOYEE_POSITIONS, MOCK_EMPLOYEES,
+  PHOENIX_ACCOUNT_GROUPS, PHOENIX_CHART_ACCOUNTS, PHOENIX_BANK_ACCOUNTS,
+  MOCK_FINANCE_TRANSACTIONS,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -85,6 +88,10 @@ interface AppState {
   employeeDepartments: EmployeeDepartment[]
   employeePositions: EmployeePosition[]
   employees: Employee[]
+  accountGroups: AccountGroup[]
+  chartAccounts: ChartAccount[]
+  bankAccounts: BankAccount[]
+  financeTransactions: FinanceTransaction[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -219,6 +226,23 @@ interface AppState {
   setEmployeePermissions: (employeeId: string, permissions: PermissionKey[]) => void
   nextEmployeeId: () => string
 
+  // Finance bookkeeping
+  addAccountGroup: (g: Omit<AccountGroup, 'id' | 'created_at'>) => AccountGroup
+  updateAccountGroup: (id: string, data: Partial<AccountGroup>) => void
+  deleteAccountGroup: (id: string) => void
+  addChartAccount: (a: Omit<ChartAccount, 'id' | 'created_at'>) => ChartAccount
+  updateChartAccount: (id: string, data: Partial<ChartAccount>) => void
+  deleteChartAccount: (id: string) => void
+  addBank: (b: Omit<BankAccount, 'id' | 'created_at' | 'branches'>) => BankAccount
+  updateBank: (id: string, data: Partial<BankAccount>) => void
+  deleteBank: (id: string) => void
+  addBankBranch: (bankId: string, branch: Omit<BankBranch, 'id' | 'bank_id'>) => void
+  removeBankBranch: (bankId: string, branchId: string) => void
+  createFinanceTransaction: (t: Omit<FinanceTransaction, 'id' | 'created_at' | 'status'> & { status?: TransactionStatus }) => FinanceTransaction
+  approveFinanceTransaction: (id: string, employeeId?: string) => void
+  rejectFinanceTransaction: (id: string) => void
+  payFinanceTransaction: (id: string, employeeId?: string) => void
+
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
   updateStudent: (id: string, data: Partial<Student>) => void
@@ -332,6 +356,10 @@ export const useAppStore = create<AppState>()(
       employeeDepartments: PHOENIX_EMPLOYEE_DEPARTMENTS,
       employeePositions: PHOENIX_EMPLOYEE_POSITIONS,
       employees: MOCK_EMPLOYEES,
+      accountGroups: PHOENIX_ACCOUNT_GROUPS,
+      chartAccounts: PHOENIX_CHART_ACCOUNTS,
+      bankAccounts: PHOENIX_BANK_ACCOUNTS,
+      financeTransactions: MOCK_FINANCE_TRANSACTIONS,
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -1095,6 +1123,84 @@ export const useAppStore = create<AppState>()(
         }
         return `PSS${String(maxNum + 1).padStart(3, '0')}`
       },
+
+      addAccountGroup: (g) => {
+        const id = `ag-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: AccountGroup = { ...g, id, created_at: new Date().toISOString() }
+        set((st) => ({ accountGroups: [...st.accountGroups, item] }))
+        return item
+      },
+      updateAccountGroup: (id, data) => set((st) => ({
+        accountGroups: st.accountGroups.map((g) => g.id === id ? { ...g, ...data } : g),
+      })),
+      deleteAccountGroup: (id) => set((st) => ({
+        accountGroups: st.accountGroups.filter((g) => g.id !== id),
+      })),
+
+      addChartAccount: (a) => {
+        const id = `ca-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: ChartAccount = { ...a, id, created_at: new Date().toISOString() }
+        set((st) => ({ chartAccounts: [...st.chartAccounts, item] }))
+        return item
+      },
+      updateChartAccount: (id, data) => set((st) => ({
+        chartAccounts: st.chartAccounts.map((a) => a.id === id ? { ...a, ...data } : a),
+      })),
+      deleteChartAccount: (id) => set((st) => ({
+        chartAccounts: st.chartAccounts.filter((a) => a.id !== id),
+      })),
+
+      addBank: (b) => {
+        const id = `ba-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: BankAccount = { ...b, id, branches: [], created_at: new Date().toISOString() }
+        set((st) => ({ bankAccounts: [...st.bankAccounts, item] }))
+        return item
+      },
+      updateBank: (id, data) => set((st) => ({
+        bankAccounts: st.bankAccounts.map((b) => b.id === id ? { ...b, ...data } : b),
+      })),
+      deleteBank: (id) => set((st) => ({
+        bankAccounts: st.bankAccounts.filter((b) => b.id !== id),
+      })),
+      addBankBranch: (bankId, branch) => set((st) => ({
+        bankAccounts: st.bankAccounts.map((b) => b.id !== bankId ? b : {
+          ...b,
+          branches: [...b.branches, { ...branch, id: `br-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, bank_id: bankId }],
+        }),
+      })),
+      removeBankBranch: (bankId, branchId) => set((st) => ({
+        bankAccounts: st.bankAccounts.map((b) => b.id !== bankId ? b : {
+          ...b,
+          branches: b.branches.filter((br) => br.id !== branchId),
+        }),
+      })),
+
+      createFinanceTransaction: (t) => {
+        const id = `ft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: FinanceTransaction = {
+          ...t,
+          id,
+          status: t.status ?? (t.pre_approved ? 'pre_approved' : 'pending'),
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ financeTransactions: [item, ...st.financeTransactions] }))
+        return item
+      },
+      approveFinanceTransaction: (id, employeeId) => set((st) => ({
+        financeTransactions: st.financeTransactions.map((t) => t.id === id
+          ? { ...t, status: 'approved', approved_by_employee_id: employeeId, approved_at: new Date().toISOString() }
+          : t),
+      })),
+      rejectFinanceTransaction: (id) => set((st) => ({
+        financeTransactions: st.financeTransactions.map((t) => t.id === id
+          ? { ...t, status: 'rejected' }
+          : t),
+      })),
+      payFinanceTransaction: (id, employeeId) => set((st) => ({
+        financeTransactions: st.financeTransactions.map((t) => t.id === id
+          ? { ...t, status: 'paid', paid_by_employee_id: employeeId, paid_at: new Date().toISOString() }
+          : t),
+      })),
 
       nextAdmissionNumber: () => {
         const students = get().students

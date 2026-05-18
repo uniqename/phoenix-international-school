@@ -103,6 +103,80 @@ export interface PayrollPeriod {
   approved_at?: string
   paid_at?: string
 }
+
+// ── Phase 10: Finance bookkeeping ─────────────────────────────
+export type AccountFlow = 'income' | 'expense'
+
+export interface AccountGroup {
+  id: string
+  name: string                          // e.g. "Canteen Expense", "General Expense"
+  code: string                          // e.g. "CS", "GE1"
+  flow: AccountFlow
+  approver_employee_id?: string         // links to Employee
+  created_at: string
+}
+
+export interface ChartAccount {
+  id: string
+  name: string                          // e.g. "Bus Fuel", "Adesua360 Payments"
+  code?: string                         // accounting code
+  flow: AccountFlow
+  group_id?: string                     // links to AccountGroup
+  approver_employee_id?: string
+  last_closed?: string
+  active: boolean
+  created_at: string
+}
+
+export interface BankBranch {
+  id: string
+  bank_id: string
+  name: string
+  branch_code?: string
+}
+
+export interface BankAccount {
+  id: string
+  bank_name: string                     // e.g. "GCB Bank Ghana"
+  sort_code?: string                    // e.g. "001"
+  is_school_bank: boolean               // primary school account flag
+  account_number?: string
+  account_name?: string
+  branches: BankBranch[]
+  created_at: string
+}
+
+export type TransactionKind = 'payment' | 'receipt' | 'bank_transfer'
+export type TransactionStatus = 'pending' | 'pre_approved' | 'approved' | 'paid' | 'rejected'
+export type FinancePaymentMode = 'cash' | 'momo' | 'cheque' | 'bank_transfer' | 'card' | 'pos'
+
+export interface FinanceTransaction {
+  id: string
+  kind: TransactionKind
+  // For payments: who you're paying / what for
+  paying_to?: string                    // free-text receiver name (vendor, employee, etc.)
+  description: string
+  // Account flow
+  spending_from_id?: string             // ChartAccount.id (revenue / source)
+  spending_to_id?: string               // ChartAccount.id (expense / destination)
+  bank_account_id?: string              // For bank transfers / when source is a bank
+  // Money
+  amount: number
+  payment_mode: FinancePaymentMode
+  // Workflow
+  status: TransactionStatus
+  created_by_employee_id?: string
+  approved_by_employee_id?: string
+  paid_by_employee_id?: string
+  // Audit
+  date: string                          // YYYY-MM-DD
+  pre_approved: boolean
+  receipt_reference?: string
+  notes?: string
+  created_at: string
+  approved_at?: string
+  paid_at?: string
+}
 export type FeeStatus = 'cleared' | 'partial' | 'outstanding'
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
 export type PaymentMethod = 'mtn_momo' | 'telecel' | 'at_money' | 'cash' | 'bank'

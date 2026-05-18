@@ -7,6 +7,7 @@ import type {
   FeeParticular, InstantFeeBucket, StandaloneFeeDiscount, FeeBilling,
   GradingGroup, RemarkBank, AcademicAssessment, ReportSignatory, StudentInterest,
   EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
+  AccountGroup, ChartAccount, BankAccount, FinanceTransaction,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -730,5 +731,64 @@ export const PERMISSION_LABELS: Record<PermissionKey, { label: string; group: st
   store_manager:           { label: 'Store Manager',             group: 'Operations', emoji: '📦' },
   transport_manager:       { label: 'Transport Manager',         group: 'Operations', emoji: '🚌' },
 }
+
+// ── Phase 10 seed: Finance bookkeeping (mirrors Adesua doc) ──
+export const PHOENIX_ACCOUNT_GROUPS: AccountGroup[] = [
+  { id: 'ag-canteen-exp', name: 'Canteen Expense',    code: 'CS',  flow: 'expense', created_at: T0 },
+  { id: 'ag-canteen-sale', name: 'Canteen Sale',       code: 'CE',  flow: 'income',  created_at: T0 },
+  { id: 'ag-director-upk', name: "Director's Upkeep",  code: 'DU',  flow: 'expense', created_at: T0 },
+  { id: 'ag-fees',         name: 'Fees',               code: 'SF',  flow: 'income',  created_at: T0 },
+  { id: 'ag-general-exp',  name: 'General Expense',    code: 'GE1', flow: 'expense', created_at: T0 },
+  { id: 'ag-govt-exp',     name: 'Government Expenses', code: 'GE', flow: 'expense', created_at: T0 },
+  { id: 'ag-maintenance',  name: 'Maintenance',        code: 'MT',  flow: 'expense', created_at: T0 },
+  { id: 'ag-miscellaneous', name: 'Miscellaneous',     code: 'MS',  flow: 'expense', created_at: T0 },
+  { id: 'ag-salaries',     name: 'Salaries & Payroll', code: 'SAL', flow: 'expense', created_at: T0 },
+  { id: 'ag-utilities',    name: 'Utilities',          code: 'UT',  flow: 'expense', created_at: T0 },
+  { id: 'ag-transport',    name: 'Transport',          code: 'TR',  flow: 'expense', created_at: T0 },
+]
+
+export const PHOENIX_CHART_ACCOUNTS: ChartAccount[] = [
+  { id: 'ca-ades-pay',    name: 'Adesua360 Payments',         code: 'ADSLTL001', flow: 'expense', group_id: 'ag-general-exp', active: true, created_at: T0 },
+  { id: 'ca-app-reg',     name: 'Applicant Registration',     flow: 'income',  group_id: 'ag-fees',         active: true, created_at: T0 },
+  { id: 'ca-bus-fuel',    name: 'Bus Fuel',                   code: 'BF',  flow: 'expense', group_id: 'ag-utilities',    active: true, created_at: T0 },
+  { id: 'ca-canteen-exp', name: 'Canteen Expense',            code: 'CE',  flow: 'expense', group_id: 'ag-canteen-exp',  active: true, created_at: T0 },
+  { id: 'ca-canteen-sale', name: 'Canteen Sale',               code: 'CS',  flow: 'income',  group_id: 'ag-canteen-sale', active: true, created_at: T0 },
+  { id: 'ca-car-insur',   name: 'Car Insurance',              code: 'CA',  flow: 'expense', group_id: 'ag-transport',    active: true, created_at: T0 },
+  { id: 'ca-carpentry',   name: 'Carpentry Materials and Labour', code: 'CW', flow: 'expense', group_id: 'ag-maintenance', active: true, created_at: T0 },
+  { id: 'ca-school-fees', name: 'School Fees',                code: 'SF',  flow: 'income',  group_id: 'ag-fees',         active: true, created_at: T0 },
+  { id: 'ca-electricity', name: 'Electricity Bill',           code: 'EB',  flow: 'expense', group_id: 'ag-utilities',    active: true, created_at: T0 },
+  { id: 'ca-water',       name: 'Water Bill',                 code: 'WB',  flow: 'expense', group_id: 'ag-utilities',    active: true, created_at: T0 },
+  { id: 'ca-internet',    name: 'Internet',                   code: 'INT', flow: 'expense', group_id: 'ag-utilities',    active: true, created_at: T0 },
+  { id: 'ca-salaries',    name: 'Teacher Salaries',           code: 'TS',  flow: 'expense', group_id: 'ag-salaries',     active: true, created_at: T0 },
+  { id: 'ca-stationery',  name: 'Stationery',                 code: 'STA', flow: 'expense', group_id: 'ag-general-exp',  active: true, created_at: T0 },
+  { id: 'ca-cleaning',    name: 'Cleaning Supplies',          code: 'CL',  flow: 'expense', group_id: 'ag-maintenance',  active: true, created_at: T0 },
+  { id: 'ca-paystack',    name: 'Paystack Receipts',          code: 'PS',  flow: 'income',  group_id: 'ag-fees',         active: true, created_at: T0 },
+]
+
+export const PHOENIX_BANK_ACCOUNTS: BankAccount[] = [
+  {
+    id: 'ba-gcb',
+    bank_name: 'GCB Bank Ghana',
+    sort_code: '001',
+    is_school_bank: true,
+    account_number: '',
+    account_name: 'Phoenix International School',
+    branches: [
+      { id: 'br-gcb-accra-central', bank_id: 'ba-gcb', name: 'Accra Central', branch_code: '0011' },
+      { id: 'br-gcb-east-legon',    bank_id: 'ba-gcb', name: 'East Legon',    branch_code: '0021' },
+    ],
+    created_at: T0,
+  },
+  {
+    id: 'ba-fbn',
+    bank_name: 'FBN BANK',
+    sort_code: '002',
+    is_school_bank: false,
+    branches: [],
+    created_at: T0,
+  },
+]
+
+export const MOCK_FINANCE_TRANSACTIONS: FinanceTransaction[] = []
 
 
