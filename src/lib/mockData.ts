@@ -10,6 +10,7 @@ import type {
   AccountGroup, ChartAccount, BankAccount, FinanceTransaction,
   CanteenMeal, CanteenFeeParticular, CanteenMenuDay,
   MessageTemplate, MessageLog,
+  Enquiry, DataUpload, SmartReport,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -878,5 +879,23 @@ export const PHOENIX_MESSAGE_TEMPLATES: MessageTemplate[] = [
 ]
 
 export const MOCK_MESSAGE_LOGS: MessageLog[] = []
+
+// ── Phase 14 seed ──
+export const PHOENIX_SMART_REPORT_TARGETS = [
+  { table: 'students',           label: '🎒 Students',           fields: ['student_id', 'full_name', 'class_name', 'level', 'category', 'fee_status', 'parent_phone', 'mobile_no', 'email', 'dob', 'gender', 'blood_group'] },
+  { table: 'employees',          label: '🧑‍💼 Employees',         fields: ['employee_id', 'full_name', 'department_id', 'position_id', 'category_id', 'status', 'phone', 'email', 'date_of_employment'] },
+  { table: 'families',           label: '👨‍👩‍👧 Families',          fields: ['family_name', 'primary_email', 'primary_phone', 'secondary_email', 'secondary_phone', 'wallet_balance', 'discount_override_percent'] },
+  { table: 'fees',               label: '💳 Fees',                fields: ['student_name', 'class_name', 'fee_type', 'term', 'academic_year', 'amount', 'paid_amount', 'status', 'due_date'] },
+  { table: 'payments',           label: '🧾 Payments',            fields: ['student_name', 'class_name', 'amount', 'method', 'reference', 'receipt_number', 'paid_at'] },
+  { table: 'attendance',         label: '📡 Attendance',          fields: ['student_name', 'class_name', 'date', 'status', 'context', 'parent_notified'] },
+  { table: 'guardians',          label: '🧑‍🤝‍🧑 Guardians',         fields: ['full_name', 'relationship', 'phone', 'email', 'is_emergency_contact', 'can_pick_up_students'] },
+  { table: 'finance_transactions', label: '🏦 Finance Transactions', fields: ['date', 'kind', 'description', 'paying_to', 'amount', 'payment_mode', 'status'] },
+  { table: 'message_logs',       label: '📨 Message Logs',        fields: ['sent_at', 'channel', 'audience_description', 'recipient_count', 'status'] },
+  { table: 'enquiries',          label: '📥 Enquiries',           fields: ['child_name', 'intended_class', 'parent_name', 'parent_phone', 'source', 'status', 'created_at'] },
+]
+
+export const MOCK_ENQUIRIES: Enquiry[] = []
+export const MOCK_DATA_UPLOADS: DataUpload[] = []
+export const MOCK_SMART_REPORTS: SmartReport[] = []
 
 

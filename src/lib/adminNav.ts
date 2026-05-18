@@ -34,5 +34,8 @@ export const ADMIN_NAV = [
   { icon: "🔑", label: "Accounts",        href: "/admin/accounts" },
   { icon: "❓", label: "Question Bank",   href: "/admin/questions" },
   { icon: "📥", label: "Data Import",     href: "/admin/import" },
+  { icon: "📊", label: "Smart Reports",   href: "/admin/smart-reports" },
+  { icon: "📤", label: "Data Uploads",    href: "/admin/data-uploads" },
+  { icon: "📬", label: "Enquiries",       href: "/admin/enquiries" },
   { icon: "⚙️", label: "School Settings", href: "/admin/settings" },
 ];

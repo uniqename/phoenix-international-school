@@ -471,6 +471,53 @@ export interface MessageTemplate {
   created_at: string
 }
 
+// ── Phase 14: Smart Reports + Data Uploads + Enquiries ────────
+export type EnquiryStatus = 'new' | 'contacted' | 'interview_scheduled' | 'admitted' | 'declined' | 'archived'
+export type EnquirySource = 'website' | 'walk_in' | 'phone' | 'referral' | 'social' | 'other'
+
+export interface Enquiry {
+  id: string
+  child_name: string
+  child_dob?: string
+  child_gender?: 'male' | 'female'
+  intended_class?: string                // free-text — could match a ClassDef name
+  parent_name: string
+  parent_phone: string
+  parent_email?: string
+  source: EnquirySource
+  status: EnquiryStatus
+  follow_up_date?: string
+  notes?: string
+  assigned_to_employee_id?: string
+  converted_student_id?: string          // links to Student.id once admitted
+  created_at: string
+  updated_at: string
+}
+
+export interface DataUpload {
+  id: string
+  filename: string
+  target_table: string                   // e.g. "students", "employees", "fees"
+  row_count: number
+  ok_count: number
+  error_count: number
+  errors?: string[]                      // first few error messages for review
+  status: 'uploaded' | 'validating' | 'processed' | 'failed'
+  uploaded_by_employee_id?: string
+  created_at: string
+}
+
+export interface SmartReport {
+  id: string
+  name: string
+  target_table: string
+  fields: string[]                       // selected field names
+  filters?: { field: string; op: string; value: string }[]
+  related_fields?: string[]
+  created_by_employee_id?: string
+  created_at: string
+}
+
 export interface MessageLog {
   id: string
   channel: MessageChannel

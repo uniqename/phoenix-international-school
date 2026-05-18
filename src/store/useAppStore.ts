@@ -21,6 +21,7 @@ import type {
   TimetablePeriod, AssignmentQuestion,
   CanteenMeal, CanteenFeeParticular, CanteenMenuDay, MenuItem,
   MessageTemplate, MessageLog, MessageChannel,
+  Enquiry, EnquiryStatus, DataUpload, SmartReport,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -41,6 +42,7 @@ import {
   MOCK_FINANCE_TRANSACTIONS,
   PHOENIX_CANTEEN_MEALS, PHOENIX_CANTEEN_FEE_PARTICULARS, MOCK_CANTEEN_MENU_DAYS,
   PHOENIX_MESSAGE_TEMPLATES, MOCK_MESSAGE_LOGS,
+  MOCK_ENQUIRIES, MOCK_DATA_UPLOADS, MOCK_SMART_REPORTS,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -107,6 +109,9 @@ interface AppState {
   canteenMenuDays: CanteenMenuDay[]
   messageTemplates: MessageTemplate[]
   messageLogs: MessageLog[]
+  enquiries: Enquiry[]
+  dataUploads: DataUpload[]
+  smartReports: SmartReport[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -303,6 +308,19 @@ interface AppState {
     sent_by_employee_id?: string
   }) => MessageLog
 
+  // Enquiries (admissions pipeline)
+  addEnquiry: (e: Omit<Enquiry, 'id' | 'created_at' | 'updated_at'>) => Enquiry
+  updateEnquiry: (id: string, data: Partial<Enquiry>) => void
+  setEnquiryStatus: (id: string, status: EnquiryStatus) => void
+  deleteEnquiry: (id: string) => void
+
+  // Data uploads (CSV)
+  recordDataUpload: (u: Omit<DataUpload, 'id' | 'created_at'>) => DataUpload
+
+  // Smart reports
+  saveSmartReport: (r: Omit<SmartReport, 'id' | 'created_at'>) => SmartReport
+  deleteSmartReport: (id: string) => void
+
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
   updateStudent: (id: string, data: Partial<Student>) => void
@@ -429,6 +447,9 @@ export const useAppStore = create<AppState>()(
       canteenMenuDays: MOCK_CANTEEN_MENU_DAYS,
       messageTemplates: PHOENIX_MESSAGE_TEMPLATES,
       messageLogs: MOCK_MESSAGE_LOGS,
+      enquiries: MOCK_ENQUIRIES,
+      dataUploads: MOCK_DATA_UPLOADS,
+      smartReports: MOCK_SMART_REPORTS,
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -1486,6 +1507,40 @@ export const useAppStore = create<AppState>()(
         set((st) => ({ messageLogs: [item, ...st.messageLogs] }))
         return item
       },
+
+      addEnquiry: (e) => {
+        const id = `enq-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const now = new Date().toISOString()
+        const item: Enquiry = { ...e, id, created_at: now, updated_at: now }
+        set((st) => ({ enquiries: [item, ...st.enquiries] }))
+        return item
+      },
+      updateEnquiry: (id, data) => set((st) => ({
+        enquiries: st.enquiries.map((e) => e.id === id ? { ...e, ...data, updated_at: new Date().toISOString() } : e),
+      })),
+      setEnquiryStatus: (id, status) => set((st) => ({
+        enquiries: st.enquiries.map((e) => e.id === id ? { ...e, status, updated_at: new Date().toISOString() } : e),
+      })),
+      deleteEnquiry: (id) => set((st) => ({
+        enquiries: st.enquiries.filter((e) => e.id !== id),
+      })),
+
+      recordDataUpload: (u) => {
+        const id = `du-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: DataUpload = { ...u, id, created_at: new Date().toISOString() }
+        set((st) => ({ dataUploads: [item, ...st.dataUploads] }))
+        return item
+      },
+
+      saveSmartReport: (r) => {
+        const id = `sr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: SmartReport = { ...r, id, created_at: new Date().toISOString() }
+        set((st) => ({ smartReports: [item, ...st.smartReports] }))
+        return item
+      },
+      deleteSmartReport: (id) => set((st) => ({
+        smartReports: st.smartReports.filter((r) => r.id !== id),
+      })),
 
       nextAdmissionNumber: () => {
         const students = get().students
