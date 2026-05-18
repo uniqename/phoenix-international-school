@@ -16,27 +16,93 @@ export interface UserProfile {
   phone?: string
 }
 
+export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'unknown'
+
 export interface Student {
   id: string
   student_id: string
   full_name: string
+  other_names?: string
   dob?: string
   gender?: 'male' | 'female'
   level: StudentLevel
   class_name: string
   category?: StudentCategory
+  course_group_id?: string
   family_id?: string
   parent_id?: string
   parent_name?: string
   parent_phone?: string
   fee_status: FeeStatus
   photo_url?: string
+  blood_group?: BloodGroup
+  nhis_no?: string
+  gps_address?: string
+  residential_city?: string
+  nationality?: string
+  address?: string
+  mobile_no?: string
+  email?: string
+  can_receive_sms?: boolean
+  can_receive_email?: boolean
+  previous_school?: string
+  previous_class?: string
+  created_at: string
+}
+
+export interface CourseGroup {
+  id: string
+  name: string
+  code: string
+  description?: string
+  active: boolean
+  created_at: string
+}
+
+export type GuardianRelationship =
+  | 'mother' | 'father' | 'grandparent' | 'aunt' | 'uncle'
+  | 'sibling' | 'driver' | 'nanny' | 'guardian' | 'other'
+
+export interface Guardian {
+  id: string
+  full_name: string
+  relationship: GuardianRelationship
+  phone?: string
+  alt_phone?: string
+  email?: string
+  occupation?: string
+  workplace?: string
+  address?: string
+  is_emergency_contact: boolean
+  can_pick_up_students: boolean
+  notes?: string
+  created_at: string
+}
+
+export interface GuardianLink {
+  id: string
+  guardian_id: string
+  student_id: string
+  is_primary: boolean
+  created_at: string
+}
+
+export type WalletTxType = 'topup' | 'fee_payment' | 'refund' | 'adjustment'
+
+export interface WalletTransaction {
+  id: string
+  family_id: string
+  amount: number
+  type: WalletTxType
+  description: string
+  recorded_by?: string
   created_at: string
 }
 
 export interface Family {
   id: string
   family_name: string
+  family_code?: string
   primary_parent_id?: string
   secondary_parent_id?: string
   primary_email?: string
@@ -45,6 +111,7 @@ export interface Family {
   secondary_phone?: string
   discount_override_percent?: number
   discount_override_note?: string
+  wallet_balance?: number
   invite_token?: string
   invite_role?: 'primary' | 'secondary'
   invite_expires_at?: string

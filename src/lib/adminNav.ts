@@ -1,7 +1,9 @@
 export const ADMIN_NAV = [
   { icon: "📊", label: "Overview",       href: "/admin" },
   { icon: "🎒", label: "Students",       href: "/admin/students" },
+  { icon: "🧑‍🤝‍🧑", label: "Guardians",     href: "/admin/guardians" },
   { icon: "👨‍👩‍👧", label: "Families",       href: "/admin/families" },
+  { icon: "🎓", label: "Course Groups",  href: "/admin/course-groups" },
   { icon: "💳", label: "Fee Management", href: "/admin/fees" },
   { icon: "🏷️", label: "Sibling Discount", href: "/admin/discount" },
   { icon: "👩‍🏫", label: "Staff",         href: "/admin/staff" },

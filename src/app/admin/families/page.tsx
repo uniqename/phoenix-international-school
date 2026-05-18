@@ -33,6 +33,7 @@ export default function FamiliesPage() {
   const setOverride = useAppStore((s) => s.setFamilyDiscountOverride);
   const policy = useAppStore((s) => s.discountPolicy);
   const generateInvite = useAppStore((s) => s.generateFamilyInvite);
+  const topUpWallet = useAppStore((s) => s.topUpFamilyWallet);
 
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -41,6 +42,9 @@ export default function FamiliesPage() {
   const [overrideOpen, setOverrideOpen] = useState<string | null>(null);
   const [overridePct, setOverridePct] = useState<string>("");
   const [overrideNote, setOverrideNote] = useState<string>("");
+  const [walletOpen, setWalletOpen] = useState<string | null>(null);
+  const [walletAmount, setWalletAmount] = useState<string>("");
+  const [walletNote, setWalletNote] = useState<string>("");
 
   const familyDetails = useMemo(() => {
     return families.map((f) => {
@@ -126,6 +130,16 @@ export default function FamiliesPage() {
     }
   };
 
+  const handleTopUp = (familyId: string) => {
+    const amount = parseFloat(walletAmount);
+    if (!amount || amount <= 0) { toast.error("Enter a valid amount"); return; }
+    topUpWallet(familyId, amount, walletNote.trim() || "Admin top-up", "admin");
+    toast.success(`💰 GHS ${amount.toFixed(2)} added to family wallet`);
+    setWalletOpen(null);
+    setWalletAmount("");
+    setWalletNote("");
+  };
+
   const handleApplyOverride = (familyId: string) => {
     if (!overridePct.trim()) {
       setOverride(familyId, undefined, undefined);
@@ -197,21 +211,54 @@ export default function FamiliesPage() {
                     )}
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Effective discount</p>
-                    <p className="text-2xl font-bold text-emerald-700">{effectivePct}%</p>
-                    {hasOverride && (
-                      <p className="text-xs text-amber-700">
-                        admin override (auto would be {autoPct}%)
-                      </p>
-                    )}
-                    {!hasOverride && policy.active && children.length >= 1 && (
-                      <p className="text-xs text-gray-400">
-                        from {children.length}-sibling tier
-                      </p>
-                    )}
+                  <div className="flex items-start gap-4">
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Wallet</p>
+                      <p className="text-xl font-black" style={{ color: "#1A3FA0" }}>GH₵ {(family.wallet_balance ?? 0).toFixed(2)}</p>
+                      <button
+                        type="button"
+                        className="text-[11px] font-bold mt-0.5 px-2 py-1 rounded-full"
+                        style={{ background: "linear-gradient(135deg,#FFD700,#FFA500)", color: "#1A0E4D" }}
+                        onClick={() => { setWalletOpen(family.id); setWalletAmount(""); setWalletNote(""); }}
+                      >
+                        💰 Top up
+                      </button>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Discount</p>
+                      <p className="text-xl font-black text-emerald-700">{effectivePct}%</p>
+                      {hasOverride && (
+                        <p className="text-[10px] text-amber-700">
+                          override (auto: {autoPct}%)
+                        </p>
+                      )}
+                      {!hasOverride && policy.active && children.length >= 1 && (
+                        <p className="text-[10px] text-gray-400">
+                          {children.length}-sibling tier
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {walletOpen === family.id && (
+                  <div className="mt-3 rounded-lg p-3 border" style={{ background: "rgba(255,215,0,0.06)", borderColor: "rgba(255,215,0,0.3)" }}>
+                    <p className="text-sm font-bold text-gray-800">💰 Add money to wallet</p>
+                    <p className="text-xs text-gray-500 mb-2">Wallet balance covers future fee bills automatically.</p>
+                    <div className="flex flex-wrap gap-2 items-end">
+                      <div>
+                        <label className="text-xs text-gray-500">Amount (GH₵)</label>
+                        <input className="input max-w-[120px]" type="number" min={1} value={walletAmount} onChange={(e) => setWalletAmount(e.target.value)} placeholder="0.00" />
+                      </div>
+                      <div className="flex-1 min-w-[160px]">
+                        <label className="text-xs text-gray-500">Note (optional)</label>
+                        <input className="input" placeholder="e.g. MoMo top-up, ref #1234" value={walletNote} onChange={(e) => setWalletNote(e.target.value)} />
+                      </div>
+                      <button type="button" className="btn-gold text-sm" onClick={() => handleTopUp(family.id)}>Add</button>
+                      <button type="button" className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: "rgba(0,0,0,0.05)", color: "#6b7280" }} onClick={() => setWalletOpen(null)}>Cancel</button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-3 pt-3 border-t">
                   <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">

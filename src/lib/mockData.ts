@@ -3,7 +3,7 @@ import type {
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
   CanteenWallet, FeedPost, Payroll, UserProfile, QuizQuestion,
   SchoolSettings, ClassDef, Subject, AcademicYear, Family, DiscountPolicy,
-  AssessmentTemplate,
+  AssessmentTemplate, CourseGroup, Guardian, GuardianLink,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -302,6 +302,20 @@ export const PHOENIX_DISCOUNT_POLICY: DiscountPolicy = {
 }
 
 export const MOCK_FAMILIES: Family[] = []
+
+// Course Groups — separate from Class. A student can be in JHS 1 + Science group.
+// Schools often use this for elective tracks or scholarship cohorts.
+export const PHOENIX_COURSE_GROUPS: CourseGroup[] = [
+  { id: 'cg-regular',   name: 'Regular',            code: 'REG',    description: 'Standard curriculum, no elective track', active: true,  created_at: '2026-01-01T00:00:00Z' },
+  { id: 'cg-science',   name: 'Science Track',      code: 'SCI',    description: 'JHS students focused on STEM electives', active: true,  created_at: '2026-01-01T00:00:00Z' },
+  { id: 'cg-arts',      name: 'Arts Track',         code: 'ART',    description: 'JHS students focused on Creative Arts + Design', active: true, created_at: '2026-01-01T00:00:00Z' },
+  { id: 'cg-language',  name: 'Language Track',     code: 'LANG',   description: 'Extra French + Ghanaian Language hours', active: true,  created_at: '2026-01-01T00:00:00Z' },
+  { id: 'cg-scholarship', name: 'Scholarship Cohort', code: 'SCHOLAR', description: 'Students on full or partial scholarship', active: true, created_at: '2026-01-01T00:00:00Z' },
+]
+
+export const MOCK_GUARDIANS: Guardian[] = []
+export const MOCK_GUARDIAN_LINKS: GuardianLink[] = []
+
 
 // Seed templates — Preschool admission as starter (the principal's example use case).
 // Admin can edit / add more per class.

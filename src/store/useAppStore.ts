@@ -10,6 +10,7 @@ import type {
   Family, DiscountPolicy, DiscountTier,
   AssessmentTemplate, AssessmentMarker, AssessmentResult, AssessmentScoreEntry,
   SmsLog, FeePaymentRequest, FeePaymentRequestStatus,
+  CourseGroup, Guardian, GuardianLink, WalletTransaction,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -19,6 +20,7 @@ import {
   PHOENIX_SCHOOL_SETTINGS, PHOENIX_CLASSES, PHOENIX_SUBJECTS,
   PHOENIX_ACADEMIC_YEAR, PHOENIX_DISCOUNT_POLICY, MOCK_FAMILIES,
   PHOENIX_ASSESSMENT_TEMPLATES,
+  PHOENIX_COURSE_GROUPS, MOCK_GUARDIANS, MOCK_GUARDIAN_LINKS,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -55,6 +57,10 @@ interface AppState {
   assessmentResults: AssessmentResult[]
   smsLogs: SmsLog[]
   feePaymentRequests: FeePaymentRequest[]
+  courseGroups: CourseGroup[]
+  guardians: Guardian[]
+  guardianLinks: GuardianLink[]
+  walletTransactions: WalletTransaction[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -95,6 +101,25 @@ interface AppState {
   setSmsBalance: (balance: number) => void
   createPaymentRequest: (r: Omit<FeePaymentRequest, 'id' | 'created_at'>) => FeePaymentRequest
   markPaymentRequestStatus: (id: string, status: FeePaymentRequestStatus, patch?: Partial<FeePaymentRequest>) => void
+
+  // Course Groups
+  addCourseGroup: (c: Omit<CourseGroup, 'id' | 'created_at'>) => CourseGroup
+  updateCourseGroup: (id: string, data: Partial<CourseGroup>) => void
+  deleteCourseGroup: (id: string) => void
+
+  // Guardians
+  addGuardian: (g: Omit<Guardian, 'id' | 'created_at'>) => Guardian
+  updateGuardian: (id: string, data: Partial<Guardian>) => void
+  deleteGuardian: (id: string) => void
+  linkGuardianToStudent: (guardianId: string, studentId: string, isPrimary?: boolean) => void
+  unlinkGuardianFromStudent: (guardianId: string, studentId: string) => void
+
+  // Family wallet
+  topUpFamilyWallet: (familyId: string, amount: number, description?: string, recordedBy?: string) => void
+  debitFamilyWallet: (familyId: string, amount: number, description: string, recordedBy?: string) => boolean
+
+  // Admission number generator
+  nextAdmissionNumber: () => string
 
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
@@ -192,6 +217,10 @@ export const useAppStore = create<AppState>()(
       assessmentResults: [],
       smsLogs: [],
       feePaymentRequests: [],
+      courseGroups: PHOENIX_COURSE_GROUPS,
+      guardians: MOCK_GUARDIANS,
+      guardianLinks: MOCK_GUARDIAN_LINKS,
+      walletTransactions: [],
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -280,8 +309,10 @@ export const useAppStore = create<AppState>()(
           primary_phone: f.primary_phone,
           secondary_email: f.secondary_email,
           secondary_phone: f.secondary_phone,
+          family_code: f.family_code ?? existing?.family_code,
           discount_override_percent: f.discount_override_percent,
           discount_override_note: f.discount_override_note,
+          wallet_balance: existing?.wallet_balance ?? f.wallet_balance ?? 0,
           created_at: existing?.created_at ?? new Date().toISOString(),
         }
         set((st) => ({
@@ -491,6 +522,104 @@ export const useAppStore = create<AppState>()(
           ? { ...r, status, ...(patch ?? {}), paid_at: status === 'paid' ? new Date().toISOString() : r.paid_at }
           : r),
       })),
+
+      addCourseGroup: (c) => {
+        const id = `cg-${Date.now()}`
+        const group: CourseGroup = { ...c, id, created_at: new Date().toISOString() }
+        set((st) => ({ courseGroups: [...st.courseGroups, group] }))
+        return group
+      },
+      updateCourseGroup: (id, data) => set((st) => ({
+        courseGroups: st.courseGroups.map((c) => c.id === id ? { ...c, ...data } : c),
+      })),
+      deleteCourseGroup: (id) => set((st) => ({
+        courseGroups: st.courseGroups.filter((c) => c.id !== id),
+      })),
+
+      addGuardian: (g) => {
+        const id = `gd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const guardian: Guardian = { ...g, id, created_at: new Date().toISOString() }
+        set((st) => ({ guardians: [...st.guardians, guardian] }))
+        return guardian
+      },
+      updateGuardian: (id, data) => set((st) => ({
+        guardians: st.guardians.map((g) => g.id === id ? { ...g, ...data } : g),
+      })),
+      deleteGuardian: (id) => set((st) => ({
+        guardians: st.guardians.filter((g) => g.id !== id),
+        guardianLinks: st.guardianLinks.filter((l) => l.guardian_id !== id),
+      })),
+      linkGuardianToStudent: (guardianId, studentId, isPrimary = false) => set((st) => {
+        const exists = st.guardianLinks.some((l) => l.guardian_id === guardianId && l.student_id === studentId)
+        if (exists) return st
+        const newLink: GuardianLink = {
+          id: `gl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          guardian_id: guardianId,
+          student_id: studentId,
+          is_primary: isPrimary,
+          created_at: new Date().toISOString(),
+        }
+        return { guardianLinks: [...st.guardianLinks, newLink] }
+      }),
+      unlinkGuardianFromStudent: (guardianId, studentId) => set((st) => ({
+        guardianLinks: st.guardianLinks.filter((l) => !(l.guardian_id === guardianId && l.student_id === studentId)),
+      })),
+
+      topUpFamilyWallet: (familyId, amount, description = 'Top-up', recordedBy) => {
+        if (amount <= 0) return
+        const txId = `wt-${Date.now()}`
+        const tx: WalletTransaction = {
+          id: txId,
+          family_id: familyId,
+          amount,
+          type: 'topup',
+          description,
+          recorded_by: recordedBy,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({
+          families: st.families.map((f) => f.id === familyId
+            ? { ...f, wallet_balance: (f.wallet_balance ?? 0) + amount }
+            : f),
+          walletTransactions: [tx, ...st.walletTransactions],
+        }))
+      },
+      debitFamilyWallet: (familyId, amount, description, recordedBy) => {
+        if (amount <= 0) return false
+        const family = get().families.find((f) => f.id === familyId)
+        if (!family) return false
+        if ((family.wallet_balance ?? 0) < amount) return false
+        const tx: WalletTransaction = {
+          id: `wt-${Date.now()}`,
+          family_id: familyId,
+          amount,
+          type: 'fee_payment',
+          description,
+          recorded_by: recordedBy,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({
+          families: st.families.map((f) => f.id === familyId
+            ? { ...f, wallet_balance: (f.wallet_balance ?? 0) - amount }
+            : f),
+          walletTransactions: [tx, ...st.walletTransactions],
+        }))
+        return true
+      },
+
+      nextAdmissionNumber: () => {
+        const students = get().students
+        // Find highest numeric portion across existing student_ids (e.g. PIS934 -> 934)
+        let maxNum = 0
+        for (const s of students) {
+          const m = (s.student_id ?? '').match(/(\d+)\s*$/)
+          if (m) {
+            const n = parseInt(m[1], 10)
+            if (!isNaN(n) && n > maxNum) maxNum = n
+          }
+        }
+        return `PIS${maxNum + 1}`
+      },
 
       computeFamilyDiscount: (familyId) => {
         const st = get()
