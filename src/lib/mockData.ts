@@ -4,6 +4,7 @@ import type {
   CanteenWallet, FeedPost, Payroll, UserProfile, QuizQuestion,
   SchoolSettings, ClassDef, Subject, AcademicYear, Family, DiscountPolicy,
   AssessmentTemplate, CourseGroup, Guardian, GuardianLink,
+  FeeParticular, InstantFeeBucket, StandaloneFeeDiscount, FeeBilling,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -315,6 +316,70 @@ export const PHOENIX_COURSE_GROUPS: CourseGroup[] = [
 
 export const MOCK_GUARDIANS: Guardian[] = []
 export const MOCK_GUARDIAN_LINKS: GuardianLink[] = []
+
+// ── Phase 6 seed: Fees Particulars (mirrors Adesua's Phoenix list) ──
+const T0 = '2026-01-01T00:00:00Z'
+export const PHOENIX_FEE_PARTICULARS: FeeParticular[] = [
+  { id: 'fp-arrears',      name: 'ARREARS',              priority: 1,  frequency: 'per_term',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-school',       name: 'SCHOOL FEES',          priority: 2,  frequency: 'per_term',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-admission',    name: 'ADMISSION FEE',        priority: 3,  frequency: 'one_time',    finance_account: 'Fee', applies_to_categories: ['new'], active: true, created_at: T0 },
+  { id: 'fp-bece-reg',     name: 'BECE REGISTRATION FEE',priority: 4,  frequency: 'one_time',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-additional',   name: 'ADDITIONAL FEE',       priority: 5,  frequency: 'per_term',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-sms',          name: 'SMS FEE',              priority: 6,  frequency: 'per_session', finance_account: 'Fee', default_amount: 30, active: true, created_at: T0 },
+  { id: 'fp-exams',        name: 'EXAMS FEE',            priority: 7,  frequency: 'per_term',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-id-card',      name: 'ID CARD',              priority: 8,  frequency: 'one_time',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-graduation',   name: 'GRADUATION FEE',       priority: 9,  frequency: 'one_time',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-grad-support', name: 'GRADUATION SUPPORT',   priority: 10, frequency: 'one_time',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-uniforms',     name: 'UNIFORMS FEE',         priority: 11, frequency: 'one_time',    finance_account: 'Fee', applies_to_categories: ['new'], active: true, created_at: T0 },
+  { id: 'fp-library',      name: 'LIBRARY FEE',          priority: 12, frequency: 'per_session', finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-camping',      name: 'CAMPING FEE BALANCE',  priority: 13, frequency: 'one_time',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-feeding',      name: 'FEEDING FEE',          priority: 14, frequency: 'per_term',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-other',        name: 'OTHER FEES',           priority: 15, frequency: 'one_time',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-seminars',     name: 'SEMINARS',             priority: 16, frequency: 'one_time',    finance_account: 'Fee', active: true, created_at: T0 },
+  { id: 'fp-feeding-arr',  name: 'FEEDING FEE ARREARS',  priority: 17, frequency: 'per_term',    finance_account: 'Fee', active: true, created_at: T0 },
+]
+
+// Feeding fee buckets — mirrors Adesua's instant fee particulars by family size
+export const PHOENIX_INSTANT_BUCKETS: InstantFeeBucket[] = [
+  { id: 'ib-feed-full',   particular_id: 'fp-feeding', bucket_name: 'FULL FEEDING',   amount: 10, auto_deduct: true, created_at: T0 },
+  { id: 'ib-feed-3rd',    particular_id: 'fp-feeding', bucket_name: 'THIRD CHILD',    amount: 5,  auto_deduct: true, created_at: T0 },
+  { id: 'ib-feed-4th',    particular_id: 'fp-feeding', bucket_name: 'FOURTH CHILD',   amount: 0,  auto_deduct: true, created_at: T0 },
+  { id: 'ib-feed-d1',     particular_id: 'fp-feeding', bucket_name: 'DISCOUNT 1',     amount: 4,  auto_deduct: true, created_at: T0 },
+  { id: 'ib-feed-d2',     particular_id: 'fp-feeding', bucket_name: 'DISCOUNT 2',     amount: 5,  auto_deduct: true, created_at: T0 },
+  { id: 'ib-feed-d3',     particular_id: 'fp-feeding', bucket_name: 'DISCOUNT 3',     amount: 6,  auto_deduct: true, created_at: T0 },
+  { id: 'ib-feed-d4',     particular_id: 'fp-feeding', bucket_name: 'DISCOUNT 4',     amount: 7,  auto_deduct: true, created_at: T0 },
+]
+
+export const PHOENIX_STANDALONE_DISCOUNTS: StandaloneFeeDiscount[] = [
+  { id: 'sd-school',  name: 'SCHOOL FEE DISCOUNT',  type: 'percent', value: 10, on_main_fees: true,  applies_to_fee_ids: ['fp-school'], active: true, created_at: T0 },
+  { id: 'sd-rebate',  name: 'PARENTS REBATE',       type: 'percent', value: 5,  on_main_fees: true,  active: true, created_at: T0 },
+  { id: 'sd-other',   name: 'SCHOOL/OTHER FEES',    type: 'amount',  value: 50, on_main_fees: false, active: true, created_at: T0 },
+  { id: 'sd-covid',   name: 'COVID-19 RELIEF',      type: 'amount',  value: 30, on_main_fees: true,  active: false, notes: 'Suspended 2023', created_at: T0 },
+]
+
+// Billing setup mirrors Adesua's per-term per-class amounts from doc page 33-34
+export const PHOENIX_FEE_BILLINGS: FeeBilling[] = [
+  {
+    id: 'fb-2025-26-t3',
+    name: '2025-2026 THIRD TERM FEES',
+    academic_year: '2025/2026',
+    term: 3,
+    is_published: false,
+    created_at: T0,
+    items: [
+      { id: 'fbi-1', particular_id: 'fp-school',    amount: 500, class_ids: ['cls-jhs1', 'cls-jhs2'] },
+      { id: 'fbi-2', particular_id: 'fp-school',    amount: 330, class_ids: ['cls-creche', 'cls-kg1', 'cls-kg2', 'cls-nur1', 'cls-nur2'] },
+      { id: 'fbi-3', particular_id: 'fp-school',    amount: 400, class_ids: ['cls-p1', 'cls-p2', 'cls-p3'] },
+      { id: 'fbi-4', particular_id: 'fp-school',    amount: 430, class_ids: ['cls-p4', 'cls-p5', 'cls-p6'] },
+      { id: 'fbi-5', particular_id: 'fp-school',    amount: 700, class_ids: ['cls-jhs3'] },
+      { id: 'fbi-6', particular_id: 'fp-admission', amount: 200, class_ids: ['cls-p1', 'cls-p2', 'cls-p3', 'cls-p4', 'cls-p5', 'cls-p6', 'cls-creche', 'cls-kg1', 'cls-kg2', 'cls-nur1', 'cls-nur2'], categories: ['new'] },
+      { id: 'fbi-7', particular_id: 'fp-admission', amount: 350, class_ids: ['cls-jhs1', 'cls-jhs2'], categories: ['new'] },
+      { id: 'fbi-8', particular_id: 'fp-additional', amount: 200, class_ids: ['cls-jhs1', 'cls-jhs2'], categories: ['new'] },
+      { id: 'fbi-9', particular_id: 'fp-uniforms',  amount: 500, class_ids: [], categories: ['new'] },
+    ],
+  },
+]
+
 
 
 // Seed templates — Preschool admission as starter (the principal's example use case).

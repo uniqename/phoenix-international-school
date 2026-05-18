@@ -238,6 +238,70 @@ export interface DiscountPolicy {
   active: boolean
 }
 
+// ── Phase 6: Fees rebuild ───────────────────────────────────────
+export type FeeFrequency = 'one_time' | 'per_term' | 'per_session' | 'monthly'
+
+export interface FeeParticular {
+  id: string
+  name: string                        // e.g. "SCHOOL FEES", "ADMISSION FEE"
+  code?: string                       // optional accounting code
+  finance_account?: string            // free-text for now; later linked to Chart of Accounts (Phase 10)
+  priority: number                    // display + application order (lower = first)
+  applies_to_categories?: StudentCategory[]  // empty = both new + continuing
+  frequency: FeeFrequency
+  default_amount?: number             // optional base amount used as suggestion
+  active: boolean
+  created_at: string
+}
+
+export interface InstantFeeBucket {
+  id: string
+  particular_id: string               // links to a FeeParticular (e.g. FEEDING FEE)
+  bucket_name: string                 // e.g. "FULL FEEDING", "THIRD CHILD"
+  amount: number
+  applies_to_class_ids?: string[]     // empty = all
+  applies_to_categories?: StudentCategory[]
+  auto_deduct: boolean                // pulls from family wallet automatically
+  created_at: string
+}
+
+export type StandaloneDiscountType = 'percent' | 'amount'
+
+export interface StandaloneFeeDiscount {
+  id: string
+  name: string                        // e.g. "SCHOOL FEE", "PARENTS REBATE", "COVID-19 RELIEF"
+  type: StandaloneDiscountType
+  value: number                       // percent (0-100) or fixed amount
+  on_main_fees: boolean               // true = applies to main fee particulars; false = only Other Fees
+  applies_to_fee_ids?: string[]       // FeeParticular.id list (empty = all matching on_main_fees)
+  active: boolean
+  notes?: string
+  created_at: string
+}
+
+export interface FeeBillingItem {
+  id: string
+  particular_id: string
+  amount: number                      // resolved amount for this batch/category combo
+  class_ids: string[]                 // which classes (empty = all)
+  course_group_ids?: string[]
+  categories?: StudentCategory[]      // empty = both
+  student_ids?: string[]              // optional override for specific students
+  due_date?: string
+  notes?: string
+}
+
+export interface FeeBilling {
+  id: string
+  name: string                        // e.g. "2025-2026 FIRST TERM FEES"
+  academic_year: string
+  term: 1 | 2 | 3
+  items: FeeBillingItem[]
+  is_published: boolean               // true once billing has been pushed to student Fee records
+  created_at: string
+  published_at?: string
+}
+
 // ── Assessments ────────────────────────────────────────────────
 export type AssessmentMarkerScale = 'abcd' | 'percent' | 'letter5' | 'narrative'
 export type AssessmentScope = 'admission' | 'term' | 'mid-term' | 'project'

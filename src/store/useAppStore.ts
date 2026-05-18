@@ -11,6 +11,8 @@ import type {
   AssessmentTemplate, AssessmentMarker, AssessmentResult, AssessmentScoreEntry,
   SmsLog, FeePaymentRequest, FeePaymentRequestStatus,
   CourseGroup, Guardian, GuardianLink, WalletTransaction,
+  FeeParticular, InstantFeeBucket, StandaloneFeeDiscount, FeeBilling, FeeBillingItem,
+  StudentCategory,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -21,6 +23,8 @@ import {
   PHOENIX_ACADEMIC_YEAR, PHOENIX_DISCOUNT_POLICY, MOCK_FAMILIES,
   PHOENIX_ASSESSMENT_TEMPLATES,
   PHOENIX_COURSE_GROUPS, MOCK_GUARDIANS, MOCK_GUARDIAN_LINKS,
+  PHOENIX_FEE_PARTICULARS, PHOENIX_INSTANT_BUCKETS,
+  PHOENIX_STANDALONE_DISCOUNTS, PHOENIX_FEE_BILLINGS,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -61,6 +65,10 @@ interface AppState {
   guardians: Guardian[]
   guardianLinks: GuardianLink[]
   walletTransactions: WalletTransaction[]
+  feeParticulars: FeeParticular[]
+  instantBuckets: InstantFeeBucket[]
+  standaloneDiscounts: StandaloneFeeDiscount[]
+  feeBillings: FeeBilling[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -120,6 +128,30 @@ interface AppState {
 
   // Admission number generator
   nextAdmissionNumber: () => string
+
+  // Fees Particulars
+  addFeeParticular: (f: Omit<FeeParticular, 'id' | 'created_at'>) => FeeParticular
+  updateFeeParticular: (id: string, data: Partial<FeeParticular>) => void
+  deleteFeeParticular: (id: string) => void
+  reorderFeeParticulars: (orderedIds: string[]) => void
+
+  // Instant Fee Buckets
+  addInstantBucket: (b: Omit<InstantFeeBucket, 'id' | 'created_at'>) => InstantFeeBucket
+  updateInstantBucket: (id: string, data: Partial<InstantFeeBucket>) => void
+  deleteInstantBucket: (id: string) => void
+
+  // Standalone discounts
+  addStandaloneDiscount: (d: Omit<StandaloneFeeDiscount, 'id' | 'created_at'>) => StandaloneFeeDiscount
+  updateStandaloneDiscount: (id: string, data: Partial<StandaloneFeeDiscount>) => void
+  deleteStandaloneDiscount: (id: string) => void
+
+  // Fee Billing setups
+  upsertFeeBilling: (b: Omit<FeeBilling, 'id' | 'created_at'> & { id?: string }) => FeeBilling
+  deleteFeeBilling: (id: string) => void
+  addBillingItem: (billingId: string, item: Omit<FeeBillingItem, 'id'>) => void
+  updateBillingItem: (billingId: string, itemId: string, data: Partial<FeeBillingItem>) => void
+  removeBillingItem: (billingId: string, itemId: string) => void
+  publishBilling: (billingId: string) => { ok: true; created: number } | { ok: false; reason: string }
 
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
@@ -221,6 +253,10 @@ export const useAppStore = create<AppState>()(
       guardians: MOCK_GUARDIANS,
       guardianLinks: MOCK_GUARDIAN_LINKS,
       walletTransactions: [],
+      feeParticulars: PHOENIX_FEE_PARTICULARS,
+      instantBuckets: PHOENIX_INSTANT_BUCKETS,
+      standaloneDiscounts: PHOENIX_STANDALONE_DISCOUNTS,
+      feeBillings: PHOENIX_FEE_BILLINGS,
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -605,6 +641,179 @@ export const useAppStore = create<AppState>()(
           walletTransactions: [tx, ...st.walletTransactions],
         }))
         return true
+      },
+
+      addFeeParticular: (f) => {
+        const id = `fp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: FeeParticular = { ...f, id, created_at: new Date().toISOString() }
+        set((st) => ({ feeParticulars: [...st.feeParticulars, item].sort((a, b) => a.priority - b.priority) }))
+        return item
+      },
+      updateFeeParticular: (id, data) => set((st) => ({
+        feeParticulars: st.feeParticulars.map((f) => f.id === id ? { ...f, ...data } : f)
+          .sort((a, b) => a.priority - b.priority),
+      })),
+      deleteFeeParticular: (id) => set((st) => ({
+        feeParticulars: st.feeParticulars.filter((f) => f.id !== id),
+        instantBuckets: st.instantBuckets.filter((b) => b.particular_id !== id),
+        feeBillings: st.feeBillings.map((b) => ({
+          ...b,
+          items: b.items.filter((i) => i.particular_id !== id),
+        })),
+      })),
+      reorderFeeParticulars: (orderedIds) => set((st) => ({
+        feeParticulars: st.feeParticulars
+          .map((f) => {
+            const idx = orderedIds.indexOf(f.id)
+            return idx >= 0 ? { ...f, priority: idx + 1 } : f
+          })
+          .sort((a, b) => a.priority - b.priority),
+      })),
+
+      addInstantBucket: (b) => {
+        const id = `ib-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: InstantFeeBucket = { ...b, id, created_at: new Date().toISOString() }
+        set((st) => ({ instantBuckets: [...st.instantBuckets, item] }))
+        return item
+      },
+      updateInstantBucket: (id, data) => set((st) => ({
+        instantBuckets: st.instantBuckets.map((b) => b.id === id ? { ...b, ...data } : b),
+      })),
+      deleteInstantBucket: (id) => set((st) => ({
+        instantBuckets: st.instantBuckets.filter((b) => b.id !== id),
+      })),
+
+      addStandaloneDiscount: (d) => {
+        const id = `sd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: StandaloneFeeDiscount = { ...d, id, created_at: new Date().toISOString() }
+        set((st) => ({ standaloneDiscounts: [...st.standaloneDiscounts, item] }))
+        return item
+      },
+      updateStandaloneDiscount: (id, data) => set((st) => ({
+        standaloneDiscounts: st.standaloneDiscounts.map((d) => d.id === id ? { ...d, ...data } : d),
+      })),
+      deleteStandaloneDiscount: (id) => set((st) => ({
+        standaloneDiscounts: st.standaloneDiscounts.filter((d) => d.id !== id),
+      })),
+
+      upsertFeeBilling: (b) => {
+        const id = b.id ?? `fb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const existing = get().feeBillings.find((x) => x.id === id)
+        const item: FeeBilling = {
+          id,
+          name: b.name,
+          academic_year: b.academic_year,
+          term: b.term,
+          items: b.items,
+          is_published: b.is_published,
+          published_at: b.published_at ?? existing?.published_at,
+          created_at: existing?.created_at ?? new Date().toISOString(),
+        }
+        set((st) => ({
+          feeBillings: existing
+            ? st.feeBillings.map((x) => x.id === id ? item : x)
+            : [...st.feeBillings, item],
+        }))
+        return item
+      },
+      deleteFeeBilling: (id) => set((st) => ({
+        feeBillings: st.feeBillings.filter((b) => b.id !== id),
+      })),
+      addBillingItem: (billingId, item) => set((st) => ({
+        feeBillings: st.feeBillings.map((b) => b.id !== billingId ? b : {
+          ...b,
+          items: [...b.items, { ...item, id: `fbi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }],
+        }),
+      })),
+      updateBillingItem: (billingId, itemId, data) => set((st) => ({
+        feeBillings: st.feeBillings.map((b) => b.id !== billingId ? b : {
+          ...b,
+          items: b.items.map((i) => i.id === itemId ? { ...i, ...data } : i),
+        }),
+      })),
+      removeBillingItem: (billingId, itemId) => set((st) => ({
+        feeBillings: st.feeBillings.map((b) => b.id !== billingId ? b : {
+          ...b,
+          items: b.items.filter((i) => i.id !== itemId),
+        }),
+      })),
+      publishBilling: (billingId) => {
+        const st = get()
+        const billing = st.feeBillings.find((b) => b.id === billingId)
+        if (!billing) return { ok: false, reason: 'Billing not found.' }
+        if (billing.items.length === 0) return { ok: false, reason: 'No fee items to publish.' }
+        const particularById = new Map(st.feeParticulars.map((f) => [f.id, f]))
+        const classNameById = new Map(st.classes.map((c) => [c.id, c.name]))
+        const studentsByClass = new Map<string, typeof st.students>()
+        for (const s of st.students) {
+          if (!studentsByClass.has(s.class_name)) studentsByClass.set(s.class_name, [])
+          studentsByClass.get(s.class_name)!.push(s)
+        }
+        const discountPolicy = st.discountPolicy
+        const computeDiscount = (familyId?: string): number => {
+          if (!familyId) return 0
+          const family = st.families.find((f) => f.id === familyId)
+          if (!family) return 0
+          if (typeof family.discount_override_percent === 'number') return family.discount_override_percent
+          if (!discountPolicy.active) return 0
+          const sibCount = st.students.filter((x) => x.family_id === familyId).length
+          if (sibCount < 1) return 0
+          const tiers = [...discountPolicy.tiers].sort((a, b) => b.sibling_count - a.sibling_count)
+          return tiers.find((t) => sibCount >= t.sibling_count)?.percent ?? 0
+        }
+        let created = 0
+        const newFees = [...st.fees]
+        for (const it of billing.items) {
+          const targetClassNames = it.class_ids.length > 0
+            ? it.class_ids.map((cid) => classNameById.get(cid) ?? '').filter(Boolean)
+            : Array.from(classNameById.values())
+          const targetStudents = targetClassNames.flatMap((cn) => studentsByClass.get(cn) ?? [])
+          const targetCategories = it.categories ?? []
+          const targetCourseGroups = it.course_group_ids ?? []
+          const targetSpecific = it.student_ids ?? []
+          for (const s of targetStudents) {
+            if (targetCategories.length > 0 && !targetCategories.includes(s.category ?? 'continuing')) continue
+            if (targetCourseGroups.length > 0 && !(s.course_group_id && targetCourseGroups.includes(s.course_group_id))) continue
+            if (targetSpecific.length > 0 && !targetSpecific.includes(s.id)) continue
+            const exists = newFees.some(
+              (f) => f.student_id === s.id
+                && f.fee_type === (particularById.get(it.particular_id)?.name ?? '')
+                && f.term === billing.term
+                && f.academic_year === billing.academic_year,
+            )
+            if (exists) continue
+            const particular = particularById.get(it.particular_id)
+            if (!particular) continue
+            // Apply sibling discount if applicable
+            let amount = it.amount
+            if (discountPolicy.applies_to_fee_types.includes(particular.name)) {
+              const pct = computeDiscount(s.family_id)
+              if (pct > 0) amount = Math.round(amount * (1 - pct / 100) * 100) / 100
+            }
+            newFees.push({
+              id: `f-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              student_id: s.id,
+              student_name: s.full_name,
+              class_name: s.class_name,
+              term: billing.term,
+              academic_year: billing.academic_year,
+              fee_type: particular.name,
+              amount,
+              paid_amount: 0,
+              status: 'outstanding',
+              due_date: it.due_date,
+              created_at: new Date().toISOString(),
+            })
+            created++
+          }
+        }
+        set((s2) => ({
+          fees: newFees,
+          feeBillings: s2.feeBillings.map((b) => b.id === billingId
+            ? { ...b, is_published: true, published_at: new Date().toISOString() }
+            : b),
+        }))
+        return { ok: true, created }
       },
 
       nextAdmissionNumber: () => {
