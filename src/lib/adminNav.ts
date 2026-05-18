@@ -11,6 +11,8 @@ export const ADMIN_NAV = [
   { icon: "📈", label: "Fee Reports",      href: "/admin/fee-reports" },
   { icon: "🏷️", label: "Sibling Discount", href: "/admin/discount" },
   { icon: "👩‍🏫", label: "Staff",         href: "/admin/staff" },
+  { icon: "🧰", label: "HR Settings",     href: "/admin/hr-settings" },
+  { icon: "🧑‍💼", label: "Employees",       href: "/admin/employees" },
   { icon: "💼", label: "Payroll",        href: "/admin/payroll" },
   { icon: "📡", label: "Attendance",     href: "/admin/attendance" },
   { icon: "🏦", label: "Canteen Wallet", href: "/admin/canteen" },

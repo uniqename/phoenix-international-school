@@ -6,6 +6,7 @@ import type {
   AssessmentTemplate, CourseGroup, Guardian, GuardianLink,
   FeeParticular, InstantFeeBucket, StandaloneFeeDiscount, FeeBilling,
   GradingGroup, RemarkBank, AcademicAssessment, ReportSignatory, StudentInterest,
+  EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -579,5 +580,155 @@ export const PHOENIX_SIGNATORIES: ReportSignatory[] = [
 ]
 
 export const MOCK_STUDENT_INTERESTS: StudentInterest[] = []
+
+// ── Phase 9 seed: HR (mirrors Adesua doc) ──
+export const PHOENIX_EMPLOYEE_CATEGORIES: EmployeeCategory[] = [
+  { id: 'ec-permanent',  name: 'Permanent',     code: 'Pm',    created_at: T0 },
+  { id: 'ec-contract',   name: 'Contract',      code: 'CT',    created_at: T0 },
+  { id: 'ec-system-admin', name: 'System Admin', code: 'Admin', created_at: T0 },
+]
+
+export const PHOENIX_EMPLOYEE_DEPARTMENTS: EmployeeDepartment[] = [
+  { id: 'ed-admin',      name: 'Administration',     code: 'AD',    created_at: T0 },
+  { id: 'ed-finance',    name: 'Finance',            code: 'FC',    created_at: T0 },
+  { id: 'ed-non-teach',  name: 'Non-Teaching Staff', code: 'NTS',   created_at: T0 },
+  { id: 'ed-sys-admin',  name: 'System Admin',       code: 'Admin', created_at: T0 },
+  { id: 'ed-teaching',   name: 'Teaching Staff',     code: 'TS',    created_at: T0 },
+]
+
+export const PHOENIX_EMPLOYEE_POSITIONS: EmployeePosition[] = [
+  { id: 'ep-administrator',          name: 'Administrator',           created_at: T0 },
+  { id: 'ep-assistant-administrator', name: 'Assistant Administrator', created_at: T0 },
+  { id: 'ep-attendant',              name: 'Attendant',               created_at: T0 },
+  { id: 'ep-ceo',                    name: 'CEO',                     created_at: T0 },
+  { id: 'ep-cook',                   name: 'Cook',                    created_at: T0 },
+  { id: 'ep-financial-secretary',    name: 'Financial Secretary',     created_at: T0 },
+  { id: 'ep-matron',                 name: 'Matron',                  created_at: T0 },
+  { id: 'ep-system-admin',           name: 'System Admin',            created_at: T0 },
+  { id: 'ep-teacher',                name: 'Teacher',                 created_at: T0 },
+  { id: 'ep-driver',                 name: 'Driver',                  created_at: T0 },
+  { id: 'ep-security',               name: 'Security',                created_at: T0 },
+]
+
+export const MOCK_EMPLOYEES: Employee[] = []
+
+// Permission templates for one-click role setup
+export const PERMISSION_TEMPLATES: Record<string, { label: string; emoji: string; permissions: PermissionKey[] }> = {
+  principal: {
+    label: 'Principal / Headmaster',
+    emoji: '👔',
+    permissions: [
+      'general_school_settings', 'admit_students', 'manage_students',
+      'manage_hr_setup', 'manage_employees', 'manage_employee_roles',
+      'manage_messaging', 'manage_enquiries',
+      'finance_control', 'manage_fees', 'manage_payroll',
+      'authorize_fee_discount', 'approve_fee_discount',
+      'create_expense', 'approve_expense', 'pay_expense',
+      'approve_payroll', 'authorize_payroll',
+      'manage_online_learning',
+      'fees_reports', 'finance_reports',
+      'take_attendance', 'view_attendance_reports',
+      'receive_finance_notice',
+    ],
+  },
+  admin: {
+    label: 'Administrator',
+    emoji: '🏛️',
+    permissions: [
+      'admit_students', 'manage_students',
+      'manage_employees',
+      'manage_messaging', 'manage_enquiries',
+      'manage_fees',
+      'manage_online_learning',
+      'fees_reports',
+      'take_attendance', 'view_attendance_reports',
+    ],
+  },
+  finance_officer: {
+    label: 'Financial Secretary',
+    emoji: '💰',
+    permissions: [
+      'finance_control', 'manage_fees', 'fees_cashier',
+      'create_expense', 'approve_expense',
+      'manage_payroll',
+      'receive_finance_notice',
+      'fees_reports', 'finance_reports',
+    ],
+  },
+  teacher: {
+    label: 'Teacher',
+    emoji: '👩‍🏫',
+    permissions: [
+      'teacher',
+      'take_attendance',
+      'manage_online_learning',
+    ],
+  },
+  cashier: {
+    label: 'Fees Cashier',
+    emoji: '🧾',
+    permissions: [
+      'fees_cashier',
+      'fees_reports',
+    ],
+  },
+  cook: {
+    label: 'Cook / Canteen',
+    emoji: '🍳',
+    permissions: [
+      'canteen_cashier',
+    ],
+  },
+  store_manager: {
+    label: 'Store Manager',
+    emoji: '📦',
+    permissions: [
+      'store_cashier', 'store_manager',
+    ],
+  },
+  transport: {
+    label: 'Transport Manager',
+    emoji: '🚌',
+    permissions: [
+      'transport_manager',
+    ],
+  },
+}
+
+// Display labels for every permission (used in the permission matrix UI)
+export const PERMISSION_LABELS: Record<PermissionKey, { label: string; group: string; emoji: string }> = {
+  general_school_settings: { label: 'General School Settings',   group: 'School',     emoji: '⚙️' },
+  admit_students:          { label: 'Admit Students',            group: 'Students',   emoji: '🎒' },
+  manage_students:         { label: 'Manage Students',           group: 'Students',   emoji: '📚' },
+  teacher:                 { label: 'Teacher',                   group: 'Academics',  emoji: '👩‍🏫' },
+  manage_hr_setup:         { label: 'Manage HR Setup',           group: 'HR',         emoji: '🧰' },
+  manage_employees:        { label: 'Manage Employees',          group: 'HR',         emoji: '🧑‍💼' },
+  manage_employee_roles:   { label: 'Manage Employee Roles',     group: 'HR',         emoji: '🔑' },
+  manage_messaging:        { label: 'Manage Messaging',          group: 'Communications', emoji: '📢' },
+  manage_enquiries:        { label: 'Manage Enquiries',          group: 'Communications', emoji: '📥' },
+  finance_control:         { label: 'Finance Control',           group: 'Finance',    emoji: '🏦' },
+  manage_fees:             { label: 'Manage Fees',               group: 'Finance',    emoji: '💳' },
+  fees_cashier:            { label: 'Fees Cashier',              group: 'Finance',    emoji: '🧾' },
+  delete_fee_transaction:  { label: 'Delete Fee Transaction',    group: 'Finance',    emoji: '🗑️' },
+  manage_payroll:          { label: 'Manage Payroll',            group: 'Finance',    emoji: '💼' },
+  receive_finance_notice:  { label: 'Receive Finance Notice',    group: 'Finance',    emoji: '🔔' },
+  authorize_fee_discount:  { label: 'Authorize Fee Discount',    group: 'Finance',    emoji: '✅' },
+  approve_fee_discount:    { label: 'Approve Fee Discount',      group: 'Finance',    emoji: '🆗' },
+  create_expense:          { label: 'Create Expense',            group: 'Finance',    emoji: '➕' },
+  approve_expense:         { label: 'Approve Expense',           group: 'Finance',    emoji: '☑️' },
+  pay_expense:             { label: 'Pay Expense',               group: 'Finance',    emoji: '💸' },
+  approve_payroll:         { label: 'Approve Payroll',           group: 'Finance',    emoji: '✔️' },
+  authorize_payroll:       { label: 'Authorize Payroll',         group: 'Finance',    emoji: '🔏' },
+  manage_online_learning:  { label: 'Manage Online Learning',    group: 'Academics',  emoji: '💻' },
+  fees_reports:            { label: 'Fees Reports',              group: 'Reports',    emoji: '📊' },
+  finance_reports:         { label: 'Finance Reports',           group: 'Reports',    emoji: '📈' },
+  take_attendance:         { label: 'Take Attendance',           group: 'Attendance', emoji: '📡' },
+  view_attendance_reports: { label: 'View Attendance Reports',   group: 'Attendance', emoji: '📋' },
+  canteen_cashier:         { label: 'Canteen Cashier',           group: 'Operations', emoji: '🍱' },
+  eacademic_control:       { label: 'EAcademic Control',         group: 'Academics',  emoji: '🎓' },
+  store_cashier:           { label: 'Store Cashier',             group: 'Operations', emoji: '🏪' },
+  store_manager:           { label: 'Store Manager',             group: 'Operations', emoji: '📦' },
+  transport_manager:       { label: 'Transport Manager',         group: 'Operations', emoji: '🚌' },
+}
 
 

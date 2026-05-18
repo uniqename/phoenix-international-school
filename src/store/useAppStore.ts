@@ -15,6 +15,7 @@ import type {
   StudentCategory,
   GradingGroup, GradeLevel, RemarkBank, RemarkEntry, AcademicAssessment,
   ReportSignatory, StudentInterest,
+  EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -29,6 +30,8 @@ import {
   PHOENIX_STANDALONE_DISCOUNTS, PHOENIX_FEE_BILLINGS,
   PHOENIX_GRADING_GROUPS, PHOENIX_REMARK_BANKS, PHOENIX_ACADEMIC_ASSESSMENTS,
   PHOENIX_SIGNATORIES, MOCK_STUDENT_INTERESTS,
+  PHOENIX_EMPLOYEE_CATEGORIES, PHOENIX_EMPLOYEE_DEPARTMENTS,
+  PHOENIX_EMPLOYEE_POSITIONS, MOCK_EMPLOYEES,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -78,6 +81,10 @@ interface AppState {
   academicAssessments: AcademicAssessment[]
   signatories: ReportSignatory[]
   studentInterests: StudentInterest[]
+  employeeCategories: EmployeeCategory[]
+  employeeDepartments: EmployeeDepartment[]
+  employeePositions: EmployeePosition[]
+  employees: Employee[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -191,6 +198,27 @@ interface AppState {
   addStudentInterest: (i: Omit<StudentInterest, 'id' | 'created_at'>) => StudentInterest
   removeStudentInterest: (id: string) => void
 
+  // HR — Categories
+  addEmployeeCategory: (c: Omit<EmployeeCategory, 'id' | 'created_at'>) => EmployeeCategory
+  updateEmployeeCategory: (id: string, data: Partial<EmployeeCategory>) => void
+  deleteEmployeeCategory: (id: string) => void
+
+  // HR — Departments
+  addEmployeeDepartment: (d: Omit<EmployeeDepartment, 'id' | 'created_at'>) => EmployeeDepartment
+  updateEmployeeDepartment: (id: string, data: Partial<EmployeeDepartment>) => void
+  deleteEmployeeDepartment: (id: string) => void
+
+  // HR — Positions
+  addEmployeePosition: (p: Omit<EmployeePosition, 'id' | 'created_at'>) => EmployeePosition
+  updateEmployeePosition: (id: string, data: Partial<EmployeePosition>) => void
+  deleteEmployeePosition: (id: string) => void
+
+  // HR — Employees + RBAC
+  upsertEmployee: (e: Omit<Employee, 'id' | 'created_at'> & { id?: string }) => Employee
+  deleteEmployee: (id: string) => void
+  setEmployeePermissions: (employeeId: string, permissions: PermissionKey[]) => void
+  nextEmployeeId: () => string
+
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
   updateStudent: (id: string, data: Partial<Student>) => void
@@ -300,6 +328,10 @@ export const useAppStore = create<AppState>()(
       academicAssessments: PHOENIX_ACADEMIC_ASSESSMENTS,
       signatories: PHOENIX_SIGNATORIES,
       studentInterests: MOCK_STUDENT_INTERESTS,
+      employeeCategories: PHOENIX_EMPLOYEE_CATEGORIES,
+      employeeDepartments: PHOENIX_EMPLOYEE_DEPARTMENTS,
+      employeePositions: PHOENIX_EMPLOYEE_POSITIONS,
+      employees: MOCK_EMPLOYEES,
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -965,6 +997,104 @@ export const useAppStore = create<AppState>()(
       removeStudentInterest: (id) => set((st) => ({
         studentInterests: st.studentInterests.filter((i) => i.id !== id),
       })),
+
+      addEmployeeCategory: (c) => {
+        const id = `ec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: EmployeeCategory = { ...c, id, created_at: new Date().toISOString() }
+        set((st) => ({ employeeCategories: [...st.employeeCategories, item] }))
+        return item
+      },
+      updateEmployeeCategory: (id, data) => set((st) => ({
+        employeeCategories: st.employeeCategories.map((c) => c.id === id ? { ...c, ...data } : c),
+      })),
+      deleteEmployeeCategory: (id) => set((st) => ({
+        employeeCategories: st.employeeCategories.filter((c) => c.id !== id),
+      })),
+
+      addEmployeeDepartment: (d) => {
+        const id = `ed-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: EmployeeDepartment = { ...d, id, created_at: new Date().toISOString() }
+        set((st) => ({ employeeDepartments: [...st.employeeDepartments, item] }))
+        return item
+      },
+      updateEmployeeDepartment: (id, data) => set((st) => ({
+        employeeDepartments: st.employeeDepartments.map((d) => d.id === id ? { ...d, ...data } : d),
+      })),
+      deleteEmployeeDepartment: (id) => set((st) => ({
+        employeeDepartments: st.employeeDepartments.filter((d) => d.id !== id),
+      })),
+
+      addEmployeePosition: (p) => {
+        const id = `ep-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: EmployeePosition = { ...p, id, created_at: new Date().toISOString() }
+        set((st) => ({ employeePositions: [...st.employeePositions, item] }))
+        return item
+      },
+      updateEmployeePosition: (id, data) => set((st) => ({
+        employeePositions: st.employeePositions.map((p) => p.id === id ? { ...p, ...data } : p),
+      })),
+      deleteEmployeePosition: (id) => set((st) => ({
+        employeePositions: st.employeePositions.filter((p) => p.id !== id),
+      })),
+
+      upsertEmployee: (e) => {
+        const id = e.id ?? `emp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const existing = get().employees.find((x) => x.id === id)
+        const item: Employee = {
+          id,
+          employee_id: e.employee_id,
+          full_name: e.full_name,
+          other_names: e.other_names,
+          email: e.email,
+          phone: e.phone,
+          alt_phone: e.alt_phone,
+          emergency_contact: e.emergency_contact,
+          gender: e.gender,
+          dob: e.dob,
+          ssn: e.ssn,
+          nationality: e.nationality,
+          residential_city: e.residential_city,
+          address: e.address,
+          photo_url: e.photo_url,
+          category_id: e.category_id,
+          department_id: e.department_id,
+          position_id: e.position_id,
+          supervisor_id: e.supervisor_id,
+          qualification: e.qualification,
+          date_of_employment: e.date_of_employment,
+          status: e.status,
+          class_ids: e.class_ids,
+          subject_ids: e.subject_ids,
+          permissions: e.permissions,
+          is_principal: e.is_principal,
+          account_id: e.account_id,
+          created_at: existing?.created_at ?? new Date().toISOString(),
+        }
+        set((st) => ({
+          employees: existing
+            ? st.employees.map((x) => x.id === id ? item : x)
+            : [...st.employees, item],
+        }))
+        return item
+      },
+      deleteEmployee: (id) => set((st) => ({
+        employees: st.employees.filter((e) => e.id !== id),
+      })),
+      setEmployeePermissions: (employeeId, permissions) => set((st) => ({
+        employees: st.employees.map((e) => e.id === employeeId ? { ...e, permissions } : e),
+      })),
+      nextEmployeeId: () => {
+        const employees = get().employees
+        let maxNum = 60
+        for (const e of employees) {
+          const m = (e.employee_id ?? '').match(/(\d+)\s*$/)
+          if (m) {
+            const n = parseInt(m[1], 10)
+            if (!isNaN(n) && n > maxNum) maxNum = n
+          }
+        }
+        return `PSS${String(maxNum + 1).padStart(3, '0')}`
+      },
 
       nextAdmissionNumber: () => {
         const students = get().students

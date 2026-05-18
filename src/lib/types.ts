@@ -1,4 +1,108 @@
 export type UserRole = 'admin' | 'teacher' | 'parent' | 'student' | 'principal'
+
+// ── Phase 9: HR + granular RBAC ───────────────────────────────
+export type PermissionKey =
+  | 'general_school_settings'
+  | 'admit_students'
+  | 'manage_students'
+  | 'teacher'
+  | 'manage_hr_setup'
+  | 'manage_employees'
+  | 'manage_employee_roles'
+  | 'manage_messaging'
+  | 'manage_enquiries'
+  | 'finance_control'
+  | 'manage_fees'
+  | 'fees_cashier'
+  | 'delete_fee_transaction'
+  | 'manage_payroll'
+  | 'receive_finance_notice'
+  | 'authorize_fee_discount'
+  | 'approve_fee_discount'
+  | 'create_expense'
+  | 'approve_expense'
+  | 'pay_expense'
+  | 'approve_payroll'
+  | 'authorize_payroll'
+  | 'manage_online_learning'
+  | 'fees_reports'
+  | 'finance_reports'
+  | 'take_attendance'
+  | 'view_attendance_reports'
+  | 'canteen_cashier'
+  | 'eacademic_control'
+  | 'store_cashier'
+  | 'store_manager'
+  | 'transport_manager'
+
+export interface EmployeeCategory {
+  id: string
+  name: string                          // e.g. "Permanent", "Contract", "System Admin"
+  code: string                          // e.g. "Pm", "CT", "Admin"
+  created_at: string
+}
+
+export interface EmployeeDepartment {
+  id: string
+  name: string                          // e.g. "Administration", "Finance", "Teaching Staff"
+  code: string                          // e.g. "AD", "FC", "TS"
+  created_at: string
+}
+
+export interface EmployeePosition {
+  id: string
+  name: string                          // e.g. "Teacher", "Cook", "Matron", "CEO"
+  description?: string
+  created_at: string
+}
+
+export type EmploymentStatus = 'active' | 'on_leave' | 'suspended' | 'terminated'
+
+export interface Employee {
+  id: string
+  employee_id: string                   // auto-generated, e.g. PSS061
+  full_name: string
+  other_names?: string
+  email?: string
+  phone?: string
+  alt_phone?: string
+  emergency_contact?: string
+  gender?: 'male' | 'female'
+  dob?: string
+  ssn?: string                          // SSNIT number
+  nationality?: string
+  residential_city?: string
+  address?: string
+  photo_url?: string
+  category_id?: string
+  department_id?: string
+  position_id?: string
+  supervisor_id?: string
+  qualification?: string
+  date_of_employment: string
+  status: EmploymentStatus
+  // Assignments
+  class_ids?: string[]                  // batches/classes this employee teaches or oversees
+  subject_ids?: string[]
+  // RBAC
+  permissions: PermissionKey[]
+  is_principal: boolean
+  // Auth linkage
+  account_id?: string                   // links to UserAccount when this employee gets a login
+  created_at: string
+}
+
+export interface PayrollPeriod {
+  id: string
+  month: number
+  year: number
+  is_published: boolean
+  authorized_by?: string
+  authorized_at?: string
+  approved_by?: string
+  approved_at?: string
+  paid_at?: string
+}
 export type FeeStatus = 'cleared' | 'partial' | 'outstanding'
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused'
 export type PaymentMethod = 'mtn_momo' | 'telecel' | 'at_money' | 'cash' | 'bank'
