@@ -3,6 +3,7 @@ import DashboardShell from "@/components/DashboardShell";
 import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import Link from "next/link";
 import { useAppStore } from "@/store/useAppStore";
+import SchoolStatsPanel from "@/components/SchoolStatsPanel";
 
 
 export default function PrincipalOverview() {
@@ -162,6 +163,11 @@ export default function PrincipalOverview() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Fees Info + School Info — live computed from store */}
+      <div className="mb-6">
+        <SchoolStatsPanel />
       </div>
 
       {/* Quick Actions */}

@@ -3,6 +3,7 @@ import DashboardShell from "@/components/DashboardShell";
 import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import Link from "next/link";
 import { useAppStore } from "@/store/useAppStore";
+import SchoolStatsPanel from "@/components/SchoolStatsPanel";
 
 
 export default function AdminOverview() {
@@ -19,6 +20,7 @@ export default function AdminOverview() {
   const smsZero = settings.sms_provider !== "none" && settings.sms_credit_balance === 0;
   const noHubtelKeys = settings.sms_provider === "hubtel" && (!settings.hubtel_client_id || !settings.hubtel_client_secret);
   const smsDeferred = settings.sms_provider === "none";
+  const noPaystackKey = settings.payment_provider === "paystack" && !settings.paystack_public_key;
 
   const today = new Date().toISOString().split("T")[0];
   const todayAtt = attendance.filter((a) => a.date === today);
@@ -42,6 +44,23 @@ export default function AdminOverview() {
   return (
     <DashboardShell role="admin" navItems={NAV}>
       <h2 className="text-xl font-black text-white mb-6">School Overview</h2>
+
+      {/* Paystack not configured — blocks parents from paying online */}
+      {noPaystackKey && (
+        <div className="rounded-2xl p-4 mb-5 flex items-start gap-3"
+          style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.5)" }}>
+          <span className="text-2xl">🚨</span>
+          <div className="flex-1">
+            <p className="font-black text-white text-sm">Paystack public key missing — parents can&apos;t pay fees online yet.</p>
+            <p className="text-xs text-white/80 mt-1">
+              Sign up at <span className="font-mono">paystack.com</span> (create a Phoenix-specific business or a Paystack Subaccount so school fees don&apos;t mix with HomeLink), then paste the <span className="font-mono">pk_live_</span> key into Settings.
+            </p>
+          </div>
+          <Link href="/admin/settings" className="text-xs font-bold px-3 py-2 rounded-lg bg-white text-gray-900 self-center">
+            Add key
+          </Link>
+        </div>
+      )}
 
       {/* SMS credit alerts — only when a provider is active */}
       {(smsZero || smsBelowThreshold) && (
@@ -162,6 +181,11 @@ export default function AdminOverview() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Fees Info + School Info — live computed from store */}
+      <div className="mb-6">
+        <SchoolStatsPanel />
       </div>
 
       {/* Quick Actions */}
