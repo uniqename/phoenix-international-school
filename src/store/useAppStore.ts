@@ -13,6 +13,8 @@ import type {
   CourseGroup, Guardian, GuardianLink, WalletTransaction,
   FeeParticular, InstantFeeBucket, StandaloneFeeDiscount, FeeBilling, FeeBillingItem,
   StudentCategory,
+  GradingGroup, GradeLevel, RemarkBank, RemarkEntry, AcademicAssessment,
+  ReportSignatory, StudentInterest,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -25,6 +27,8 @@ import {
   PHOENIX_COURSE_GROUPS, MOCK_GUARDIANS, MOCK_GUARDIAN_LINKS,
   PHOENIX_FEE_PARTICULARS, PHOENIX_INSTANT_BUCKETS,
   PHOENIX_STANDALONE_DISCOUNTS, PHOENIX_FEE_BILLINGS,
+  PHOENIX_GRADING_GROUPS, PHOENIX_REMARK_BANKS, PHOENIX_ACADEMIC_ASSESSMENTS,
+  PHOENIX_SIGNATORIES, MOCK_STUDENT_INTERESTS,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -69,6 +73,11 @@ interface AppState {
   instantBuckets: InstantFeeBucket[]
   standaloneDiscounts: StandaloneFeeDiscount[]
   feeBillings: FeeBilling[]
+  gradingGroups: GradingGroup[]
+  remarkBanks: RemarkBank[]
+  academicAssessments: AcademicAssessment[]
+  signatories: ReportSignatory[]
+  studentInterests: StudentInterest[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -152,6 +161,35 @@ interface AppState {
   updateBillingItem: (billingId: string, itemId: string, data: Partial<FeeBillingItem>) => void
   removeBillingItem: (billingId: string, itemId: string) => void
   publishBilling: (billingId: string) => { ok: true; created: number } | { ok: false; reason: string }
+
+  // Grading groups
+  addGradingGroup: (g: Omit<GradingGroup, 'id' | 'created_at'>) => GradingGroup
+  updateGradingGroup: (id: string, data: Partial<GradingGroup>) => void
+  deleteGradingGroup: (id: string) => void
+  addGradeLevel: (groupId: string, lvl: Omit<GradeLevel, 'id'>) => void
+  updateGradeLevel: (groupId: string, levelId: string, data: Partial<GradeLevel>) => void
+  deleteGradeLevel: (groupId: string, levelId: string) => void
+
+  // Remark banks
+  addRemarkBank: (b: Omit<RemarkBank, 'id' | 'created_at' | 'remarks'>) => RemarkBank
+  updateRemarkBank: (id: string, data: Partial<RemarkBank>) => void
+  deleteRemarkBank: (id: string) => void
+  addRemarkEntry: (bankId: string, entry: Omit<RemarkEntry, 'id'>) => void
+  updateRemarkEntry: (bankId: string, entryId: string, data: Partial<RemarkEntry>) => void
+  deleteRemarkEntry: (bankId: string, entryId: string) => void
+
+  // Academic Assessments
+  addAcademicAssessment: (a: Omit<AcademicAssessment, 'id' | 'created_at'>) => AcademicAssessment
+  updateAcademicAssessment: (id: string, data: Partial<AcademicAssessment>) => void
+  deleteAcademicAssessment: (id: string) => void
+
+  // Signatories
+  upsertSignatory: (s: Omit<ReportSignatory, 'id'> & { id?: string }) => ReportSignatory
+  deleteSignatory: (id: string) => void
+
+  // Student interests
+  addStudentInterest: (i: Omit<StudentInterest, 'id' | 'created_at'>) => StudentInterest
+  removeStudentInterest: (id: string) => void
 
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
@@ -257,6 +295,11 @@ export const useAppStore = create<AppState>()(
       instantBuckets: PHOENIX_INSTANT_BUCKETS,
       standaloneDiscounts: PHOENIX_STANDALONE_DISCOUNTS,
       feeBillings: PHOENIX_FEE_BILLINGS,
+      gradingGroups: PHOENIX_GRADING_GROUPS,
+      remarkBanks: PHOENIX_REMARK_BANKS,
+      academicAssessments: PHOENIX_ACADEMIC_ASSESSMENTS,
+      signatories: PHOENIX_SIGNATORIES,
+      studentInterests: MOCK_STUDENT_INTERESTS,
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -815,6 +858,113 @@ export const useAppStore = create<AppState>()(
         }))
         return { ok: true, created }
       },
+
+      addGradingGroup: (g) => {
+        const id = `gg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: GradingGroup = { ...g, id, created_at: new Date().toISOString() }
+        set((st) => ({ gradingGroups: [...st.gradingGroups, item] }))
+        return item
+      },
+      updateGradingGroup: (id, data) => set((st) => ({
+        gradingGroups: st.gradingGroups.map((g) => g.id === id ? { ...g, ...data } : g),
+      })),
+      deleteGradingGroup: (id) => set((st) => ({
+        gradingGroups: st.gradingGroups.filter((g) => g.id !== id),
+      })),
+      addGradeLevel: (groupId, lvl) => set((st) => ({
+        gradingGroups: st.gradingGroups.map((g) => g.id !== groupId ? g : {
+          ...g,
+          levels: [...g.levels, { ...lvl, id: `gl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }],
+        }),
+      })),
+      updateGradeLevel: (groupId, levelId, data) => set((st) => ({
+        gradingGroups: st.gradingGroups.map((g) => g.id !== groupId ? g : {
+          ...g,
+          levels: g.levels.map((l) => l.id === levelId ? { ...l, ...data } : l),
+        }),
+      })),
+      deleteGradeLevel: (groupId, levelId) => set((st) => ({
+        gradingGroups: st.gradingGroups.map((g) => g.id !== groupId ? g : {
+          ...g,
+          levels: g.levels.filter((l) => l.id !== levelId),
+        }),
+      })),
+
+      addRemarkBank: (b) => {
+        const id = `rb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: RemarkBank = { ...b, id, remarks: [], created_at: new Date().toISOString() }
+        set((st) => ({ remarkBanks: [...st.remarkBanks, item] }))
+        return item
+      },
+      updateRemarkBank: (id, data) => set((st) => ({
+        remarkBanks: st.remarkBanks.map((b) => b.id === id ? { ...b, ...data } : b),
+      })),
+      deleteRemarkBank: (id) => set((st) => ({
+        remarkBanks: st.remarkBanks.filter((b) => b.id !== id),
+      })),
+      addRemarkEntry: (bankId, entry) => set((st) => ({
+        remarkBanks: st.remarkBanks.map((b) => b.id !== bankId ? b : {
+          ...b,
+          remarks: [...b.remarks, { ...entry, id: `r-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }],
+        }),
+      })),
+      updateRemarkEntry: (bankId, entryId, data) => set((st) => ({
+        remarkBanks: st.remarkBanks.map((b) => b.id !== bankId ? b : {
+          ...b,
+          remarks: b.remarks.map((r) => r.id === entryId ? { ...r, ...data } : r),
+        }),
+      })),
+      deleteRemarkEntry: (bankId, entryId) => set((st) => ({
+        remarkBanks: st.remarkBanks.map((b) => b.id !== bankId ? b : {
+          ...b,
+          remarks: b.remarks.filter((r) => r.id !== entryId),
+        }),
+      })),
+
+      addAcademicAssessment: (a) => {
+        const id = `aa-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: AcademicAssessment = { ...a, id, created_at: new Date().toISOString() }
+        set((st) => ({ academicAssessments: [...st.academicAssessments, item] }))
+        return item
+      },
+      updateAcademicAssessment: (id, data) => set((st) => ({
+        academicAssessments: st.academicAssessments.map((a) => a.id === id ? { ...a, ...data } : a),
+      })),
+      deleteAcademicAssessment: (id) => set((st) => ({
+        academicAssessments: st.academicAssessments.filter((a) => a.id !== id),
+      })),
+
+      upsertSignatory: (s) => {
+        const id = s.id ?? `sig-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const existing = get().signatories.find((x) => x.id === id)
+        const item: ReportSignatory = {
+          id,
+          role_label: s.role_label,
+          full_name: s.full_name,
+          signature_url: s.signature_url,
+          active: s.active,
+          order: s.order,
+        }
+        set((st) => ({
+          signatories: existing
+            ? st.signatories.map((x) => x.id === id ? item : x)
+            : [...st.signatories, item],
+        }))
+        return item
+      },
+      deleteSignatory: (id) => set((st) => ({
+        signatories: st.signatories.filter((s) => s.id !== id),
+      })),
+
+      addStudentInterest: (i) => {
+        const id = `si-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: StudentInterest = { ...i, id, created_at: new Date().toISOString() }
+        set((st) => ({ studentInterests: [...st.studentInterests, item] }))
+        return item
+      },
+      removeStudentInterest: (id) => set((st) => ({
+        studentInterests: st.studentInterests.filter((i) => i.id !== id),
+      })),
 
       nextAdmissionNumber: () => {
         const students = get().students

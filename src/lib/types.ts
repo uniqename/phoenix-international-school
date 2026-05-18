@@ -334,6 +334,82 @@ export interface AssessmentScoreEntry {
   note?: string
 }
 
+// ── Phase 7: Assessment depth ─────────────────────────────────
+export type GradingScale = 'abcd' | 'percent' | 'letter5' | 'letter6_basic_school' | 'narrative_preschool' | 'kg_frequency'
+
+export interface GradeLevel {
+  id: string
+  grade_name: string                    // e.g. "A", "B+", "MO" (KG), "Excellent" (narrative)
+  min_score?: number                    // minimum % to earn this grade (omitted for narrative scales)
+  aggregate_value?: number              // BECE-style aggregate contribution (1=top)
+  short_remark?: string                 // e.g. "Excellent", "Very Good"
+  description?: string                  // longer guidance for teachers
+}
+
+export interface GradingGroup {
+  id: string
+  name: string                          // e.g. "Basic School", "JHS 3 Grading", "Pre-School", "Kindergarten"
+  scale: GradingScale
+  applies_to_class_ids?: string[]       // empty = manual assignment per student/class
+  applies_to_levels?: StudentLevel[]    // e.g. ['primary'] for Basic School
+  levels: GradeLevel[]
+  active: boolean
+  created_at: string
+}
+
+export type RemarkGroupKind = 'headmaster' | 'class_teacher' | 'interest' | 'conduct' | 'health' | 'other'
+
+export interface RemarkBank {
+  id: string
+  kind: RemarkGroupKind
+  group_name: string                    // e.g. "Headmaster's Remarks", "Interest", "Conduct"
+  remarks: RemarkEntry[]
+  created_at: string
+}
+
+export interface RemarkEntry {
+  id: string
+  text: string                          // e.g. "Attention must be given to the core subjects."
+  min_score?: number                    // optional auto-suggest threshold
+  max_score?: number
+  order: number
+}
+
+export interface StudentInterest {
+  id: string
+  student_id: string
+  interest: string                      // e.g. "Athletics", "Basketball", "Reading"
+  rating?: 'low' | 'medium' | 'high'
+  notes?: string
+  created_at: string
+}
+
+export type AcademicAssessmentType = 'marks_only' | 'marks_with_grades' | 'grades_only' | 'narrative'
+export type AcademicAssessmentReport = 'single' | 'combined'
+
+export interface AcademicAssessment {
+  id: string
+  name: string                          // e.g. "1ST TERM BASIC SCHOOL EXAMINATION", "CAT1"
+  code: string                          // short code, e.g. "TERM1", "CAT1"
+  max_marks: number
+  type: AcademicAssessmentType
+  report_type: AcademicAssessmentReport // combined assessments roll into a term report
+  grading_group_id?: string             // optional link to GradingGroup
+  applies_to_levels?: StudentLevel[]
+  weight?: number                       // for combined assessments (e.g. CAT1 = 10% of term)
+  active: boolean
+  created_at: string
+}
+
+export interface ReportSignatory {
+  id: string
+  role_label: string                    // "Headmaster", "Class Teacher", "Examinations Officer"
+  full_name: string
+  signature_url?: string                // optional uploaded signature image
+  active: boolean
+  order: number
+}
+
 export interface AssessmentResult {
   id: string
   template_id: string

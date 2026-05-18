@@ -5,6 +5,7 @@ import type {
   SchoolSettings, ClassDef, Subject, AcademicYear, Family, DiscountPolicy,
   AssessmentTemplate, CourseGroup, Guardian, GuardianLink,
   FeeParticular, InstantFeeBucket, StandaloneFeeDiscount, FeeBilling,
+  GradingGroup, RemarkBank, AcademicAssessment, ReportSignatory, StudentInterest,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -422,5 +423,161 @@ export const PHOENIX_ASSESSMENT_TEMPLATES: AssessmentTemplate[] = [
     ],
   },
 ]
+
+// ── Phase 7 seed: Grading Groups (4 rubrics from doc) ──
+export const PHOENIX_GRADING_GROUPS: GradingGroup[] = [
+  {
+    id: 'gg-basic-school',
+    name: 'Basic School',
+    scale: 'letter6_basic_school',
+    applies_to_levels: ['primary'],
+    active: true,
+    created_at: T0,
+    levels: [
+      { id: 'gl-bs-a', grade_name: 'A', min_score: 80, aggregate_value: 1, short_remark: 'Excellent',     description: 'Achieved Basic Competence exceptionally well.' },
+      { id: 'gl-bs-b', grade_name: 'B', min_score: 70, aggregate_value: 2, short_remark: 'Very Good',     description: 'Achieved Basic Competence very well; highly proficient in most areas of competency.' },
+      { id: 'gl-bs-c', grade_name: 'C', min_score: 60, aggregate_value: 3, short_remark: 'Good',          description: 'Achieved Basic Competence satisfactorily.' },
+      { id: 'gl-bs-d', grade_name: 'D', min_score: 50, aggregate_value: 4, short_remark: 'Below Average', description: 'Achieved minimum Basic Competence — may sometimes need help.' },
+      { id: 'gl-bs-e', grade_name: 'E', min_score: 40, aggregate_value: 5, short_remark: 'Weak',          description: 'Not achieved majority of the Basic Competencies.' },
+      { id: 'gl-bs-f', grade_name: 'F', min_score: 0,  aggregate_value: 6, short_remark: 'Fail',          description: 'Does not meet grade level expectation.' },
+    ],
+  },
+  {
+    id: 'gg-jhs3',
+    name: 'JHS 3 Grading',
+    scale: 'percent',
+    applies_to_levels: ['jhs'],
+    active: true,
+    created_at: T0,
+    levels: [
+      { id: 'gl-jhs-1', grade_name: '1', min_score: 80, aggregate_value: 1, short_remark: 'Highest',      description: 'Strong excellent performance.' },
+      { id: 'gl-jhs-2', grade_name: '2', min_score: 70, aggregate_value: 2, short_remark: 'Higher',       description: 'Strong performance.' },
+      { id: 'gl-jhs-3', grade_name: '3', min_score: 65, aggregate_value: 3, short_remark: 'High',         description: 'Appropriate development.' },
+      { id: 'gl-jhs-4', grade_name: '4', min_score: 60, aggregate_value: 4, short_remark: 'High Average', description: 'Slow development.' },
+      { id: 'gl-jhs-5', grade_name: '5', min_score: 55, aggregate_value: 5, short_remark: 'Average',      description: 'Beginning knowledge.' },
+      { id: 'gl-jhs-6', grade_name: '6', min_score: 50, aggregate_value: 6, short_remark: 'Low Average',  description: 'Weak understanding.' },
+      { id: 'gl-jhs-7', grade_name: '7', min_score: 45, aggregate_value: 7, short_remark: 'Low',          description: 'Weak knowledge.' },
+      { id: 'gl-jhs-8', grade_name: '8', min_score: 40, aggregate_value: 8, short_remark: 'Lower',        description: 'Weak knowledge.' },
+      { id: 'gl-jhs-9', grade_name: '9', min_score: 0,  aggregate_value: 9, short_remark: 'Lowest',       description: 'Does not meet grade level expectation.' },
+    ],
+  },
+  {
+    id: 'gg-preschool',
+    name: 'Pre-School',
+    scale: 'narrative_preschool',
+    applies_to_levels: ['creche', 'nursery'],
+    active: true,
+    created_at: T0,
+    levels: [
+      { id: 'gl-ps-a', grade_name: 'A', short_remark: 'Excellent',     description: 'Outstanding in all areas of competency.' },
+      { id: 'gl-ps-b', grade_name: 'B', short_remark: 'Very Good',     description: 'Highly proficient in most areas.' },
+      { id: 'gl-ps-c', grade_name: 'C', short_remark: 'Good',          description: 'Mastered the competencies satisfactorily.' },
+      { id: 'gl-ps-d', grade_name: 'D', short_remark: 'Below Average', description: 'Achieved minimum competencies — may sometimes need help.' },
+    ],
+  },
+  {
+    id: 'gg-kg',
+    name: 'Kindergarten',
+    scale: 'kg_frequency',
+    applies_to_levels: ['kg'],
+    active: true,
+    created_at: T0,
+    levels: [
+      { id: 'gl-kg-mo', grade_name: 'MO', short_remark: 'Most Often',       description: 'Consistently demonstrates the competency.' },
+      { id: 'gl-kg-o',  grade_name: 'O',  short_remark: 'Often',            description: 'Often demonstrates the competency.' },
+      { id: 'gl-kg-s',  grade_name: 'S',  short_remark: 'Sometimes',        description: 'Sometimes demonstrates the competency.' },
+      { id: 'gl-kg-n',  grade_name: 'N',  short_remark: 'Needs Assistance', description: 'Needs assistance to demonstrate.' },
+      { id: 'gl-kg-na', grade_name: 'NA', short_remark: 'Not at all',       description: 'Does not yet demonstrate the competency.' },
+    ],
+  },
+]
+
+export const PHOENIX_REMARK_BANKS: RemarkBank[] = [
+  {
+    id: 'rb-headmaster',
+    kind: 'headmaster',
+    group_name: "Headmaster's Remarks",
+    created_at: T0,
+    remarks: [
+      { id: 'r-hm-1',  text: 'Attention must be given to the core subjects.',   min_score: 0,  max_score: 40, order: 1 },
+      { id: 'r-hm-2',  text: 'Not too good a performance. Buck up.',            min_score: 40, max_score: 50, order: 2 },
+      { id: 'r-hm-3',  text: 'Can do better still.',                            min_score: 50, max_score: 60, order: 3 },
+      { id: 'r-hm-4',  text: 'A good effort. Work harder still.',               min_score: 60, max_score: 70, order: 4 },
+      { id: 'r-hm-5',  text: 'Much would be expected of her next term.',        min_score: 70, max_score: 80, order: 5 },
+      { id: 'r-hm-6',  text: 'Much would be expected of him next term.',        min_score: 70, max_score: 80, order: 6 },
+      { id: 'r-hm-7',  text: 'An encouraging performance. Keep it up.',         min_score: 75, max_score: 85, order: 7 },
+      { id: 'r-hm-8',  text: 'Needs to put in more efforts.',                   min_score: 0,  max_score: 50, order: 8 },
+      { id: 'r-hm-9',  text: 'Excellent performance. Keep it up!',              min_score: 85, max_score: 100, order: 9 },
+      { id: 'r-hm-10', text: 'A great improvement. Well done!',                                              order: 10 },
+    ],
+  },
+  {
+    id: 'rb-class-teacher',
+    kind: 'class_teacher',
+    group_name: "Class Teacher's Remarks",
+    created_at: T0,
+    remarks: [
+      { id: 'r-ct-1', text: 'Hardworking and attentive in class.',                order: 1 },
+      { id: 'r-ct-2', text: 'Shows promise — needs to apply herself more.',       order: 2 },
+      { id: 'r-ct-3', text: 'Shows promise — needs to apply himself more.',       order: 3 },
+      { id: 'r-ct-4', text: 'Polite and well-behaved. A pleasure to teach.',      order: 4 },
+      { id: 'r-ct-5', text: 'Needs to participate more in class discussions.',    order: 5 },
+      { id: 'r-ct-6', text: 'Consistent performance across all subjects.',        order: 6 },
+    ],
+  },
+  {
+    id: 'rb-interest',
+    kind: 'interest',
+    group_name: 'Interests',
+    created_at: T0,
+    remarks: [
+      { id: 'r-int-1',  text: 'Athletics',           order: 1 },
+      { id: 'r-int-2',  text: 'Basketball',          order: 2 },
+      { id: 'r-int-3',  text: 'Drawing and colouring', order: 3 },
+      { id: 'r-int-4',  text: 'Drumming',            order: 4 },
+      { id: 'r-int-5',  text: 'Football',            order: 5 },
+      { id: 'r-int-6',  text: 'Listening to stories', order: 6 },
+      { id: 'r-int-7',  text: 'Music and dancing',   order: 7 },
+      { id: 'r-int-8',  text: 'Playing with puzzles', order: 8 },
+      { id: 'r-int-9',  text: 'Reading',             order: 9 },
+      { id: 'r-int-10', text: 'Writing',             order: 10 },
+      { id: 'r-int-11', text: 'Singing',             order: 11 },
+      { id: 'r-int-12', text: 'Swimming',            order: 12 },
+    ],
+  },
+  {
+    id: 'rb-conduct',
+    kind: 'conduct',
+    group_name: 'Conduct',
+    created_at: T0,
+    remarks: [
+      { id: 'r-con-1', text: 'Excellent',          order: 1 },
+      { id: 'r-con-2', text: 'Very Good',          order: 2 },
+      { id: 'r-con-3', text: 'Good',               order: 3 },
+      { id: 'r-con-4', text: 'Fair',               order: 4 },
+      { id: 'r-con-5', text: 'Needs Improvement',  order: 5 },
+    ],
+  },
+]
+
+export const PHOENIX_ACADEMIC_ASSESSMENTS: AcademicAssessment[] = [
+  { id: 'aa-term1',  name: '1ST TERM BASIC SCHOOL EXAMINATION', code: 'TERM1', max_marks: 100, type: 'marks_with_grades', report_type: 'combined', grading_group_id: 'gg-basic-school', applies_to_levels: ['primary', 'kg', 'nursery'], weight: 70, active: true, created_at: T0 },
+  { id: 'aa-term2',  name: '2ND TERM BASIC SCHOOL EXAMINATION', code: 'TM2E',  max_marks: 100, type: 'marks_with_grades', report_type: 'combined', grading_group_id: 'gg-basic-school', applies_to_levels: ['primary', 'kg', 'nursery'], weight: 70, active: true, created_at: T0 },
+  { id: 'aa-term3',  name: '3RD TERM BASIC SCHOOL EXAMINATION', code: 'TM3',   max_marks: 100, type: 'marks_with_grades', report_type: 'combined', grading_group_id: 'gg-basic-school', applies_to_levels: ['primary', 'kg', 'nursery'], weight: 70, active: true, created_at: T0 },
+  { id: 'aa-cat1',   name: 'CONTINUOUS ASSESSMENT 1',           code: 'CAT1',  max_marks: 10,  type: 'marks_only',        report_type: 'single',   weight: 10, active: true, created_at: T0 },
+  { id: 'aa-cat2',   name: 'CONTINUOUS ASSESSMENT 2',           code: 'CAT2',  max_marks: 20,  type: 'marks_only',        report_type: 'single',   weight: 10, active: true, created_at: T0 },
+  { id: 'aa-cat3',   name: 'CONTINUOUS ASSESSMENT 3',           code: 'CAT3',  max_marks: 20,  type: 'marks_only',        report_type: 'single',   weight: 10, active: true, created_at: T0 },
+  { id: 'aa-cat4',   name: 'CONTINUOUS ASSESSMENT 4',           code: 'CAT4',  max_marks: 10,  type: 'marks_only',        report_type: 'single',   weight: 10, active: true, created_at: T0 },
+  { id: 'aa-cat5',   name: 'CONTINUOUS ASSESSMENT 5',           code: 'CAT5',  max_marks: 20,  type: 'marks_only',        report_type: 'single',   weight: 10, active: true, created_at: T0 },
+  { id: 'aa-cat6',   name: 'CONTINUOUS ASSESSMENT 6',           code: 'CAT6',  max_marks: 20,  type: 'marks_only',        report_type: 'single',   weight: 10, active: true, created_at: T0 },
+]
+
+export const PHOENIX_SIGNATORIES: ReportSignatory[] = [
+  { id: 'sig-headmaster',    role_label: 'Headmaster / Principal', full_name: '', active: true, order: 1 },
+  { id: 'sig-class-teacher', role_label: 'Class Teacher',          full_name: '', active: true, order: 2 },
+  { id: 'sig-examiner',      role_label: 'Examinations Officer',   full_name: '', active: true, order: 3 },
+]
+
+export const MOCK_STUDENT_INTERESTS: StudentInterest[] = []
 
 
