@@ -74,13 +74,13 @@ export default function CalendarPage() {
     <DashboardShell role="admin" navItems={NAV as never}>
       <div className="max-w-5xl mx-auto space-y-6 p-6">
         <header>
-          <h1 className="text-2xl font-bold">Academic Calendar</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-black text-white">📅 Academic Calendar</h1>
+          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
             Set term dates and holidays. Reports auto-stamp with the current term and year. Parents see this calendar in the parent app.
           </p>
         </header>
 
-        <section className="rounded-xl border bg-white p-5 space-y-3">
+        <section className="glass rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-semibold">Academic year</h2>
             <select className="input max-w-[200px]" value={selectedYearId} onChange={(e) => setSelectedYearId(e.target.value)}>
@@ -113,7 +113,7 @@ export default function CalendarPage() {
           const term = year.terms.find((t) => t.number === termNum);
           if (!term) return null;
           return (
-            <section key={termNum} className="rounded-xl border bg-white p-5 space-y-3">
+            <section key={termNum} className="glass rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="font-semibold">Term {termNum} {term.is_current && <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded ml-1">current</span>}</h2>
                 {!term.is_current && (
@@ -161,7 +161,7 @@ export default function CalendarPage() {
           );
         })}
 
-        <section className="rounded-xl border bg-white p-5 space-y-3">
+        <section className="glass rounded-2xl p-5 space-y-3">
           <h2 className="font-semibold">Add holiday to selected year</h2>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
             <div>
@@ -185,10 +185,10 @@ export default function CalendarPage() {
               <input className="input" type="date" value={holidayForm.end_date} onChange={(e) => setHolidayForm({ ...holidayForm, end_date: e.target.value })} />
             </div>
           </div>
-          <button className="btn-primary" onClick={onAddHoliday}>Add holiday</button>
+          <button className="btn-gold" onClick={onAddHoliday}>Add holiday</button>
         </section>
 
-        <section className="rounded-xl border bg-white p-5 space-y-3">
+        <section className="glass rounded-2xl p-5 space-y-3">
           <h2 className="font-semibold">Add a new academic year</h2>
           <p className="text-xs text-gray-500">Default term dates can be edited above after creation.</p>
           <div className="flex gap-2 items-end">
@@ -196,15 +196,15 @@ export default function CalendarPage() {
               <label className="text-xs text-gray-500">Year name</label>
               <input className="input" placeholder="2026/2027" value={newYearName} onChange={(e) => setNewYearName(e.target.value)} />
             </div>
-            <button className="btn-primary" onClick={onAddYear}>Add year</button>
+            <button className="btn-gold" onClick={onAddYear}>Add year</button>
           </div>
         </section>
 
         <style jsx>{`
           .input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
           .input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-          .btn-primary { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-          .btn-primary:hover { background: #2c1a73; }
+          .btn-gold { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
+          .btn-gold:hover { background: #2c1a73; }
         `}</style>
       </div>
     </DashboardShell>

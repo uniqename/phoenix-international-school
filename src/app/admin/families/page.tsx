@@ -163,12 +163,12 @@ export default function FamiliesPage() {
       <div className="max-w-5xl mx-auto p-6 space-y-5">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Families</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-black text-white">👨‍👩‍👧 Families</h1>
+            <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
               Group siblings into one family. Unlocks the sibling discount, dual-parent login, and one-view-of-the-whole-family in the parent app.
             </p>
           </div>
-          <button className="btn-primary" onClick={openNew}>+ New family</button>
+          <button className="btn-gold" onClick={openNew}>+ New family</button>
         </header>
 
         {unassigned.length > 0 && (
@@ -195,7 +195,7 @@ export default function FamiliesPage() {
             const hasOverride = typeof family.discount_override_percent === "number";
             const effectivePct = hasOverride ? family.discount_override_percent! : autoPct;
             return (
-              <div key={family.id} className="rounded-xl border bg-white p-4">
+              <div key={family.id} className="glass rounded-2xl p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold text-lg">{family.family_name}</h3>
@@ -334,7 +334,7 @@ export default function FamiliesPage() {
                         <label className="text-xs text-gray-500">Note (optional)</label>
                         <input className="input" placeholder="e.g. staff family" value={overrideNote} onChange={(e) => setOverrideNote(e.target.value)} />
                       </div>
-                      <button className="btn-primary" onClick={() => handleApplyOverride(family.id)}>Apply</button>
+                      <button className="btn-gold" onClick={() => handleApplyOverride(family.id)}>Apply</button>
                       <button className="btn-secondary" onClick={() => setOverrideOpen(null)}>Cancel</button>
                     </div>
                   </div>
@@ -426,7 +426,7 @@ export default function FamiliesPage() {
               </div>
               <div className="p-5 border-t flex gap-2 justify-end sticky bottom-0 bg-white">
                 <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button className="btn-primary" onClick={handleSave}>{editing ? "Update family" : "Create family"}</button>
+                <button className="btn-gold" onClick={handleSave}>{editing ? "Update family" : "Create family"}</button>
               </div>
             </div>
           </div>
@@ -435,8 +435,8 @@ export default function FamiliesPage() {
         <style jsx>{`
           .input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
           .input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-          .btn-primary { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-          .btn-primary:hover { background: #2c1a73; }
+          .btn-gold { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
+          .btn-gold:hover { background: #2c1a73; }
           .btn-secondary { background: white; border: 1px solid #e5e7eb; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
         `}</style>
       </div>

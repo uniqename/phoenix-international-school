@@ -57,14 +57,14 @@ export default function DiscountPage() {
     <DashboardShell role="admin" navItems={NAV as never}>
       <div className="max-w-4xl mx-auto space-y-6 p-6">
         <header>
-          <h1 className="text-2xl font-bold">Sibling Discount</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-black text-white">🏷️ Sibling Discount</h1>
+          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
             Families with multiple children get a discount automatically. Set the ladder here.
             Admin can also override the auto-calculated discount per family on the Families page.
           </p>
         </header>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-3">
             <label className="inline-flex items-center gap-2 cursor-pointer">
               <input
@@ -79,7 +79,7 @@ export default function DiscountPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Discount tiers</h2>
           <p className="text-xs text-gray-500">
             Discount applies to the per-child fee for families with that many enrolled siblings.
@@ -127,11 +127,11 @@ export default function DiscountPage() {
             </div>
             <button className="btn-secondary" onClick={onAddTier}>Add tier</button>
             <div className="flex-1" />
-            <button className="btn-primary" onClick={onSaveTiers}>Save ladder</button>
+            <button className="btn-gold" onClick={onSaveTiers}>Save ladder</button>
           </div>
         </section>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Applies to fee types</h2>
           <p className="text-xs text-gray-500">Tick which fee types get the sibling discount. Most schools apply it only to School Fees.</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -162,8 +162,8 @@ export default function DiscountPage() {
         <style jsx>{`
           .input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
           .input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-          .btn-primary { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-          .btn-primary:hover { background: #2c1a73; }
+          .btn-gold { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
+          .btn-gold:hover { background: #2c1a73; }
           .btn-secondary { background: white; border: 1px solid #e5e7eb; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
         `}</style>
       </div>

@@ -70,13 +70,13 @@ export default function SettingsPage() {
     <DashboardShell role="admin" navItems={NAV as never}>
       <div className="max-w-3xl mx-auto space-y-6 p-6">
         <header>
-          <h1 className="text-2xl font-bold">School Settings</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-black text-white">⚙️ School Settings</h1>
+          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
             Update the school&apos;s public info. These details appear on reports, parent invites, SMS, and the parent app header.
           </p>
         </header>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Identity</h2>
           <Field label="School name">
             <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -89,7 +89,7 @@ export default function SettingsPage() {
           </Field>
         </section>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Contact</h2>
           <Field label="Phone numbers (comma-separated)">
             <input className="input" value={form.phones} onChange={(e) => setForm({ ...form, phones: e.target.value })} placeholder="0508923445, 0545307614" />
@@ -102,7 +102,7 @@ export default function SettingsPage() {
           </Field>
         </section>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Fee payment gateway</h2>
           <Field label="Provider">
             <select
@@ -154,7 +154,7 @@ export default function SettingsPage() {
           )}
         </section>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">SMS / Messaging</h2>
           <Field label="Provider">
             <select
@@ -201,7 +201,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border bg-white p-5 space-y-4">
+        <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Hubtel API credentials</h2>
           <p className="text-xs text-gray-500">
             Get these from <span className="font-mono">unity.hubtel.com</span> → API → API Keys. The same Client ID + Secret unlocks both SMS and Receive Money payments. Never share them — they let anyone send SMS or collect funds on your account.
@@ -233,14 +233,14 @@ export default function SettingsPage() {
 
         <div className="flex justify-end gap-2">
           <button className="btn-secondary" onClick={() => window.location.reload()}>Discard</button>
-          <button className="btn-primary" onClick={onSave}>Save settings</button>
+          <button className="btn-gold" onClick={onSave}>Save settings</button>
         </div>
 
         <style jsx>{`
           .input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
           .input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-          .btn-primary { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-          .btn-primary:hover { background: #2c1a73; }
+          .btn-gold { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
+          .btn-gold:hover { background: #2c1a73; }
           .btn-secondary { background: white; border: 1px solid #e5e7eb; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
         `}</style>
       </div>

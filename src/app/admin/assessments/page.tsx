@@ -100,16 +100,16 @@ export default function AssessmentsPage() {
       <div className="max-w-5xl mx-auto p-6 space-y-5">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Assessments</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-black text-white">📋 Assessments</h1>
+            <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
               Each class has its own assessment template. Add markers, scored A–D (or your chosen scale). Teachers fill these in for each student per term; reports auto-generate.
             </p>
           </div>
-          <button type="button" className="btn-primary" onClick={openNew}>+ New template</button>
+          <button type="button" className="btn-gold" onClick={openNew}>+ New template</button>
         </header>
 
         {/* Class picker */}
-        <div className="rounded-xl border bg-white p-4">
+        <div className="glass rounded-2xl p-4">
           <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Class</p>
           <div className="flex flex-wrap gap-2">
             {classes.map((c) => {
@@ -142,7 +142,7 @@ export default function AssessmentsPage() {
             </div>
           )}
           {classTemplates.map((t) => (
-            <div key={t.id} className="rounded-xl border bg-white p-4">
+            <div key={t.id} className="glass rounded-2xl p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <h3 className="font-semibold">{t.name}</h3>
@@ -230,7 +230,7 @@ export default function AssessmentsPage() {
                         onChange={(e) => setNewMarker({ ...newMarker, description: e.target.value })}
                       />
                     </div>
-                    <button type="button" className="btn-primary" onClick={() => onAddMarker(t.id)}>Add marker</button>
+                    <button type="button" className="btn-gold" onClick={() => onAddMarker(t.id)}>Add marker</button>
                   </div>
                 </div>
               )}
@@ -283,7 +283,7 @@ export default function AssessmentsPage() {
               </div>
               <div className="p-5 border-t flex gap-2 justify-end">
                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="button" className="btn-primary" onClick={saveTemplate}>{editing ? "Save changes" : "Create template"}</button>
+                <button type="button" className="btn-gold" onClick={saveTemplate}>{editing ? "Save changes" : "Create template"}</button>
               </div>
             </div>
           </div>
@@ -292,8 +292,8 @@ export default function AssessmentsPage() {
         <style jsx>{`
           .input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
           .input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-          .btn-primary { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-          .btn-primary:hover { background: #2c1a73; }
+          .btn-gold { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
+          .btn-gold:hover { background: #2c1a73; }
           .btn-secondary { background: white; border: 1px solid #e5e7eb; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
         `}</style>
       </div>

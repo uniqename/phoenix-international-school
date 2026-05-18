@@ -45,14 +45,14 @@ export default function AdminReportsPage() {
     <DashboardShell role="admin" navItems={NAV as never}>
       <div className="p-6 max-w-5xl mx-auto space-y-4 print:p-0">
         <header className="print:hidden">
-          <h1 className="text-2xl font-bold">Reports &amp; Remarks</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-black text-white">📄 Reports &amp; Remarks</h1>
+          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
             Review teacher-finalized assessments, add the headmaster&apos;s remark, then print the report card.
           </p>
         </header>
 
         {/* Pickers — hidden on print */}
-        <section className="grid md:grid-cols-3 gap-3 rounded-xl border bg-white p-4 print:hidden">
+        <section className="grid md:grid-cols-3 gap-3 glass rounded-2xl p-4 print:hidden">
           <Field label="Class">
             <select className="input" value={classId} onChange={(e) => { setClassId(e.target.value); setStudentId(""); }}>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -90,7 +90,7 @@ export default function AdminReportsPage() {
             <div className="flex justify-end gap-2 print:hidden">
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-gold"
                 onClick={() => window.print()}
               >
                 🖨️ Print report
@@ -153,8 +153,8 @@ export default function AdminReportsPage() {
         <style jsx>{`
           .input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.95rem; }
           .input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-          .btn-primary { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-          .btn-primary:hover { background: #2c1a73; }
+          .btn-gold { background: #1A0E4D; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
+          .btn-gold:hover { background: #2c1a73; }
         `}</style>
         <style jsx global>{`
           @media print {

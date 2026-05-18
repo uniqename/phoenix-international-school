@@ -86,14 +86,14 @@ export default function TeacherAssessmentsPage() {
     <DashboardShell role="teacher" navItems={NAV}>
       <div className="p-6 max-w-6xl mx-auto space-y-4">
         <header>
-          <h1 className="text-2xl font-bold">Assessments</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-black text-white">📋 Assessments</h1>
+          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
             Pick a class and template, then score each student per marker. Add a remark, then mark finalized once you&apos;re done.
           </p>
         </header>
 
         {/* Pickers */}
-        <section className="grid md:grid-cols-3 gap-3 rounded-xl border bg-white p-4">
+        <section className="grid md:grid-cols-3 gap-3 glass rounded-2xl p-4">
           <Field label="Class">
             <select className="input" value={classId} onChange={(e) => { setClassId(e.target.value); setTemplateId(""); }}>
               {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -181,7 +181,7 @@ function StudentRow({
   const scoredCount = result?.entries.length ?? 0;
 
   return (
-    <div className="rounded-xl border bg-white p-4">
+    <div className="glass rounded-2xl p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div>
           <p className="font-semibold">{student.full_name}</p>
