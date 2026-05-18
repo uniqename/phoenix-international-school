@@ -9,6 +9,7 @@ import type {
   EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
   AccountGroup, ChartAccount, BankAccount, FinanceTransaction,
   CanteenMeal, CanteenFeeParticular, CanteenMenuDay,
+  MessageTemplate, MessageLog,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -814,5 +815,68 @@ export const PHOENIX_CANTEEN_FEE_PARTICULARS: CanteenFeeParticular[] = [
 ]
 
 export const MOCK_CANTEEN_MENU_DAYS: CanteenMenuDay[] = []
+
+// ── Phase 13 seed: messaging templates ──
+export const PHOENIX_MESSAGE_TEMPLATES: MessageTemplate[] = [
+  {
+    id: 'mt-welcome',
+    name: 'Welcome new admission',
+    trigger: 'admission',
+    channels: ['sms', 'email'],
+    subject: 'Welcome to {{school_name}}',
+    body: 'Hi {{first_name}}, welcome to {{school_name}}! Your ERP login is: username {{username}}, initial password {{password}}. Sign in at {{erp_portal_url}}.',
+    is_active: true,
+    created_at: T0,
+  },
+  {
+    id: 'mt-payment',
+    name: 'Payment confirmed',
+    trigger: 'payment_confirmed',
+    channels: ['sms'],
+    body: 'Thank you {{first_name}} for your payment of GHS {{amount}} to {{school_name}}. Receipt #{{receipt_number}}.',
+    is_active: true,
+    created_at: T0,
+  },
+  {
+    id: 'mt-absent',
+    name: 'Absent today',
+    trigger: 'absent_today',
+    channels: ['sms', 'whatsapp'],
+    body: '{{school_name}}: {{full_name}} was marked ABSENT today ({{date}}). Please respond if this was unexpected.',
+    is_active: true,
+    created_at: T0,
+  },
+  {
+    id: 'mt-fees-due',
+    name: 'Fees due reminder',
+    trigger: 'fees_due',
+    channels: ['sms', 'email'],
+    subject: 'Fee balance reminder',
+    body: 'Hi {{first_name}}, this is a reminder that {{full_name}} has an outstanding fee balance of GHS {{balance}}. Please settle by {{due_date}}.',
+    is_active: true,
+    created_at: T0,
+  },
+  {
+    id: 'mt-birthday',
+    name: 'Birthday greeting',
+    trigger: 'birthday',
+    channels: ['sms'],
+    body: '🎂 Happy Birthday {{first_name}}! Wishing you a wonderful year ahead — from everyone at {{school_name}}.',
+    is_active: true,
+    created_at: T0,
+  },
+  {
+    id: 'mt-low-credit',
+    name: 'Principal low-credit alert',
+    trigger: 'low_credit',
+    channels: ['email', 'sms'],
+    subject: '⚠️ Low SMS credit',
+    body: '{{school_name}} SMS balance is now GHS {{balance}}, below the threshold of GHS {{threshold}}. Top up at unity.hubtel.com to avoid delivery interruptions.',
+    is_active: true,
+    created_at: T0,
+  },
+]
+
+export const MOCK_MESSAGE_LOGS: MessageLog[] = []
 
 

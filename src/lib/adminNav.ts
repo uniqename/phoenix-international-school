@@ -29,6 +29,7 @@ export const ADMIN_NAV = [
   { icon: "💗", label: "Student Interests", href: "/admin/interests" },
   { icon: "📄", label: "Reports & Remarks", href: "/admin/reports" },
   { icon: "📢", label: "Announcements",   href: "/admin/announcements" },
+  { icon: "📨", label: "Messaging Service", href: "/admin/messaging" },
   { icon: "📸", label: "School Feed",     href: "/admin/feed" },
   { icon: "🔑", label: "Accounts",        href: "/admin/accounts" },
   { icon: "❓", label: "Question Bank",   href: "/admin/questions" },

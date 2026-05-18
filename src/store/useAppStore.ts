@@ -20,6 +20,7 @@ import type {
   ClassTimetable, OnlineExam, OnlineAssignment, OnlineClassroomSession,
   TimetablePeriod, AssignmentQuestion,
   CanteenMeal, CanteenFeeParticular, CanteenMenuDay, MenuItem,
+  MessageTemplate, MessageLog, MessageChannel,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -39,6 +40,7 @@ import {
   PHOENIX_ACCOUNT_GROUPS, PHOENIX_CHART_ACCOUNTS, PHOENIX_BANK_ACCOUNTS,
   MOCK_FINANCE_TRANSACTIONS,
   PHOENIX_CANTEEN_MEALS, PHOENIX_CANTEEN_FEE_PARTICULARS, MOCK_CANTEEN_MENU_DAYS,
+  PHOENIX_MESSAGE_TEMPLATES, MOCK_MESSAGE_LOGS,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -103,6 +105,8 @@ interface AppState {
   canteenMeals: CanteenMeal[]
   canteenFeeParticulars: CanteenFeeParticular[]
   canteenMenuDays: CanteenMenuDay[]
+  messageTemplates: MessageTemplate[]
+  messageLogs: MessageLog[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -284,6 +288,21 @@ interface AppState {
   removeMenuDayItem: (dayId: string, itemId: string) => void
   resetAllCanteenBalances: () => number
 
+  // Messaging upgrade
+  addMessageTemplate: (t: Omit<MessageTemplate, 'id' | 'created_at'>) => MessageTemplate
+  updateMessageTemplate: (id: string, data: Partial<MessageTemplate>) => void
+  deleteMessageTemplate: (id: string) => void
+  sendMessage: (input: {
+    channels: MessageChannel[]
+    audience_kind: MessageLog['audience_kind']
+    audience_description: string
+    recipients: string[]
+    subject?: string
+    body: string
+    template_id?: string
+    sent_by_employee_id?: string
+  }) => MessageLog
+
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
   updateStudent: (id: string, data: Partial<Student>) => void
@@ -408,6 +427,8 @@ export const useAppStore = create<AppState>()(
       canteenMeals: PHOENIX_CANTEEN_MEALS,
       canteenFeeParticulars: PHOENIX_CANTEEN_FEE_PARTICULARS,
       canteenMenuDays: MOCK_CANTEEN_MENU_DAYS,
+      messageTemplates: PHOENIX_MESSAGE_TEMPLATES,
+      messageLogs: MOCK_MESSAGE_LOGS,
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -1427,6 +1448,43 @@ export const useAppStore = create<AppState>()(
           ],
         }))
         return count
+      },
+
+      addMessageTemplate: (t) => {
+        const id = `mt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: MessageTemplate = { ...t, id, created_at: new Date().toISOString() }
+        set((st) => ({ messageTemplates: [...st.messageTemplates, item] }))
+        return item
+      },
+      updateMessageTemplate: (id, data) => set((st) => ({
+        messageTemplates: st.messageTemplates.map((t) => t.id === id ? { ...t, ...data } : t),
+      })),
+      deleteMessageTemplate: (id) => set((st) => ({
+        messageTemplates: st.messageTemplates.filter((t) => t.id !== id),
+      })),
+      sendMessage: (input) => {
+        const id = `mlog-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        // Simulate dispatch (in real prod this would call Hubtel / email API / WhatsApp)
+        const item: MessageLog = {
+          id,
+          channel: input.channels[0] ?? 'sms',  // log primary channel; fanout would create one per channel
+          audience_kind: input.audience_kind,
+          audience_description: input.audience_description,
+          recipients: input.recipients.slice(0, 50),
+          recipient_count: input.recipients.length,
+          subject: input.subject,
+          body: input.body,
+          template_id: input.template_id,
+          status: input.recipients.length > 0 ? 'delivered' : 'failed',
+          gateway_response: input.recipients.length > 0
+            ? `Dispatched to ${input.recipients.length} recipient${input.recipients.length === 1 ? '' : 's'} via ${input.channels.join(' + ')}`
+            : 'No recipients in audience',
+          sent_at: new Date().toISOString(),
+          sent_by_employee_id: input.sent_by_employee_id,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ messageLogs: [item, ...st.messageLogs] }))
+        return item
       },
 
       nextAdmissionNumber: () => {

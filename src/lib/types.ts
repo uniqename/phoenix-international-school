@@ -455,6 +455,39 @@ export interface SchoolSettings {
   hubtel_settlement_account?: string
 }
 
+// ── Phase 13: Messaging upgrade ───────────────────────────────
+export type MessageChannel = 'sms' | 'email' | 'whatsapp'
+export type MessageAudienceKind = 'individuals' | 'students' | 'staff' | 'all_users' | 'event'
+export type MessageDeliveryStatus = 'pending' | 'delivered' | 'failed' | 'partial'
+
+export interface MessageTemplate {
+  id: string
+  name: string                          // e.g. "Welcome new admission"
+  trigger: 'manual' | 'admission' | 'payment_confirmed' | 'absent_today' | 'birthday' | 'fees_due' | 'low_credit'
+  channels: MessageChannel[]
+  subject?: string                      // for email
+  body: string                          // supports merge tokens like {{first_name}}, {{school_name}}, {{password}}
+  is_active: boolean
+  created_at: string
+}
+
+export interface MessageLog {
+  id: string
+  channel: MessageChannel
+  audience_kind: MessageAudienceKind
+  audience_description: string          // human-readable, e.g. "All parents in JHS 2"
+  recipients: string[]                  // phones/emails — limited to ~50 to keep log compact
+  recipient_count: number
+  subject?: string
+  body: string
+  template_id?: string
+  status: MessageDeliveryStatus
+  gateway_response?: string             // success/error text from provider
+  sent_at?: string
+  sent_by_employee_id?: string
+  created_at: string
+}
+
 export type SmsStatus = 'pending' | 'sent' | 'failed'
 
 export interface SmsLog {
