@@ -8,6 +8,7 @@ import type {
   GradingGroup, RemarkBank, AcademicAssessment, ReportSignatory, StudentInterest,
   EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
   AccountGroup, ChartAccount, BankAccount, FinanceTransaction,
+  CanteenMeal, CanteenFeeParticular, CanteenMenuDay,
 } from './types'
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
@@ -790,5 +791,28 @@ export const PHOENIX_BANK_ACCOUNTS: BankAccount[] = [
 ]
 
 export const MOCK_FINANCE_TRANSACTIONS: FinanceTransaction[] = []
+
+// ── Phase 12 seed: Canteen ──
+export const PHOENIX_CANTEEN_MEALS: CanteenMeal[] = [
+  { id: 'cm-jollof',       name: 'Jollof Rice',                 type: 'lunch',     price: 8,  active: true, created_at: T0 },
+  { id: 'cm-banku',        name: 'Banku & Tilapia',             type: 'lunch',     price: 12, active: true, created_at: T0 },
+  { id: 'cm-fufu',         name: 'Fufu & Groundnut Soup',       type: 'lunch',     price: 10, active: true, created_at: T0 },
+  { id: 'cm-omelette',     name: 'Omelette & Bread',            type: 'breakfast', price: 5,  active: true, created_at: T0 },
+  { id: 'cm-porridge',     name: 'Hausa Koko & Koose',          type: 'breakfast', price: 4,  active: true, created_at: T0 },
+  { id: 'cm-fruits',       name: 'Fruit Cup',                   type: 'snacks',    price: 3,  active: true, created_at: T0 },
+  { id: 'cm-meatpie',      name: 'Meat Pie',                    type: 'snacks',    price: 3,  active: true, created_at: T0 },
+  { id: 'cm-water',        name: 'Bottled Water',               type: 'snacks',    price: 1,  active: true, created_at: T0 },
+  { id: 'cm-brunch',       name: 'Indomie & Egg',               type: 'brunch',    price: 6,  active: true, created_at: T0 },
+  { id: 'cm-supper',       name: 'Rice & Stew',                 type: 'supper',    price: 7,  active: true, created_at: T0 },
+]
+
+export const PHOENIX_CANTEEN_FEE_PARTICULARS: CanteenFeeParticular[] = [
+  { id: 'cfp-feeding',         name: 'FEEDING FEE',                default_amount: 10, active: true, created_at: T0 },
+  { id: 'cfp-family-three',    name: 'FEEDING FEE - FAMILY OF THREE', default_amount: 5,  active: true, created_at: T0 },
+  { id: 'cfp-family-four',     name: 'FEEDING FEE - FAMILIY OF FOUR', default_amount: 0,  active: true, created_at: T0 },
+  { id: 'cfp-discount',        name: 'FEEDING FEE - DISCOUNT',     default_amount: 4,  active: true, created_at: T0 },
+]
+
+export const MOCK_CANTEEN_MENU_DAYS: CanteenMenuDay[] = []
 
 

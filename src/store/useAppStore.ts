@@ -19,6 +19,7 @@ import type {
   AccountGroup, ChartAccount, BankAccount, BankBranch, FinanceTransaction, TransactionStatus,
   ClassTimetable, OnlineExam, OnlineAssignment, OnlineClassroomSession,
   TimetablePeriod, AssignmentQuestion,
+  CanteenMeal, CanteenFeeParticular, CanteenMenuDay, MenuItem,
 } from '@/lib/types'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
@@ -37,6 +38,7 @@ import {
   PHOENIX_EMPLOYEE_POSITIONS, MOCK_EMPLOYEES,
   PHOENIX_ACCOUNT_GROUPS, PHOENIX_CHART_ACCOUNTS, PHOENIX_BANK_ACCOUNTS,
   MOCK_FINANCE_TRANSACTIONS,
+  PHOENIX_CANTEEN_MEALS, PHOENIX_CANTEEN_FEE_PARTICULARS, MOCK_CANTEEN_MENU_DAYS,
 } from '@/lib/mockData'
 import {
   generateReceiptNumber, generatePickupCode, getGESGrade,
@@ -98,6 +100,9 @@ interface AppState {
   onlineExams: OnlineExam[]
   onlineAssignments: OnlineAssignment[]
   classroomSessions: OnlineClassroomSession[]
+  canteenMeals: CanteenMeal[]
+  canteenFeeParticulars: CanteenFeeParticular[]
+  canteenMenuDays: CanteenMenuDay[]
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -266,6 +271,19 @@ interface AppState {
   updateClassroomSession: (id: string, data: Partial<OnlineClassroomSession>) => void
   deleteClassroomSession: (id: string) => void
 
+  // Canteen
+  addCanteenMeal: (m: Omit<CanteenMeal, 'id' | 'created_at'>) => CanteenMeal
+  updateCanteenMeal: (id: string, data: Partial<CanteenMeal>) => void
+  deleteCanteenMeal: (id: string) => void
+  addCanteenFeeParticular: (p: Omit<CanteenFeeParticular, 'id' | 'created_at'>) => CanteenFeeParticular
+  updateCanteenFeeParticular: (id: string, data: Partial<CanteenFeeParticular>) => void
+  deleteCanteenFeeParticular: (id: string) => void
+  upsertMenuDay: (m: Omit<CanteenMenuDay, 'id' | 'created_at'> & { id?: string }) => CanteenMenuDay
+  deleteMenuDay: (id: string) => void
+  addMenuDayItem: (dayId: string, item: Omit<MenuItem, 'id'>) => void
+  removeMenuDayItem: (dayId: string, itemId: string) => void
+  resetAllCanteenBalances: () => number
+
   // Students
   addStudent: (s: Omit<Student, 'id' | 'created_at'>) => void
   updateStudent: (id: string, data: Partial<Student>) => void
@@ -387,6 +405,9 @@ export const useAppStore = create<AppState>()(
       onlineExams: [],
       onlineAssignments: [],
       classroomSessions: [],
+      canteenMeals: PHOENIX_CANTEEN_MEALS,
+      canteenFeeParticulars: PHOENIX_CANTEEN_FEE_PARTICULARS,
+      canteenMenuDays: MOCK_CANTEEN_MENU_DAYS,
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -1330,6 +1351,83 @@ export const useAppStore = create<AppState>()(
       deleteClassroomSession: (id) => set((st) => ({
         classroomSessions: st.classroomSessions.filter((s) => s.id !== id),
       })),
+
+      addCanteenMeal: (m) => {
+        const id = `cm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: CanteenMeal = { ...m, id, created_at: new Date().toISOString() }
+        set((st) => ({ canteenMeals: [...st.canteenMeals, item] }))
+        return item
+      },
+      updateCanteenMeal: (id, data) => set((st) => ({
+        canteenMeals: st.canteenMeals.map((m) => m.id === id ? { ...m, ...data } : m),
+      })),
+      deleteCanteenMeal: (id) => set((st) => ({
+        canteenMeals: st.canteenMeals.filter((m) => m.id !== id),
+      })),
+      addCanteenFeeParticular: (p) => {
+        const id = `cfp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const item: CanteenFeeParticular = { ...p, id, created_at: new Date().toISOString() }
+        set((st) => ({ canteenFeeParticulars: [...st.canteenFeeParticulars, item] }))
+        return item
+      },
+      updateCanteenFeeParticular: (id, data) => set((st) => ({
+        canteenFeeParticulars: st.canteenFeeParticulars.map((p) => p.id === id ? { ...p, ...data } : p),
+      })),
+      deleteCanteenFeeParticular: (id) => set((st) => ({
+        canteenFeeParticulars: st.canteenFeeParticulars.filter((p) => p.id !== id),
+      })),
+      upsertMenuDay: (m) => {
+        const id = m.id ?? `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const existing = get().canteenMenuDays.find((x) => x.id === id)
+        const item: CanteenMenuDay = {
+          id,
+          date: m.date,
+          items: m.items,
+          notes: m.notes,
+          created_at: existing?.created_at ?? new Date().toISOString(),
+        }
+        set((st) => ({
+          canteenMenuDays: existing
+            ? st.canteenMenuDays.map((x) => x.id === id ? item : x)
+            : [...st.canteenMenuDays, item],
+        }))
+        return item
+      },
+      deleteMenuDay: (id) => set((st) => ({
+        canteenMenuDays: st.canteenMenuDays.filter((m) => m.id !== id),
+      })),
+      addMenuDayItem: (dayId, item) => set((st) => ({
+        canteenMenuDays: st.canteenMenuDays.map((d) => d.id !== dayId ? d : {
+          ...d,
+          items: [...d.items, { ...item, id: `mi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` }],
+        }),
+      })),
+      removeMenuDayItem: (dayId, itemId) => set((st) => ({
+        canteenMenuDays: st.canteenMenuDays.map((d) => d.id !== dayId ? d : {
+          ...d,
+          items: d.items.filter((i) => i.id !== itemId),
+        }),
+      })),
+      resetAllCanteenBalances: () => {
+        const wallets = get().canteenWallets
+        const count = wallets.length
+        set((st) => ({
+          canteenWallets: st.canteenWallets.map((w) => ({ ...w, balance: 0, updated_at: new Date().toISOString().split('T')[0] })),
+          canteenTransactions: [
+            ...wallets.map((w) => ({
+              id: `ct-reset-${Date.now()}-${w.student_id}`,
+              student_id: w.student_id,
+              student_name: w.student_name,
+              amount: w.balance,
+              type: 'debit' as const,
+              description: 'Term reset (admin)',
+              created_at: new Date().toISOString(),
+            })),
+            ...st.canteenTransactions,
+          ],
+        }))
+        return count
+      },
 
       nextAdmissionNumber: () => {
         const students = get().students

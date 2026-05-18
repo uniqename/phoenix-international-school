@@ -226,6 +226,41 @@ export interface OnlineAssignment {
   created_at: string
 }
 
+// ── Phase 12: Canteen module ──────────────────────────────────
+export type MealType = 'breakfast' | 'snacks' | 'brunch' | 'lunch' | 'supper'
+
+export interface CanteenMeal {
+  id: string
+  name: string                          // e.g. "Jollof Rice"
+  type: MealType
+  description?: string
+  price?: number                        // default price; per-day menu can override
+  active: boolean
+  created_at: string
+}
+
+export interface CanteenFeeParticular {
+  id: string
+  name: string                          // e.g. "FEEDING FEE - FAMILY OF THREE"
+  default_amount: number
+  active: boolean
+  created_at: string
+}
+
+export interface MenuItem {
+  id: string
+  meal_id: string
+  override_price?: number
+}
+
+export interface CanteenMenuDay {
+  id: string
+  date: string                          // YYYY-MM-DD
+  items: MenuItem[]                     // meals offered that day
+  notes?: string
+  created_at: string
+}
+
 export type ClassroomSessionKind = 'live' | 'recorded' | 'discussion'
 
 export interface OnlineClassroomSession {

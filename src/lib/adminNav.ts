@@ -19,6 +19,7 @@ export const ADMIN_NAV = [
   { icon: "💼", label: "Payroll",        href: "/admin/payroll" },
   { icon: "📡", label: "Attendance",     href: "/admin/attendance" },
   { icon: "🏦", label: "Canteen Wallet", href: "/admin/canteen" },
+  { icon: "🍱", label: "Canteen",        href: "/admin/canteen-module" },
   { icon: "🏫", label: "Classes & Subjects", href: "/admin/classes" },
   { icon: "📅", label: "Academic Calendar", href: "/admin/calendar" },
   { icon: "🕘", label: "Timetable",         href: "/admin/timetable" },
