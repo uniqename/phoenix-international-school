@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 // Admin library — catalog management + issue / return tracking.
 // Three tabs: 📖 Catalog, 📤 Issue book, 🔁 Active loans.
 
-type Tab = "catalog" | "issue" | "loans";
+type Tab = "catalog" | "issue" | "loans" | "stats";
 
 export default function AdminLibraryPage() {
   const { user } = useAuth();
@@ -90,8 +90,8 @@ export default function AdminLibraryPage() {
             {overdueCount > 0 && <> · <span className="text-amber-400 font-bold">{overdueCount} overdue</span></>}
           </p>
         </div>
-        <div className="flex gap-1.5">
-          {(["catalog", "issue", "loans"] as const).map((t) => (
+        <div className="flex gap-1.5 flex-wrap">
+          {(["catalog", "issue", "loans", "stats"] as const).map((t) => (
             <button key={t} type="button" onClick={() => setTab(t)}
               className="text-xs font-bold px-3 py-1.5 rounded-full"
               style={{
@@ -99,7 +99,7 @@ export default function AdminLibraryPage() {
                 color: tab === t ? "white" : "rgba(196,181,253,0.85)",
                 border: `1px solid ${tab === t ? "#1A0E4D" : "rgba(255,255,255,0.12)"}`,
               }}>
-              {t === "catalog" ? `📖 Catalog (${books.length})` : t === "issue" ? "📤 Issue book" : `🔁 On loan (${activeLoans.length})`}
+              {t === "catalog" ? `📖 Catalog (${books.length})` : t === "issue" ? "📤 Issue book" : t === "loans" ? `🔁 On loan (${activeLoans.length})` : "📊 Stats"}
             </button>
           ))}
         </div>
@@ -276,6 +276,48 @@ export default function AdminLibraryPage() {
             </div>
           )}
         </>
+      )}
+
+      {tab === "stats" && (
+        <div className="space-y-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="glass rounded-2xl p-4 text-center">
+              <div className="text-2xl font-black text-white">{books.length}</div>
+              <div className="text-xs text-gray-400 mt-1">Titles in catalog</div>
+            </div>
+            <div className="glass rounded-2xl p-4 text-center">
+              <div className="text-2xl font-black text-emerald-400">{activeLoans.length}</div>
+              <div className="text-xs text-gray-400 mt-1">Currently on loan</div>
+            </div>
+            <div className="glass rounded-2xl p-4 text-center">
+              <div className="text-2xl font-black text-orange-400">{overdueCount}</div>
+              <div className="text-xs text-gray-400 mt-1">Overdue books</div>
+            </div>
+            <div className="glass rounded-2xl p-4 text-center">
+              <div className="text-2xl font-black text-blue-400">{books.reduce((sum, b) => sum + b.copies_total, 0)}</div>
+              <div className="text-xs text-gray-400 mt-1">Total copies</div>
+            </div>
+          </div>
+
+          <div className="glass rounded-2xl p-5">
+            <h3 className="font-bold text-white mb-3">📊 Most Borrowed Books</h3>
+            <div className="space-y-2">
+              {books
+                .map((b) => ({ ...b, borrowed: loans.filter((l) => l.book_id === b.id && l.status === "returned").length }))
+                .sort((a, b) => b.borrowed - a.borrowed)
+                .slice(0, 5)
+                .map((b, idx) => (
+                  <div key={b.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-800">
+                    <div>
+                      <p className="text-sm font-bold text-white">{idx + 1}. {b.title}</p>
+                      <p className="text-[11px] text-gray-400">{b.author ?? "—"}</p>
+                    </div>
+                    <span className="text-xs font-bold text-blue-400">{b.borrowed} times</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
       )}
     </DashboardShell>
   );
