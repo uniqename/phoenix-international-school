@@ -384,6 +384,7 @@ interface AppState {
   addComment: (postId: string, comment: Omit<FeedComment, 'id' | 'post_id' | 'created_at'>) => FeedComment
   deleteComment: (commentId: string) => void
   editComment: (commentId: string, body: string) => void
+  toggleCommentReaction: (commentId: string, emoji: string, userId: string) => void
 
   // Phase 15f: bus tracking
   addBusRoute: (r: Omit<BusRoute, 'id' | 'created_at'>) => BusRoute
@@ -448,6 +449,11 @@ interface AppState {
 
   // BECE
   recordBECEAttempt: (studentId: string, subject: string, score: number, total: number) => void
+
+  // Student Engagement & Achievements
+  getOrCreateStudentEngagement: (studentId: string) => StudentEngagement
+  recordPracticeAttempt: (studentId: string) => void
+  awardAchievement: (studentId: string, badgeType: 'perfect_attendance_5' | 'perfect_attendance_30' | 'homework_100' | 'great_grades_a' | 'practice_streak_7' | 'practice_streak_30') => void
 
   // Staff
   addTeacher: (t: Omit<Teacher, 'id'>) => void
@@ -2164,6 +2170,35 @@ export const useAppStore = create<AppState>()(
         feedComments: st.feedComments.map((c) =>
           c.id === commentId ? { ...c, body } : c,
         ),
+      })),
+
+      toggleCommentReaction: (commentId, emoji, userId) => set((st) => ({
+        feedComments: st.feedComments.map((c) => {
+          if (c.id !== commentId) return c
+          const reactions = c.reactions ?? []
+          const reactionIdx = reactions.findIndex((r) => r.emoji === emoji)
+          if (reactionIdx === -1) {
+            return { ...c, reactions: [...reactions, { emoji, users: [userId] }] }
+          }
+          const reaction = reactions[reactionIdx]
+          const userIdx = reaction.users.indexOf(userId)
+          if (userIdx === -1) {
+            return {
+              ...c,
+              reactions: reactions.map((r, i) =>
+                i === reactionIdx ? { ...r, users: [...r.users, userId] } : r
+              ),
+            }
+          }
+          return {
+            ...c,
+            reactions: reactions.map((r, i) =>
+              i === reactionIdx
+                ? { ...r, users: r.users.filter((u) => u !== userId) }
+                : r
+            ).filter((r) => r.users.length > 0),
+          }
+        }),
       })),
 
       getOrCreateChatThread: (input) => {

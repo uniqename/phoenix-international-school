@@ -44,6 +44,9 @@ export default function StudentPortal() {
   const deleteComment = useAppStore((s) => s.deleteComment);
   const homeworkSubmissions = useAppStore((s) => s.homeworkSubmissions);
   const submitHomeworkFn    = useAppStore((s) => s.submitHomework);
+  const studentEngagements = useAppStore((s) => s.studentEngagements);
+  const getOrCreateStudentEngagement = useAppStore((s) => s.getOrCreateStudentEngagement);
+  const toggleCommentReaction = useAppStore((s) => s.toggleCommentReaction);
 
   const [pendingFiles, setPendingFiles] = useState<Record<string, File | null>>({});
   const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
@@ -277,6 +280,54 @@ export default function StudentPortal() {
         </div>
       )}
 
+      {/* Engagement & Achievements */}
+      {student && (() => {
+        const engagement = getOrCreateStudentEngagement(student.id);
+        return (
+          <div className="glass rounded-2xl p-5 mb-5">
+            <h3 className="font-black text-gray-900 mb-4">🎮 Your Learning Streak</h3>
+            <div className="grid sm:grid-cols-3 gap-4 mb-4">
+              {/* Streak Counter */}
+              <div className="p-4 rounded-xl text-center" style={{ background: "rgba(234,179,8,0.08)" }}>
+                <div className="text-3xl font-black text-amber-600 mb-1">{engagement.practice_streak}</div>
+                <div className="text-xs font-bold text-gray-600">Day Streak</div>
+                <div className="text-[10px] text-gray-500 mt-1">Keep it up!</div>
+              </div>
+              {/* Total Points */}
+              <div className="p-4 rounded-xl text-center" style={{ background: "rgba(168,85,247,0.08)" }}>
+                <div className="text-3xl font-black text-purple-600 mb-1">{engagement.total_points}</div>
+                <div className="text-xs font-bold text-gray-600">Points Earned</div>
+                <div className="text-[10px] text-gray-500 mt-1">Practice & achieve</div>
+              </div>
+              {/* Homework Stats */}
+              <div className="p-4 rounded-xl text-center" style={{ background: "rgba(59,130,246,0.08)" }}>
+                <div className="text-3xl font-black text-blue-600 mb-1">{engagement.homework_submitted_count}</div>
+                <div className="text-xs font-bold text-gray-600">Homework Done</div>
+                <div className="text-[10px] text-gray-500 mt-1">{engagement.homework_on_time_count} on time</div>
+              </div>
+            </div>
+            {/* Badges */}
+            {engagement.achievements.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">Unlocked Badges</p>
+                <div className="flex flex-wrap gap-2">
+                  {engagement.achievements.map((a) => (
+                    <div key={a.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                      style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)" }}>
+                      <span className="text-lg">{a.emoji}</span>
+                      <div className="text-[10px]">
+                        <div className="font-bold text-gray-900">{a.badge_name}</div>
+                        <div className="text-gray-600">{a.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* My gate check-in code — show this at the school gate every morning */}
       {student && (
         <div className="glass rounded-2xl p-5 mb-5 flex items-center gap-4 flex-wrap">
@@ -394,6 +445,7 @@ export default function StudentPortal() {
                     }
                   }}
                   onDeleteComment={deleteComment}
+                  onToggleReaction={toggleCommentReaction}
                   currentUserId={user?.id}
                   currentUserRole={user?.role}
                   currentUserName={user?.full_name}

@@ -8,6 +8,7 @@ interface CommentSectionProps {
   comments: FeedComment[];
   onAddComment: (body: string) => void;
   onDeleteComment: (commentId: string) => void;
+  onToggleReaction?: (commentId: string, emoji: string, userId: string) => void;
   currentUserId?: string;
   currentUserRole?: UserRole;
   currentUserName?: string;
@@ -18,6 +19,7 @@ export default function CommentSection({
   comments,
   onAddComment,
   onDeleteComment,
+  onToggleReaction,
   currentUserId,
   currentUserRole,
   currentUserName,
@@ -118,24 +120,69 @@ export default function CommentSection({
                       minute: "2-digit",
                     })}
                   </span>
+                  {/* Reactions */}
+                  {(comment.reactions?.length ?? 0) > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {comment.reactions!.map((reaction) => {
+                        const isLiked = reaction.users.includes(currentUserId || '');
+                        return (
+                          <button
+                            key={reaction.emoji}
+                            type="button"
+                            onClick={() => {
+                              if (currentUserId && onToggleReaction) {
+                                onToggleReaction(comment.id, reaction.emoji, currentUserId);
+                              }
+                            }}
+                            className={`px-2 py-1 rounded-full text-xs font-bold transition ${
+                              isLiked
+                                ? 'bg-purple-100 border-purple-300'
+                                : 'bg-gray-100 border-gray-300'
+                            } border hover:bg-purple-100`}
+                          >
+                            {reaction.emoji} {reaction.users.length}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 {currentUserId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (
-                        confirm(
-                          "Delete this comment? This cannot be undone."
-                        )
-                      ) {
-                        onDeleteComment(comment.id);
-                        toast.success("Comment deleted");
-                      }
-                    }}
-                    className="text-xs text-red-500 hover:text-red-700 transition flex-shrink-0"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex gap-1 flex-shrink-0 flex-col items-end">
+                    <div className="flex gap-1">
+                      {['👍', '❤️', '😂'].map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            if (onToggleReaction) {
+                              onToggleReaction(comment.id, emoji, currentUserId);
+                            }
+                          }}
+                          className="text-lg hover:scale-125 transition"
+                          title={`React with ${emoji}`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Delete this comment? This cannot be undone."
+                          )
+                        ) {
+                          onDeleteComment(comment.id);
+                          toast.success("Comment deleted");
+                        }
+                      }}
+                      className="text-xs text-red-500 hover:text-red-700 transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

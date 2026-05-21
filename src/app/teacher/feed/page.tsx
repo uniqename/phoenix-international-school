@@ -15,6 +15,7 @@ export default function TeacherFeedPage() {
   const feedComments = useAppStore((s) => s.feedComments);
   const addComment = useAppStore((s) => s.addComment);
   const deleteComment = useAppStore((s) => s.deleteComment);
+  const toggleCommentReaction = useAppStore((s) => s.toggleCommentReaction);
   const { user }     = useAuth();
 
   const [showModal, setShowModal] = useState(false);
@@ -119,6 +120,7 @@ export default function TeacherFeedPage() {
                     }
                   }}
                   onDeleteComment={deleteComment}
+                  onToggleReaction={toggleCommentReaction}
                   currentUserId={user?.id}
                   currentUserRole={user?.role}
                   currentUserName={user?.full_name}

@@ -1065,6 +1065,11 @@ export interface FeedPost {
   rejection_reason?: string
 }
 
+export interface CommentReaction {
+  emoji: string
+  users: string[]  // user IDs who reacted with this emoji
+}
+
 export interface FeedComment {
   id: string
   post_id: string
@@ -1072,6 +1077,7 @@ export interface FeedComment {
   author_role?: 'admin' | 'teacher' | 'parent' | 'principal' | 'student'
   body: string
   created_at: string
+  reactions?: CommentReaction[]
 }
 
 // ── Phase 15c: parent-teacher chat ──

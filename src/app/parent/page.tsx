@@ -46,6 +46,7 @@ export default function ParentPortal() {
   const feedComments          = useAppStore((s) => s.feedComments);
   const addComment            = useAppStore((s) => s.addComment);
   const deleteComment         = useAppStore((s) => s.deleteComment);
+  const toggleCommentReaction = useAppStore((s) => s.toggleCommentReaction);
   const announcements         = useAppStore((s) => s.announcements);
   const getOrCreatePickupCode = useAppStore((s) => s.getOrCreatePickupCode);
   const teachers              = useAppStore((s) => s.teachers);
@@ -943,6 +944,7 @@ export default function ParentPortal() {
                       }
                     }}
                     onDeleteComment={deleteComment}
+                    onToggleReaction={toggleCommentReaction}
                     currentUserId={user?.id}
                     currentUserRole={user?.role}
                     currentUserName={user?.full_name}
