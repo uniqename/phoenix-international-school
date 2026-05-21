@@ -202,6 +202,26 @@ export default function ParentPortal() {
   const liveBusNextStop = busStops.find((s) => s.id === liveBusRun?.next_stop_id);
   const liveBusCurrentStop = busStops.find((s) => s.id === liveBusRun?.current_stop_id);
 
+  const busEta = useMemo(() => {
+    if (!liveBusNextStop?.scheduled_pickup || liveBusRun?.direction !== "pickup") return null;
+    const [hh, mm] = liveBusNextStop.scheduled_pickup.split(':').map(Number);
+    const scheduled = new Date();
+    scheduled.setHours(hh, mm, 0);
+    const now = new Date();
+    const minutes = Math.round((scheduled.getTime() - now.getTime()) / 60000);
+    return minutes > 0 ? minutes : null;
+  }, [liveBusNextStop, liveBusRun?.direction]);
+
+  const pingDriver = useAppStore((s) => s.pingDriver);
+  const [busAlertSent, setBusAlertSent] = useState(false);
+  const sendBusAlert = () => {
+    if (!liveBusRoute?.id) return;
+    pingDriver(liveBusRoute.id, user?.full_name ?? "Parent", "🆘 Parent needs immediate driver assistance");
+    setBusAlertSent(true);
+    toast.success("Alert sent to driver — they've been notified of your urgent request.");
+    setTimeout(() => setBusAlertSent(false), 3000);
+  };
+
   // Pay modal — can be opened from any fee row or the global button
   const [payModal, setPayModal] = useState(false);
   const [targetFee, setTargetFee] = useState<Fee | null>(null);
@@ -232,6 +252,9 @@ export default function ParentPortal() {
 
   // Chat search state
   const [chatSearch, setChatSearch] = useState("");
+
+  // Fee view state
+  const [feeViewMode, setFeeViewMode] = useState<'list' | 'calendar'>('list');
 
   // Excuse-from-school form state
   const submitExcuseRequest = useAppStore((s) => s.submitExcuseRequest);
@@ -292,6 +315,8 @@ export default function ParentPortal() {
   const [payForm, setPayForm] = useState<{
     amount: string; method: Payment["method"]; reference: string;
   }>({ amount: "", method: "mtn_momo", reference: "" });
+  const [paymentPlan, setPaymentPlan] = useState<{ enabled: boolean; installments: 2 | 3 | 4 }>({ enabled: false, installments: 3 });
+  const createPaymentPlan = useAppStore((s) => s.createPaymentPlan);
 
   const childFees       = fees.filter((f) => f.student_id === child?.id);
   const childPayments   = payments.filter((p) => p.student_id === child?.id)
@@ -323,6 +348,31 @@ export default function ParentPortal() {
     const amt = parseFloat(payForm.amount);
     if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
     if (!child) return;
+
+    if (paymentPlan.enabled) {
+      const perInstallment = Math.round((amt / paymentPlan.installments) * 100) / 100;
+      const planId = `pp-${Date.now()}`;
+      const today = new Date();
+      const installments = Array.from({ length: paymentPlan.installments }, (_, i) => {
+        const dueDate = new Date(today);
+        dueDate.setDate(dueDate.getDate() + (i + 1) * 30);
+        return {
+          id: `ppi-${Date.now()}-${i}`,
+          plan_id: planId,
+          amount: i === paymentPlan.installments - 1 ? amt - (perInstallment * (paymentPlan.installments - 1)) : perInstallment,
+          due_date: dueDate.toISOString().split('T')[0],
+        };
+      });
+      createPaymentPlan({
+        student_id: child.id,
+        fee_id: targetFee?.id,
+        total_amount: amt,
+        installments,
+      } as any);
+      toast.success(`📅 Payment plan created: ${paymentPlan.installments} installments of ~${formatGHS(perInstallment)} each`);
+      setPayModal(false);
+      return;
+    }
 
     const goesViaGateway = payForm.method === "mtn_momo"
       || payForm.method === "telecel"
@@ -418,7 +468,6 @@ export default function ParentPortal() {
         hubtel_invoice_id: result.invoiceId,
         hubtel_checkout_url: result.checkoutUrl,
       });
-      // For MoMo, Hubtel pushes a prompt to the customer's phone; for card/bank it opens a checkout page.
       if (result.checkoutUrl && typeof window !== "undefined") {
         window.open(result.checkoutUrl, "_blank", "noopener");
       }
@@ -427,7 +476,6 @@ export default function ParentPortal() {
       return;
     }
 
-    // Cash / fallback path — admin will reconcile and confirm.
     recordPayment(child.id, amt, payForm.method, payForm.reference || undefined);
     toast.success(`Payment of ${formatGHS(amt)} recorded — admin will confirm receipt.`);
     setPayModal(false);
@@ -606,13 +654,35 @@ export default function ParentPortal() {
 
       {/* ── Fees & Payments ── */}
       <div id="fees" className="glass rounded-2xl p-5 mb-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="font-black text-gray-900">💳 Fees &amp; Payments</h3>
-          <button type="button" onClick={() => openPay()}
-            className="text-xs font-bold px-4 py-2 rounded-xl"
-            style={{ background: "linear-gradient(135deg,#1A3FA0,#6B21A8)", color: "white" }}>
-            + Make Payment
-          </button>
+          <div className="flex gap-2">
+            <div className="flex gap-1.5">
+              <button type="button"
+                onClick={() => setFeeViewMode('list')}
+                className="text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all"
+                style={{
+                  background: feeViewMode === 'list' ? "#003087" : "rgba(0,48,135,0.07)",
+                  color: feeViewMode === 'list' ? "white" : "#003087",
+                }}>
+                📋 List
+              </button>
+              <button type="button"
+                onClick={() => setFeeViewMode('calendar')}
+                className="text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all"
+                style={{
+                  background: feeViewMode === 'calendar' ? "#003087" : "rgba(0,48,135,0.07)",
+                  color: feeViewMode === 'calendar' ? "white" : "#003087",
+                }}>
+                📅 Calendar
+              </button>
+            </div>
+            <button type="button" onClick={() => openPay()}
+              className="text-xs font-bold px-4 py-1.5 rounded-xl"
+              style={{ background: "linear-gradient(135deg,#1A3FA0,#6B21A8)", color: "white" }}>
+              + Pay
+            </button>
+          </div>
         </div>
 
         {/* Summary totals */}
@@ -630,10 +700,10 @@ export default function ParentPortal() {
           ))}
         </div>
 
-        {/* Fee rows */}
+        {/* Fee rows — list or calendar view */}
         {childFees.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-3">No fees set yet.</p>
-        ) : (
+        ) : feeViewMode === 'list' ? (
           <div className="space-y-2 mb-4">
             {childFees.map((f) => {
               const bal = f.amount - f.paid_amount;
@@ -673,6 +743,47 @@ export default function ParentPortal() {
                 </div>
               );
             })}
+          </div>
+        ) : (
+          <div className="mb-4 overflow-x-auto">
+            <div className="grid grid-cols-7 gap-1 min-w-full">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                <div key={d} className="text-center text-[10px] font-bold text-gray-500 py-1">{d}</div>
+              ))}
+              {(() => {
+                const feesByDate: Record<string, typeof childFees> = {};
+                childFees.forEach((f) => {
+                  if (f.due_date) {
+                    if (!feesByDate[f.due_date]) feesByDate[f.due_date] = [];
+                    feesByDate[f.due_date].push(f);
+                  }
+                });
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth();
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const days = [];
+                for (let i = 0; i < firstDay; i++) days.push(null);
+                for (let i = 1; i <= daysInMonth; i++) days.push(i);
+                return days.map((day, idx) => {
+                  if (day === null) return <div key={`empty-${idx}`}></div>;
+                  const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const feesOnDay = feesByDate[dateStr] || [];
+                  return (
+                    <div key={day} className="p-1 rounded-lg text-center min-h-12 text-[10px] border"
+                      style={{ background: feesOnDay.length > 0 ? "rgba(239,68,68,0.08)" : "rgba(0,0,0,0.02)", borderColor: feesOnDay.length > 0 ? "rgba(239,68,68,0.25)" : "#e5e7eb" }}>
+                      <div className="font-bold text-gray-700">{day}</div>
+                      {feesOnDay.length > 0 && (
+                        <div className="text-[9px] text-red-700 font-bold mt-0.5">
+                          {feesOnDay.length > 1 ? `${feesOnDay.length} fees` : `${formatGHS(feesOnDay[0].amount - feesOnDay[0].paid_amount)}`}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
           </div>
         )}
 
@@ -1081,39 +1192,62 @@ export default function ParentPortal() {
           <div className="space-y-2">
             <div className="rounded-xl p-3"
               style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)" }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-emerald-800">{liveBusRoute?.name ?? "Bus run"}</span>
-                <span className="text-[10px] text-emerald-700">
-                  {liveBusRun.direction === "pickup" ? "🌅 Morning pickup" : "🌇 Afternoon drop-off"}
-                </span>
-              </div>
-              {liveBusCurrentStop && !liveBusNextStop ? (
-                <p className="text-sm text-gray-700">
-                  Currently at <span className="font-bold">{liveBusCurrentStop.name}</span>
-                </p>
-              ) : liveBusNextStop ? (
-                <p className="text-sm text-gray-700">
-                  Next stop: <span className="font-bold">{liveBusNextStop.name}</span>
-                  {liveBusNextStop.scheduled_pickup && liveBusRun.direction === "pickup" && (
-                    <span className="text-xs text-gray-500"> · scheduled {liveBusNextStop.scheduled_pickup}</span>
+              <div className="flex items-start justify-between mb-2 gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-emerald-800">{liveBusRoute?.name ?? "Bus run"}</span>
+                    <span className="text-[10px] text-emerald-700">
+                      {liveBusRun.direction === "pickup" ? "🌅 Morning pickup" : "🌇 Afternoon drop-off"}
+                    </span>
+                  </div>
+                  {liveBusCurrentStop && !liveBusNextStop ? (
+                    <p className="text-sm text-gray-700">
+                      Currently at <span className="font-bold">{liveBusCurrentStop.name}</span>
+                    </p>
+                  ) : liveBusNextStop ? (
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Next stop: <span className="font-bold">{liveBusNextStop.name}</span>
+                      </p>
+                      {liveBusNextStop.scheduled_pickup && liveBusRun.direction === "pickup" && (
+                        <p className="text-xs text-emerald-700 font-bold mt-0.5">
+                          {busEta !== null ? `⏱️ ETA ~${busEta} min` : `Scheduled ${liveBusNextStop.scheduled_pickup}`}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-700">All stops complete — bus heading back to school 🏫</p>
                   )}
-                </p>
-              ) : (
-                <p className="text-sm text-gray-700">All stops complete — bus heading back to school 🏫</p>
-              )}
-              <p className="text-[10px] text-gray-400 mt-1">
+                </div>
+                {liveBusRoute?.driver_photo_url && (
+                  <img src={liveBusRoute.driver_photo_url} alt="Driver"
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-emerald-400" />
+                )}
+              </div>
+              <p className="text-[10px] text-gray-400">
                 Last update {liveBusRun.current_ping_at ? new Date(liveBusRun.current_ping_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "just now"}
                 {liveBusRoute?.driver_name && ` · Driver ${liveBusRoute.driver_name}`}
                 {liveBusRoute?.bus_label && ` · ${liveBusRoute.bus_label}`}
               </p>
             </div>
-            {liveBusRoute?.driver_phone && (
-              <a href={`tel:${liveBusRoute.driver_phone}`}
-                className="block w-full text-center text-xs font-bold py-2 rounded-xl"
-                style={{ background: "rgba(26,14,77,0.06)", color: "#1A0E4D", border: "1px solid rgba(26,14,77,0.15)" }}>
-                📞 Call driver — {liveBusRoute.driver_phone}
-              </a>
-            )}
+            <div className="flex gap-2 flex-wrap">
+              {liveBusRoute?.driver_phone && (
+                <a href={`tel:${liveBusRoute.driver_phone}`}
+                  className="flex-1 text-center text-xs font-bold py-2 rounded-xl"
+                  style={{ background: "rgba(26,14,77,0.06)", color: "#1A0E4D", border: "1px solid rgba(26,14,77,0.15)" }}>
+                  📞 Call driver
+                </a>
+              )}
+              <button type="button" onClick={sendBusAlert} disabled={busAlertSent}
+                className="flex-1 text-xs font-bold py-2 rounded-xl transition-all"
+                style={{
+                  background: busAlertSent ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
+                  color: busAlertSent ? "#22c55e" : "#ef4444",
+                  border: busAlertSent ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(239,68,68,0.3)",
+                }}>
+                {busAlertSent ? "✅ Alert sent" : "🆘 Alert driver"}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1388,16 +1522,46 @@ export default function ParentPortal() {
               </div>
 
               <div>
+                <label className="flex items-center gap-2 cursor-pointer mb-2">
+                  <input type="checkbox" checked={paymentPlan.enabled}
+                    onChange={(e) => setPaymentPlan((p) => ({ ...p, enabled: e.target.checked }))}
+                    className="rounded w-4 h-4" />
+                  <span className="text-xs font-bold text-gray-700">Split into installments</span>
+                </label>
+                {paymentPlan.enabled && (
+                  <div className="flex gap-2 mb-2">
+                    {[2, 3, 4].map((n) => (
+                      <button key={n} type="button"
+                        onClick={() => setPaymentPlan((p) => ({ ...p, installments: n as 2 | 3 | 4 }))}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex-1"
+                        style={{
+                          background: paymentPlan.installments === n ? "#003087" : "rgba(0,48,135,0.07)",
+                          color: paymentPlan.installments === n ? "white" : "#003087",
+                          border: paymentPlan.installments === n ? "1px solid #003087" : "1px solid rgba(0,48,135,0.2)",
+                        }}>
+                        {n}x
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Payment Method</label>
                 <select aria-label="Payment method" value={payForm.method}
                   onChange={(e) => setPayForm((p) => ({ ...p, method: e.target.value as Payment["method"] }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none">
+                  disabled={paymentPlan.enabled}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none disabled:opacity-50"
+                  style={paymentPlan.enabled ? { background: "#f3f4f6" } : {}}>
                   <option value="mtn_momo">📱 MTN MoMo</option>
                   <option value="telecel">📱 Telecel Cash</option>
                   <option value="at_money">📱 AT Money</option>
                   <option value="cash">💵 Cash at School</option>
                   <option value="bank">🏦 Bank Transfer</option>
                 </select>
+                {paymentPlan.enabled && (
+                  <p className="text-[10px] text-gray-500 mt-1">💳 Payment method locked for installment plans</p>
+                )}
               </div>
               {payForm.method === "bank" && (
                 <div className="rounded-xl p-3 text-xs space-y-1"
