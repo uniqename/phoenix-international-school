@@ -5,6 +5,7 @@ import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
 import { CLASSES, LEVEL_NAMES } from "@/lib/utils";
 import type { Student, StudentLevel, BloodGroup } from "@/lib/types";
+import ProfilePhotoUploader from "@/components/ProfilePhotoUploader";
 import toast from "react-hot-toast";
 
 
@@ -155,8 +156,21 @@ export default function StudentsPage() {
                 return (
                   <tr key={s.id} className="table-row border-t border-gray-50">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900">{s.full_name}</div>
-                      <div className="text-xs text-gray-400">{s.gender} · {s.dob ?? "—"}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                          style={{ background: "rgba(0,48,135,0.08)" }}>
+                          {s.photo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={s.photo_url} alt={s.full_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{s.gender === "female" ? "👧" : "👦"}</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">{s.full_name}</div>
+                          <div className="text-xs text-gray-400">{s.gender} · {s.dob ?? "—"}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.student_id}</td>
                     <td className="px-4 py-3">
@@ -382,12 +396,15 @@ export default function StudentsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm">
             <div className="text-center mb-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3"
-                style={{ background: "rgba(0,48,135,0.08)" }}>
-                {viewing.gender === "female" ? "👧" : "👦"}
+              <div className="mx-auto mb-3 inline-block">
+                <ProfilePhotoUploader studentId={viewing.id}
+                  currentUrl={viewing.photo_url}
+                  fallbackEmoji={viewing.gender === "female" ? "👧" : "👦"}
+                  size={80} rounded="2xl" />
               </div>
               <h3 className="font-black text-gray-900 text-lg">{viewing.full_name}</h3>
               <p className="text-xs text-gray-400 font-mono">{viewing.student_id}</p>
+              <p className="text-[10px] text-gray-500 mt-1">📷 Tap the gold button to take or upload a photo</p>
             </div>
             {[
               ["Class", viewing.class_name], ["Level", LEVEL_NAMES[viewing.level]],

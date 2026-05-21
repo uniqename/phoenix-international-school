@@ -16,11 +16,7 @@ export default function SettingsPage() {
     phones: settings.phones.join(", "),
     email: settings.email,
     website: settings.website ?? "",
-    sms_provider: settings.sms_provider,
-    sms_sender_id: settings.sms_sender_id ?? "",
-    sms_alert_threshold: settings.sms_alert_threshold,
-    hubtel_client_id: settings.hubtel_client_id ?? "",
-    hubtel_client_secret: settings.hubtel_client_secret ?? "",
+    // Hubtel SMS retired — kept as no-op so persisted settings still satisfy the type.
     hubtel_payments_merchant_id: settings.hubtel_payments_merchant_id ?? "",
     hubtel_settlement_bank: settings.hubtel_settlement_bank ?? "",
     hubtel_settlement_account: settings.hubtel_settlement_account ?? "",
@@ -28,6 +24,9 @@ export default function SettingsPage() {
     paystack_public_key: settings.paystack_public_key ?? "",
     paystack_secret_key: settings.paystack_secret_key ?? "",
     paystack_subaccount_code: settings.paystack_subaccount_code ?? "",
+    ai_drafting_enabled: settings.ai_drafting_enabled !== false,
+    anthropic_api_key: settings.anthropic_api_key ?? "",
+    ai_model: settings.ai_model ?? "claude-opus-4-7",
   });
 
   const onSave = () => {
@@ -50,11 +49,7 @@ export default function SettingsPage() {
       phones,
       email: form.email.trim(),
       website: form.website.trim() || undefined,
-      sms_provider: form.sms_provider,
-      sms_sender_id: form.sms_sender_id.trim() || undefined,
-      sms_alert_threshold: Number(form.sms_alert_threshold) || 10,
-      hubtel_client_id: form.hubtel_client_id.trim() || undefined,
-      hubtel_client_secret: form.hubtel_client_secret.trim() || undefined,
+      // Hubtel SMS fields removed; app now uses in-app push notifications.
       hubtel_payments_merchant_id: form.hubtel_payments_merchant_id.trim() || undefined,
       hubtel_settlement_bank: form.hubtel_settlement_bank.trim() || undefined,
       hubtel_settlement_account: form.hubtel_settlement_account.trim() || undefined,
@@ -62,6 +57,9 @@ export default function SettingsPage() {
       paystack_public_key: form.paystack_public_key.trim() || undefined,
       paystack_secret_key: form.paystack_secret_key.trim() || undefined,
       paystack_subaccount_code: form.paystack_subaccount_code.trim() || undefined,
+      ai_drafting_enabled: form.ai_drafting_enabled,
+      anthropic_api_key: form.anthropic_api_key.trim() || undefined,
+      ai_model: form.ai_model.trim() || undefined,
     });
     toast.success("School settings saved");
   };
@@ -152,88 +150,103 @@ export default function SettingsPage() {
               </p>
             </div>
           )}
+
         </section>
 
-        <section className="glass rounded-2xl p-5 space-y-4">
-          <h2 className="font-semibold">SMS / Messaging</h2>
-          <Field label="Provider">
-            <select
-              className="input"
-              value={form.sms_provider}
-              onChange={(e) => setForm({ ...form, sms_provider: e.target.value as typeof form.sms_provider })}
-            >
-              <option value="hubtel">Hubtel</option>
-              <option value="mnotify">mNotify</option>
-              <option value="arkesel">Arkesel</option>
-              <option value="none">None (in-app + email only)</option>
-            </select>
-          </Field>
-          {form.sms_provider === "none" && (
-            <div className="rounded-lg border bg-gray-50 border-gray-200 p-3 text-xs text-gray-700">
-              <p className="font-semibold mb-1">No SMS today — announcements stay in-app + email</p>
-              <p>
-                Parents see notices when they open the app. To send SMS (e.g. fee reminders, attendance alerts) switch this back to Hubtel and add credentials below once your Hubtel KYC is approved.
-              </p>
-            </div>
-          )}
-          <Field label="Sender ID (registered with provider)">
-            <input className="input" value={form.sms_sender_id} onChange={(e) => setForm({ ...form, sms_sender_id: e.target.value })} placeholder="PHOENIX" />
-          </Field>
-          <Field label="Low-credit alert threshold (GHS)">
-            <input
-              className="input"
-              type="number"
-              min={1}
-              value={form.sms_alert_threshold}
-              onChange={(e) => setForm({ ...form, sms_alert_threshold: Number(e.target.value) })}
-            />
+        <section className="glass rounded-2xl p-5 space-y-3">
+          <div>
+            <h2 className="font-semibold">📢 In-app notifications</h2>
             <p className="text-xs text-gray-500 mt-1">
-              Principal gets a warning when SMS balance falls below this amount.
-            </p>
-          </Field>
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm">
-            <p className="font-medium text-amber-800">Current SMS balance: GHS {settings.sms_credit_balance.toFixed(2)}</p>
-            <p className="text-xs text-amber-700 mt-1">
-              {settings.hubtel_last_balance_check
-                ? `Last checked ${new Date(settings.hubtel_last_balance_check).toLocaleString()}.`
-                : "Balance refreshes after you save the Hubtel keys below."}
+              Phoenix uses <strong>in-app push notifications</strong> instead of SMS. When you send a message from <span className="font-mono">/admin/messaging</span>, it reaches parents and staff via the 🔔 bell on their dashboard and (when they have notifications enabled) as a phone alert. <strong>No SMS credits to top up.</strong> Hubtel SMS can be added later if you ever decide you want it.
             </p>
           </div>
+          <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
+            <li>Every recipient sees the message inside the app instantly.</li>
+            <li>Triggered events (absence, fee due, low SMS — n/a now, payment confirmed, birthday) all route through the same notification log.</li>
+            <li>Templates live in <span className="font-mono">/admin/messaging → Templates</span> — same merge tokens as before.</li>
+          </ul>
         </section>
 
         <section className="glass rounded-2xl p-5 space-y-4">
-          <h2 className="font-semibold">Hubtel API credentials</h2>
-          <p className="text-xs text-gray-500">
-            Get these from <span className="font-mono">unity.hubtel.com</span> → API → API Keys. The same Client ID + Secret unlocks both SMS and Receive Money payments. Never share them — they let anyone send SMS or collect funds on your account.
-          </p>
-          <Field label="Client ID">
-            <input className="input" placeholder="hbtl_..." value={form.hubtel_client_id} onChange={(e) => setForm({ ...form, hubtel_client_id: e.target.value })} />
-          </Field>
-          <Field label="Client Secret">
-            <input className="input" type="password" placeholder="••••••••" value={form.hubtel_client_secret} onChange={(e) => setForm({ ...form, hubtel_client_secret: e.target.value })} />
-          </Field>
-          <Field label="Payments Merchant Account Number (POS Sales)">
-            <input className="input" placeholder="e.g. 2017557" value={form.hubtel_payments_merchant_id} onChange={(e) => setForm({ ...form, hubtel_payments_merchant_id: e.target.value })} />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Settlement bank">
-              <input className="input" placeholder="GCB Bank Ghana" value={form.hubtel_settlement_bank} onChange={(e) => setForm({ ...form, hubtel_settlement_bank: e.target.value })} />
-            </Field>
-            <Field label="Settlement account">
-              <input className="input" placeholder="1024567890" value={form.hubtel_settlement_account} onChange={(e) => setForm({ ...form, hubtel_settlement_account: e.target.value })} />
-            </Field>
-          </div>
-          <div className="rounded-lg bg-indigo-50 border border-indigo-200 p-3 text-xs text-indigo-900">
-            <p className="font-semibold mb-1">🔒 Production note</p>
-            <p>
-              For production apps, store these keys on a small server proxy (Cloudflare Worker or similar) rather than in this settings form — the keys would otherwise ship inside the bundled APK/IPA. The Hubtel API calls from this app should route through that proxy. For now, these keys are stored locally in browser state and used in dev / staging only.
+          <div>
+            <h2 className="font-semibold">🤖 AI report-card drafting</h2>
+            <p className="text-xs text-gray-500 mt-1">
+              In <span className="font-mono">/admin/reports</span> the head sees a <strong>📋 Copy AI prompt</strong> button next to every remark box. It copies a ready-made prompt (with the student&apos;s marker grades baked in) and opens <span className="font-mono">claude.ai</span> — the head pastes it into the free Claude chat, then copies the draft back. <strong>No API key, no monthly bill.</strong>
             </p>
+          </div>
+
+          <div className="rounded-lg bg-purple-50 border border-purple-200 p-3 text-xs text-purple-900">
+            <p className="font-semibold mb-1">💡 Optional: one-tap auto-draft</p>
+            <p>
+              If you want the draft to appear instantly without copy-paste, paste an Anthropic API key below. This is a paid service — about <strong>GH₵ 0.02–0.20 per remark</strong> depending on model. Most schools don&apos;t need this; the free copy-prompt flow above already covers report-card season.
+            </p>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.ai_drafting_enabled}
+              onChange={(e) => setForm({ ...form, ai_drafting_enabled: e.target.checked })} />
+            <span className="text-sm font-semibold">Enable optional auto-draft (paid)</span>
+          </label>
+          {form.ai_drafting_enabled && (
+            <>
+              <Field label="Anthropic API key (optional)">
+                <input className="input" type="password" placeholder="sk-ant-… (leave blank to use the free copy-prompt flow)"
+                  aria-label="Anthropic API key"
+                  value={form.anthropic_api_key}
+                  onChange={(e) => setForm({ ...form, anthropic_api_key: e.target.value })} />
+                <p className="text-xs text-gray-500 mt-1">
+                  Get one from <span className="font-mono">console.anthropic.com</span> → API Keys. Keep it secret — same warning as the payment keys above.
+                </p>
+              </Field>
+              <Field label="Model">
+                <select className="input" aria-label="AI model"
+                  value={form.ai_model}
+                  onChange={(e) => setForm({ ...form, ai_model: e.target.value })}>
+                  <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — fastest, cheapest (recommended)</option>
+                  <option value="claude-sonnet-4-6">Claude Sonnet 4.6 — balanced</option>
+                  <option value="claude-opus-4-7">Claude Opus 4.7 — highest quality, slower</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Haiku is plenty for routine remarks; use Opus only for end-of-year reports where wording really matters.
+                </p>
+              </Field>
+            </>
+          )}
+        </section>
+
+        {/* Lifecycle: switch out of demo mode */}
+        <section className="glass rounded-2xl p-5 space-y-3">
+          <h2 className="font-semibold">🧹 Start fresh / training data</h2>
+          <p className="text-xs text-gray-500">
+            The app ships with demo students, fees, attendance and lessons so you can see how everything works. When you&apos;re ready to go live, wipe the demos and start entering your own school&apos;s records. The Admin and Principal sign-in are preserved either way.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button type="button"
+              onClick={() => {
+                if (!window.confirm("Wipe all demo students, fees, attendance, grades, lessons, etc.? Your Admin / Principal login is kept. This cannot be undone — use 'Restore demos' below if you change your mind.")) return;
+                useAppStore.getState().wipeDemoData();
+                toast.success("🧹 Demo data cleared — start adding your real students from /admin/students");
+              }}
+              className="text-sm font-bold px-4 py-2 rounded-lg"
+              style={{ background: "#b91c1c", color: "white" }}>
+              🧹 Wipe demo data &amp; start fresh
+            </button>
+            <button type="button"
+              onClick={() => {
+                if (!window.confirm("Restore the original demo dataset? This will overwrite your current students, fees, grades, lessons, etc.")) return;
+                useAppStore.getState().restoreDemoData();
+                toast.success("Demo data restored");
+              }}
+              className="text-sm font-bold px-4 py-2 rounded-lg"
+              style={{ background: "rgba(245,158,11,0.15)", color: "#92400e", border: "1px solid rgba(245,158,11,0.35)" }}>
+              ↩ Restore demos (training mode)
+            </button>
           </div>
         </section>
 
         <div className="flex justify-end gap-2">
-          <button className="btn-secondary" onClick={() => window.location.reload()}>Discard</button>
-          <button className="btn-gold" onClick={onSave}>Save settings</button>
+          <button type="button" className="btn-secondary" onClick={() => window.location.reload()}>Discard</button>
+          <button type="button" className="btn-gold" onClick={onSave}>Save settings</button>
         </div>
 
         <style jsx>{`

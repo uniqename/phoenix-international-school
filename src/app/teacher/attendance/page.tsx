@@ -40,6 +40,7 @@ function ManualTab({
   const students       = useAppStore((s) => s.students);
   const attendance     = useAppStore((s) => s.attendance);
   const saveAttendance = useAppStore((s) => s.saveAttendance);
+  const submitExcuseRequest = useAppStore((s) => s.submitExcuseRequest);
 
   const myStudents = students.filter((s) => s.class_name === activeClass);
   const today      = todayISO();
@@ -145,6 +146,30 @@ function ManualTab({
                           {o.label}
                         </button>
                       ))}
+                      <button type="button"
+                        onClick={() => {
+                          const reason = window.prompt(`What's wrong with ${s.full_name.split(" ")[0]}? (this asks the parent for a doctor's note)`, "Looks unwell — please send a note");
+                          if (!reason?.trim()) return;
+                          submitExcuseRequest({
+                            student_id: s.id,
+                            student_name: s.full_name,
+                            class_name: s.class_name,
+                            family_id: s.family_id,
+                            submitted_by_email: user?.full_name ? `teacher:${user.full_name}` : undefined,
+                            kind: 'medical',
+                            start_date: today,
+                            end_date: today,
+                            reason: `Teacher-flagged: ${reason.trim()}`,
+                            document_name: undefined,
+                            document_data_url: undefined,
+                          });
+                          toast.success(`🩺 Excuse request created for ${s.full_name.split(" ")[0]} — admin will follow up`);
+                        }}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg"
+                        style={{ background: "rgba(168,85,247,0.12)", color: "#6B21A8" }}
+                        title="Flag this student as needing a doctor's note">
+                        🩺 Flag
+                      </button>
                     </div>
                   </div>
                 );

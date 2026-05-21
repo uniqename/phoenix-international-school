@@ -159,7 +159,7 @@ function InviteForm() {
 
 function Frame({ title, body, children }: { title: string; body: string; children?: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "linear-gradient(135deg, #0C0A1E, #1A0E4D)" }}>
+    <div className="min-h-screen flex items-center justify-center p-6 safe-top safe-bottom" style={{ background: "linear-gradient(135deg, #0C0A1E, #1A0E4D)" }}>
       <div className="max-w-md w-full rounded-2xl p-7 text-white" style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.12)" }}>
         <div className="flex items-center gap-3 mb-3">
           <div className="text-3xl">🔥</div>

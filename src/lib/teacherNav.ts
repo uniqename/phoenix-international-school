@@ -6,6 +6,7 @@ export const TEACHER_NAV = [
   { icon: "📝", label: "Lesson Planner", href: "/teacher/lessons" },
   { icon: "📚", label: "Homework",       href: "/teacher/homework" },
   { icon: "📸", label: "School Feed",    href: "/teacher/feed" },
+  { icon: "💬", label: "Parent Chat",    href: "/teacher/chat" },
   { icon: "❓", label: "Question Bank",  href: "/teacher/questions" },
   { icon: "🔐", label: "Pickup Verify",  href: "/teacher/pickup" },
 ];

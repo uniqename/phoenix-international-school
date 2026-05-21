@@ -5,6 +5,9 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import PWAInit from "@/components/PWAInit";
 import OfflineIndicator from "@/components/OfflineIndicator";
+import RootErrorBoundary from "@/components/RootErrorBoundary";
+import WhatsNewModal from "@/components/WhatsNewModal";
+import UrgentNotificationBridge from "@/components/UrgentNotificationBridge";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -35,12 +38,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen">
-        <AuthProvider>
-          {children}
-          <Toaster position="top-right" toastOptions={{ style: { borderRadius: "12px", fontWeight: 600, fontSize: "13px" } }} />
-          <OfflineIndicator />
-          <PWAInit />
-        </AuthProvider>
+        <RootErrorBoundary>
+          <AuthProvider>
+            {children}
+            <Toaster
+              position="top-center"
+              containerStyle={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)" }}
+              toastOptions={{ style: { borderRadius: "12px", fontWeight: 600, fontSize: "13px", maxWidth: "90vw" } }} />
+            <OfflineIndicator />
+            <PWAInit />
+            <WhatsNewModal />
+            <UrgentNotificationBridge />
+          </AuthProvider>
+        </RootErrorBoundary>
       </body>
     </html>
   );

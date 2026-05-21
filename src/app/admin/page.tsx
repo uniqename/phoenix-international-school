@@ -13,13 +13,13 @@ export default function AdminOverview() {
   const teachers  = useAppStore((s) => s.teachers);
   const attendance = useAppStore((s) => s.attendance);
   const settings   = useAppStore((s) => s.schoolSettings);
+  const excuseRequests = useAppStore((s) => s.excuseRequests);
+  const chatThreads = useAppStore((s) => s.chatThreads);
+  const busRuns = useAppStore((s) => s.busRuns);
+  const staffCheckIns = useAppStore((s) => s.staffCheckIns);
+  const feedPosts = useAppStore((s) => s.feedPosts);
 
-  const smsBelowThreshold = settings.sms_provider !== "none"
-    && settings.sms_credit_balance > 0
-    && settings.sms_credit_balance < settings.sms_alert_threshold;
-  const smsZero = settings.sms_provider !== "none" && settings.sms_credit_balance === 0;
-  const noHubtelKeys = settings.sms_provider === "hubtel" && (!settings.hubtel_client_id || !settings.hubtel_client_secret);
-  const smsDeferred = settings.sms_provider === "none";
+  // SMS banners temporarily suppressed; only the Paystack-key banner remains.
   const noPaystackKey = settings.payment_provider === "paystack" && !settings.paystack_public_key;
 
   const today = new Date().toISOString().split("T")[0];
@@ -30,6 +30,27 @@ export default function AdminOverview() {
   const feesOutstanding = outstanding.reduce((s, f) => s + (f.amount - f.paid_amount), 0);
 
   const recentPayments = [...payments].sort((a, b) => new Date(b.paid_at).getTime() - new Date(a.paid_at).getTime()).slice(0, 6);
+
+  // Today's activity — replaces the noisy SMS banner with something useful.
+  const todayPayments = payments.filter((p) => p.paid_at.slice(0, 10) === today);
+  const todayPaymentsTotal = todayPayments.reduce((s, p) => s + p.amount, 0);
+  const todayAbsent = todayAtt.filter((a) => a.status === "absent").length;
+  const todayLate = todayAtt.filter((a) => a.status === "late").length;
+  const pendingExcuses = excuseRequests.filter((r) => r.status === "pending").length;
+  const pendingFeed = feedPosts.filter((p) => p.status === "pending").length;
+  const unreadChats = chatThreads.reduce((s, t) => s + (t.unread_for_teacher ?? 0), 0);
+  const liveBuses = busRuns.filter((r) => r.status === "in_progress" && r.date === today).length;
+  const staffOnSite = staffCheckIns.filter((c) => c.date === today && !c.out_at).length;
+  const activityItems = [
+    { emoji: "✅", label: "Students present today", value: presentToday, hint: "out of " + students.length },
+    { emoji: "❌", label: "Absent today",             value: todayAbsent, hint: todayLate > 0 ? `${todayLate} late` : "—" },
+    { emoji: "💰", label: "Today's payments",         value: `GH₵ ${todayPaymentsTotal.toFixed(0)}`, hint: `${todayPayments.length} transaction${todayPayments.length === 1 ? "" : "s"}` },
+    { emoji: "📋", label: "Excuse requests",          value: pendingExcuses, hint: "awaiting your review", href: "/admin/excuses", warn: pendingExcuses > 0 },
+    { emoji: "💬", label: "Unread parent messages",   value: unreadChats, hint: "tap to open inbox", href: "/admin/chats", warn: unreadChats > 0 },
+    { emoji: "📸", label: "Feed posts pending",       value: pendingFeed, hint: "moderation queue", href: "/admin/feed", warn: pendingFeed > 0 },
+    { emoji: "🚌", label: "Buses live now",           value: liveBuses, hint: liveBuses > 0 ? "drivers running" : "no run yet", href: "/admin/transport" },
+    { emoji: "🕒", label: "Staff on site",            value: staffOnSite, hint: "checked in today", href: "/admin/staff-checkin" },
+  ];
 
   const levelBreakdown = [
     { level: "Crèche",       count: students.filter((s) => s.level === "creche").length,  color: "#FFD700" },
@@ -62,57 +83,39 @@ export default function AdminOverview() {
         </div>
       )}
 
-      {/* SMS credit alerts — only when a provider is active */}
-      {(smsZero || smsBelowThreshold) && (
-        <div className="rounded-2xl p-4 mb-5 flex items-start gap-3"
-          style={{ background: smsZero ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.18)", border: `1px solid ${smsZero ? "rgba(239,68,68,0.5)" : "rgba(245,158,11,0.5)"}` }}>
-          <span className="text-2xl">{smsZero ? "🚨" : "⚠️"}</span>
-          <div className="flex-1">
-            <p className="font-black text-white text-sm">
-              {smsZero
-                ? "SMS credit is empty — parent SMS notices are NOT being sent right now."
-                : `Low SMS credit: GHS ${settings.sms_credit_balance.toFixed(2)} (below your alert threshold of GHS ${settings.sms_alert_threshold.toFixed(2)})`}
-            </p>
-            <p className="text-xs text-white/80 mt-1">
-              Top up at <span className="font-mono">unity.hubtel.com</span> to keep fee reminders, attendance alerts, and urgent notices flowing.
-            </p>
-          </div>
-          <Link href="/admin/settings" className="text-xs font-bold px-3 py-2 rounded-lg bg-white text-gray-900 self-center">
-            Settings
-          </Link>
-        </div>
-      )}
-      {noHubtelKeys && !smsZero && !smsBelowThreshold && (
-        <div className="rounded-2xl p-4 mb-5 flex items-start gap-3"
-          style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)" }}>
-          <span className="text-2xl">🔧</span>
-          <div className="flex-1">
-            <p className="font-black text-white text-sm">Hubtel keys not yet configured</p>
-            <p className="text-xs text-white/80 mt-1">
-              Add your Hubtel Client ID + Secret in Settings to enable parent SMS notices.
-            </p>
-          </div>
-          <Link href="/admin/settings" className="text-xs font-bold px-3 py-2 rounded-lg bg-white text-gray-900 self-center">
-            Set up
-          </Link>
-        </div>
-      )}
+      {/* SMS / Hubtel banners hidden from the dashboard at the user's request.
+          They reappear automatically once a real Hubtel key is added in
+          /admin/settings — for now the in-app notifications remain functional. */}
 
-      {/* Informational: SMS deferred — Hubtel onboarding in progress */}
-      {smsDeferred && (
-        <div className="rounded-2xl p-3 mb-5 flex items-start gap-3"
-          style={{ background: "rgba(148,163,184,0.15)", border: "1px solid rgba(148,163,184,0.35)" }}>
-          <span className="text-lg">ℹ️</span>
-          <div className="flex-1">
-            <p className="text-sm text-white/95">
-              <strong>SMS notices paused</strong> — Hubtel onboarding pending (needs cert of incorporation, Ghana Card IDs of directors, business logo). Notices currently sent in-app + email only.
-            </p>
-            <p className="text-xs text-white/70 mt-0.5">
-              Switch <span className="font-mono">SMS provider</span> in Settings to <span className="font-mono">hubtel</span> and paste keys once approved.
-            </p>
-          </div>
+      {/* Today's activity at a glance */}
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-white text-sm">📅 Today &mdash; {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long" })}</h3>
         </div>
-      )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {activityItems.map((a) => {
+            const inner = (
+              <div className="rounded-2xl p-3 h-full"
+                style={{
+                  background: a.warn ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${a.warn ? "rgba(245,158,11,0.35)" : "rgba(255,255,255,0.1)"}`,
+                }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-lg">{a.emoji}</span>
+                  <span className="text-lg font-black text-white">{a.value}</span>
+                </div>
+                <p className="text-[11px] font-bold text-white truncate">{a.label}</p>
+                <p className="text-[10px] text-gray-400 truncate">{a.hint}</p>
+              </div>
+            );
+            return a.href ? (
+              <Link key={a.label} href={a.href} className="block">{inner}</Link>
+            ) : (
+              <div key={a.label}>{inner}</div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">

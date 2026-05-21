@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'teacher' | 'parent' | 'student' | 'principal'
+export type UserRole = 'admin' | 'teacher' | 'parent' | 'student' | 'principal' | 'driver'
 
 // ── Phase 9: HR + granular RBAC ───────────────────────────────
 export type PermissionKey =
@@ -224,6 +224,32 @@ export interface OnlineAssignment {
   created_by_employee_id?: string
   total_marks?: number
   created_at: string
+}
+
+// Phase 19 — student-side test taking. Records one submission per
+// student-per-assignment. Multiple-choice auto-graded; essays / short answer
+// stored verbatim for the teacher to grade later.
+export interface AssignmentAnswer {
+  question_id: string
+  choice_index?: number                  // multiple_choice
+  text?: string                          // short_answer / essay
+  file_name?: string                     // file_upload
+  file_data_url?: string
+}
+
+export interface AssignmentSubmission {
+  id: string
+  assignment_id: string
+  student_id: string
+  student_name?: string
+  class_name?: string
+  answers: AssignmentAnswer[]
+  auto_score?: number                    // sum of correct multiple_choice marks
+  total_possible?: number                // sum of all marks
+  manual_score?: number                  // teacher grades the essays/short-answer
+  graded_by?: string
+  graded_at?: string
+  submitted_at: string
 }
 
 // ── Phase 12: Canteen module ──────────────────────────────────
@@ -453,6 +479,11 @@ export interface SchoolSettings {
   hubtel_payments_merchant_id?: string
   hubtel_settlement_bank?: string
   hubtel_settlement_account?: string
+
+  // AI report-card drafting (Phase 15g)
+  ai_drafting_enabled?: boolean
+  anthropic_api_key?: string
+  ai_model?: string
 }
 
 // ── Phase 13: Messaging upgrade ───────────────────────────────
@@ -569,6 +600,11 @@ export interface FeePaymentRequest {
   created_at: string
   paid_at?: string
   error?: string
+  // Set when admin imports the Paystack settlement CSV: confirms that the
+  // money actually landed in the school's bank account.
+  settled?: boolean
+  settled_at?: string
+  settlement_reference?: string
 }
 
 export interface ClassDef {
@@ -825,6 +861,10 @@ export interface Teacher {
   basic_salary: number
   hire_date?: string
   ssnit_number?: string
+  // Used by the payroll bank-credit CSV export.
+  bank_name?: string
+  bank_branch?: string
+  bank_account?: string
 }
 
 export interface Fee {
@@ -865,7 +905,9 @@ export interface AttendanceRecord {
   status: AttendanceStatus
   parent_notified: boolean
   marked_by?: string
-  context?: 'classroom' | 'bus'
+  context?: 'classroom' | 'bus' | 'gate'
+  arrival_time?: string                  // HH:mm — recorded when status='late' or gate scan
+  reason?: string                        // free-text note (for 'excused' or 'late')
 }
 
 export interface Grade {
@@ -897,6 +939,14 @@ export interface HomeworkAssignment {
   created_at: string
 }
 
+export interface LessonAttachment {
+  id: string
+  kind: 'image' | 'video' | 'pdf' | 'link' | 'audio'
+  name: string
+  url: string                            // external URL OR a data: URL for in-app uploads
+  size?: number
+}
+
 export interface LessonPlan {
   id: string
   teacher_id?: string
@@ -907,7 +957,15 @@ export interface LessonPlan {
   sub_strand: string
   week_number?: number
   content?: string
+  // Rich lesson media (Phase 16 — teacher e-learning)
+  objectives?: string                     // What students should know by the end
+  experiment?: string                     // Hands-on activity / experiment write-up
+  attachments?: LessonAttachment[]
+  cover_image_url?: string
+  primary_video_url?: string              // YouTube / Drive / direct mp4
+  is_published?: boolean                  // false = teacher draft; true = visible to students
   created_at: string
+  updated_at?: string
 }
 
 export interface Announcement {
@@ -944,6 +1002,10 @@ export interface PickupCode {
   valid_date: string
   used: boolean
   used_at?: string
+  // Who collected the child + which staff verified (Phase 18)
+  picked_up_by_name?: string
+  picked_up_by_relationship?: string
+  verified_by?: string
 }
 
 export interface CanteenWallet {
@@ -981,14 +1043,194 @@ export interface Payroll {
   paid_at?: string
 }
 
+export type FeedPostStatus = 'approved' | 'pending' | 'rejected'
+
 export interface FeedPost {
   id: string
   title: string
   content?: string
-  image_url?: string
+  image_url?: string             // legacy single-image field — still rendered as the cover
+  image_urls?: string[]          // Phase 15d: gallery / album posts
   likes: number
+  liked_by?: string[]            // user ids who already liked — prevents double-likes
   created_by?: string
   author_name?: string
+  author_role?: 'admin' | 'teacher' | 'parent' | 'principal'
+  created_at: string
+
+  // Phase 15d: moderation queue
+  status?: FeedPostStatus        // missing = 'approved' for legacy posts
+  moderated_by?: string
+  moderated_at?: string
+  rejection_reason?: string
+}
+
+export interface FeedComment {
+  id: string
+  post_id: string
+  author_name: string
+  author_role?: 'admin' | 'teacher' | 'parent' | 'principal' | 'student'
+  body: string
+  created_at: string
+}
+
+// ── Phase 15c: parent-teacher chat ──
+
+export interface ChatThread {
+  id: string
+  family_id?: string                // parent side of the conversation
+  parent_name?: string              // cached for display
+  teacher_id?: string               // teacher / staff side
+  teacher_name?: string             // cached for display
+  student_id?: string               // the child the chat is about
+  student_name?: string             // cached
+  class_name?: string
+  last_message_at?: string
+  last_message_preview?: string
+  unread_for_parent: number
+  unread_for_teacher: number
+  created_at: string
+}
+
+export interface ChatMessage {
+  id: string
+  thread_id: string
+  sender_role: 'parent' | 'teacher'
+  sender_id?: string
+  sender_name?: string
+  body: string
+  created_at: string
+  // Urgent messages keep nagging the parent until they tap "I've read it".
+  priority?: 'normal' | 'urgent'
+  acknowledged_at?: string
+}
+
+// ── Phase 15f: bus tracking ──
+
+export interface BusRoute {
+  id: string
+  name: string                          // "Route A — Tema → Spintex"
+  bus_label?: string                    // "Bus #1", number plate, vehicle nickname
+  driver_name?: string
+  driver_phone?: string
+  conductor_name?: string
+  created_at: string
+}
+
+export interface BusStop {
+  id: string
+  route_id: string
+  name: string
+  scheduled_pickup?: string             // 'HH:mm' AM stop pickup time
+  scheduled_dropoff?: string            // 'HH:mm' PM stop drop time
+  lat?: number
+  lng?: number
+  order: number
+}
+
+// A run = one direction (morning pickup or afternoon drop-off) on a given day.
+export type BusRunStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+export type BusRunDirection = 'pickup' | 'dropoff'
+
+export interface BusRun {
+  id: string
+  route_id: string
+  direction: BusRunDirection
+  date: string                          // ISO date
+  status: BusRunStatus
+  started_at?: string
+  completed_at?: string
+  current_stop_id?: string              // last stop the driver pressed "arrived"
+  next_stop_id?: string                 // computed: next stop in `order`
+  current_lat?: number
+  current_lng?: number
+  current_ping_at?: string
+  notes?: string
+}
+
+// Staff check-in / time-clock — cooks, drivers, store managers, teachers.
+// Records when each staff member started and ended their workday so admin
+// can audit attendance and use it as a basis for payroll.
+export interface StaffCheckIn {
+  id: string
+  staff_id: string                       // matches a teachers.id or employees.id
+  staff_name: string
+  role_label?: string                    // "Cook", "Driver", "Teacher", etc.
+  date: string                           // ISO date
+  in_at?: string                         // ISO datetime
+  out_at?: string                        // ISO datetime
+  in_lat?: number
+  in_lng?: number
+  out_lat?: number
+  out_lng?: number
+  notes?: string
+}
+
+// Parent-submitted absence excuse with supporting document (doctor's note,
+// police report, etc.). Admin reviews and approves/declines; on approval the
+// matching AttendanceRecord(s) get status='excused'.
+export type ExcuseStatus = 'pending' | 'approved' | 'declined'
+export type ExcuseKind = 'medical' | 'family' | 'religious' | 'bereavement' | 'travel' | 'other'
+
+export interface ExcuseRequest {
+  id: string
+  student_id: string
+  student_name?: string
+  class_name?: string
+  family_id?: string
+  submitted_by_email?: string
+  kind: ExcuseKind
+  start_date: string                     // ISO date
+  end_date: string                       // ISO date (same as start for 1-day)
+  reason: string
+  document_name?: string
+  document_data_url?: string             // base64 attachment (≤10 MB)
+  status: ExcuseStatus
+  reviewed_by?: string
+  reviewed_at?: string
+  review_notes?: string
+  created_at: string
+}
+
+// Library catalog + lending log.
+export interface LibraryBook {
+  id: string
+  title: string
+  author?: string
+  isbn?: string
+  category?: string                      // Fiction, Science, Reference, etc.
+  copies_total: number
+  cover_image_url?: string
+  created_at: string
+}
+
+export type LibraryLoanStatus = 'out' | 'returned' | 'overdue'
+
+export interface LibraryLoan {
+  id: string
+  book_id: string
+  book_title?: string
+  borrower_student_id?: string
+  borrower_staff_id?: string
+  borrower_name: string
+  borrower_class?: string
+  issued_at: string
+  due_at: string                         // ISO date when book should be back
+  returned_at?: string
+  status: LibraryLoanStatus
+  issued_by?: string
+  notes?: string
+}
+
+export interface BusEvent {
+  id: string
+  run_id: string
+  kind: 'started' | 'departed_stop' | 'arrived_stop' | 'completed' | 'incident'
+  stop_id?: string
+  stop_name?: string
+  lat?: number
+  lng?: number
+  note?: string
   created_at: string
 }
 
@@ -1010,7 +1252,13 @@ export interface HomeworkSubmission {
   file_name: string
   file_type: string
   file_size: number
+  file_data_url?: string        // base64 data: URL stored in-app (works offline)
   submitted_at: string
+  // Teacher grading (Phase 17)
+  score?: number                 // out of 100
+  teacher_comment?: string
+  graded_by?: string
+  graded_at?: string
 }
 
 export interface QuizQuestion {
@@ -1022,6 +1270,10 @@ export interface QuizQuestion {
   answer: 0 | 1 | 2 | 3
   explanation?: string
   source?: string
+  // Per-level practice (Phase 16): which level this question is targeted at.
+  // 'any' or missing = JHS / BECE-style; 'primary' / 'kg' / 'nursery' / 'creche'
+  // surface to younger students from their portal's "Practice" link.
+  level?: 'creche' | 'nursery' | 'kg' | 'primary' | 'jhs' | 'any'
   created_by?: string
   created_at: string
 }

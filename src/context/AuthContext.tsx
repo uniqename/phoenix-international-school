@@ -21,19 +21,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = useCallback(async () => {
     if (typeof window === 'undefined') return
-    if (supabase) {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
-        if (profile) { setUser(profile); setLoading(false); return }
+    try {
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+          if (profile) { setUser(profile); return }
+        }
       }
+      let stored: string | null = null
+      try { stored = localStorage.getItem('phoenix-auth-user') } catch { /* iOS private mode */ }
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored))
+        } catch {
+          try { localStorage.removeItem('phoenix-auth-user') } catch { /* ignore */ }
+        }
+      }
+    } catch (err) {
+      // Never let an auth init failure trap the app on the loading screen.
+      console.warn('Auth init failed — continuing as signed-out:', err)
+    } finally {
+      setLoading(false)
     }
-    const stored = localStorage.getItem('phoenix-auth-user')
-    if (stored) setUser(JSON.parse(stored))
-    setLoading(false)
   }, [])
 
-  useEffect(() => { loadUser() }, [loadUser])
+  useEffect(() => {
+    loadUser()
+    // Hard fallback: if loadUser somehow never resolves (e.g. iOS WKWebView
+    // hangs on a network call), force the app off the loading screen after 4s.
+    const t = window.setTimeout(() => setLoading(false), 4000)
+    return () => window.clearTimeout(t)
+  }, [loadUser])
 
   const login = async (email: string, password: string): Promise<{ error?: string }> => {
     // 1. Try Supabase
@@ -48,8 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 2. Check admin-created accounts in the store
     const { accounts, markLoginUsed } = useAppStore.getState()
+    const cleanEmail = email.trim().toLowerCase()
     const account = accounts.find(
-      (a) => a.email.toLowerCase() === email.toLowerCase() && a.password === password && a.is_active
+      (a) => a.email.trim().toLowerCase() === cleanEmail && a.password === password && a.is_active
     )
     if (account) {
       const profile: UserProfile = { id: account.id, full_name: account.full_name, email: account.email, role: account.role }

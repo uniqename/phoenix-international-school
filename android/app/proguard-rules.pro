@@ -1,21 +1,60 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ────────────────────────────────────────────────────────────────────
+# Phoenix International School — ProGuard / R8 rules
+# Enables minifyEnabled + shrinkResources so Play Console gets a
+# deobfuscation file (mapping.txt) bundled with every AAB.
+# ────────────────────────────────────────────────────────────────────
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep crash-report-friendly metadata
+-keepattributes SourceFile,LineNumberTable
+-keepattributes Signature,InnerClasses,EnclosingMethod
+-keepattributes *Annotation*
+-keepattributes Exceptions
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Hide original source file name in stack traces (mapping.txt covers it)
+-renamesourcefileattribute SourceFile
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Capacitor framework — uses reflection from JS bridge ──
+-keep class com.getcapacitor.** { *; }
+-keep interface com.getcapacitor.** { *; }
+-keep enum com.getcapacitor.** { *; }
+-keep class com.capacitorjs.** { *; }
+
+# Keep classes annotated as Capacitor plugins
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod <methods>;
+}
+
+# Keep our MainActivity + Application class
+-keep public class gh.edu.phoenixintlschool.** { *; }
+
+# AndroidX + Material — keep generally
+-keep class androidx.** { *; }
+-keep interface androidx.** { *; }
+-dontwarn androidx.**
+
+# WebView with JS interface (Capacitor bridge)
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keep class * implements android.os.Parcelable {
+    public static final ** CREATOR;
+}
+
+# Enum values() / valueOf() are accessed reflectively
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# Suppress noisy warnings from third-party libs that don't affect runtime
+-dontwarn java.lang.invoke.**
+-dontwarn javax.annotation.**
+-dontwarn org.slf4j.**
+
+# Strip verbose logging from release builds (keeps Log.w / Log.e)
+-assumenosideeffects class android.util.Log {
+    public static *** v(...);
+    public static *** d(...);
+    public static *** i(...);
+}

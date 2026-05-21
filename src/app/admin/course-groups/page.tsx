@@ -128,6 +128,23 @@ export default function CourseGroupsPage() {
                   </div>
                   {g.description && <p className="text-sm text-gray-600 mt-1">{g.description}</p>}
                   <p className="text-xs text-gray-400 mt-1">{count} student{count === 1 ? "" : "s"} in this group</p>
+                  {count > 0 && (
+                    <details className="mt-2">
+                      <summary className="text-xs font-bold text-indigo-700 cursor-pointer">View roster ({count}) →</summary>
+                      <ul className="mt-2 space-y-1">
+                        {students
+                          .filter((s) => s.course_group_id === g.id)
+                          .sort((a, b) => a.full_name.localeCompare(b.full_name))
+                          .map((s) => (
+                            <li key={s.id} className="text-xs text-gray-700 flex items-center gap-2 py-1 px-2 rounded bg-gray-50">
+                              <span className="font-bold">{s.full_name}</span>
+                              <span className="text-gray-500">{s.class_name}</span>
+                              {s.student_id && <span className="ml-auto font-mono text-gray-400">{s.student_id}</span>}
+                            </li>
+                          ))}
+                      </ul>
+                    </details>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button type="button" className="btn-secondary text-sm" onClick={() => openEdit(g)}>Edit</button>

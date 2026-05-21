@@ -11,12 +11,15 @@ const DEMO_CREDENTIALS: Record<UserRole, { email: string; label: string; icon: s
   teacher:   { email: "teacher@phoenixgh.edu",   label: "Teacher Demo",   icon: "👩‍🏫", color: "#A855F7" },
   parent:    { email: "parent@phoenixgh.edu",    label: "Parent Demo",    icon: "👨‍👩‍👧", color: "#60a5fa" },
   student:   { email: "student@phoenixgh.edu",   label: "Student Demo",   icon: "🎒",  color: "#c084fc" },
+  driver:    { email: "driver@phoenixgh.edu",    label: "Driver Demo",    icon: "🚌", color: "#f59e0b" },
 };
 
 function LoginForm() {
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
+  const [showPw, setShowPw]     = useState(false);
   const { login, loginAsRole, user } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
@@ -47,7 +50,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen hero-bg grid-pattern flex items-center justify-center px-4">
+    <div className="min-h-screen hero-bg grid-pattern flex items-center justify-center px-4 safe-top safe-bottom">
       <div className="w-full max-w-sm">
 
         {/* Logo + title */}
@@ -74,28 +77,40 @@ function LoginForm() {
                 Email or Phone Number
               </label>
               <input
-                type="text"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@example.com or 024XXXXXXX"
                 required
-                className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 focus:outline-none transition-all"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)" }}
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="username"
+                className="w-full px-4 py-3 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white" }}
               />
             </div>
             <div>
               <label className="block text-xs font-bold mb-1.5" style={{ color: "rgba(196,181,253,0.85)" }}>
                 Password
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30 focus:outline-none transition-all"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)" }}
-              />
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your password"
+                  required
+                  autoComplete="current-password"
+                  className="w-full px-4 py-3 pr-12 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all"
+                  style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white" }}
+                />
+                <button type="button" onClick={() => setShowPw((v) => !v)}
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md text-xs font-bold"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)" }}>
+                  {showPw ? "🙈 Hide" : "👁 Show"}
+                </button>
+              </div>
             </div>
             <button type="submit" disabled={submitting}
               className="btn-gold w-full py-3 text-sm disabled:opacity-60">
@@ -104,13 +119,46 @@ function LoginForm() {
           </form>
         </div>
 
-        {/* Demo access — dark glass */}
-        <div className="rounded-3xl p-4"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
-          <p className="text-xs text-center mb-3 font-semibold" style={{ color: "rgba(196,181,253,0.65)" }}>
-            Quick Demo Access
-          </p>
-          <div className="grid grid-cols-2 gap-2">
+        {/* First-time setup helper — collapsed by default so the credentials
+            aren't visible to anyone glancing at the screen. Tap once to expand. */}
+        <div className="text-center mb-3">
+          <button type="button" onClick={() => setShowSetup((s) => !s)}
+            className="text-xs font-bold underline"
+            style={{ color: "rgba(196,181,253,0.7)" }}>
+            {showSetup ? "Hide setup help" : "First-time setting up the school? →"}
+          </button>
+        </div>
+
+        {showSetup && (
+          <div className="rounded-3xl p-4 mb-3"
+            style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.35)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+            <p className="text-xs font-bold mb-1" style={{ color: "#FFD700" }}>
+              🔑 First-time school sign-in
+            </p>
+            <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>
+              On day one only, the Admin and Principal sign in with the temporary credentials provided to your school in your handover document. The app will force a password change on first login.
+            </p>
+            <button type="button"
+              onClick={() => { setEmail("admin@phoenixintl.school"); setPassword("Phoenix2026!"); setShowSetup(false); }}
+              className="w-full py-2 text-[11px] font-bold rounded-lg"
+              style={{ background: "rgba(255,215,0,0.18)", color: "#FFD700", border: "1px solid rgba(255,215,0,0.35)" }}>
+              Auto-fill Admin starter login
+            </button>
+            <p className="text-[10px] mt-2 italic" style={{ color: "rgba(196,181,253,0.55)" }}>
+              Hide this card after your first sign-in — staff and parents shouldn&apos;t see it.
+            </p>
+          </div>
+        )}
+
+        {/* Demo access — kept tiny and hidden behind a toggle so the production
+            login feels professional, not training-flavoured. */}
+        <details className="rounded-2xl p-3"
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <summary className="text-xs font-bold cursor-pointer list-none"
+            style={{ color: "rgba(196,181,253,0.55)" }}>
+            🧪 Show training demos (sample data only)
+          </summary>
+          <div className="grid grid-cols-2 gap-2 mt-3">
             {(Object.keys(DEMO_CREDENTIALS) as UserRole[]).map((role) => {
               const d = DEMO_CREDENTIALS[role];
               return (
@@ -122,10 +170,10 @@ function LoginForm() {
               );
             })}
           </div>
-        </div>
+        </details>
 
-        <p className="text-center text-xs mt-4" style={{ color: "rgba(196,181,253,0.6)" }}>
-          First time? Ask the school office for your account — they create it from <span className="font-mono">/admin/accounts</span> and hand you a credential slip.
+        <p className="text-center text-xs mt-4" style={{ color: "rgba(196,181,253,0.7)" }}>
+          Teachers, parents and students: your account is created by the school office. You&apos;ll receive your sign-in details by SMS.
         </p>
         <p className="text-center text-[10px] mt-2" style={{ color: "rgba(196,181,253,0.4)" }}>
           © 2026 Phoenix International School Ghana

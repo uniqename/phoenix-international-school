@@ -5,6 +5,10 @@ import type {
   Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
   CanteenWallet, CanteenTransaction, FeedPost, Payroll, BECEAttempt, PickupCode,
+  ChatThread, ChatMessage,
+  BusRoute, BusStop, BusRun, BusEvent, BusRunDirection,
+  StaffCheckIn, ExcuseRequest,
+  LibraryBook, LibraryLoan,
   HomeworkSubmission, UserAccount, UserRole, QuizQuestion,
   SchoolSettings, ClassDef, Subject, AcademicYear, AcademicHoliday,
   Family, DiscountPolicy, DiscountTier,
@@ -18,7 +22,7 @@ import type {
   EmployeeCategory, EmployeeDepartment, EmployeePosition, Employee, PermissionKey,
   AccountGroup, ChartAccount, BankAccount, BankBranch, FinanceTransaction, TransactionStatus,
   ClassTimetable, OnlineExam, OnlineAssignment, OnlineClassroomSession,
-  TimetablePeriod, AssignmentQuestion,
+  TimetablePeriod, AssignmentQuestion, AssignmentSubmission,
   CanteenMeal, CanteenFeeParticular, CanteenMenuDay, MenuItem,
   MessageTemplate, MessageLog, MessageChannel,
   Enquiry, EnquiryStatus, DataUpload, SmartReport,
@@ -63,6 +67,16 @@ interface AppState {
   canteenWallets: CanteenWallet[]
   canteenTransactions: CanteenTransaction[]
   feedPosts: FeedPost[]
+  chatThreads: ChatThread[]
+  chatMessages: ChatMessage[]
+  busRoutes: BusRoute[]
+  busStops: BusStop[]
+  busRuns: BusRun[]
+  busEvents: BusEvent[]
+  staffCheckIns: StaffCheckIn[]
+  excuseRequests: ExcuseRequest[]
+  libraryBooks: LibraryBook[]
+  libraryLoans: LibraryLoan[]
   payroll: Payroll[]
   beceAttempts: BECEAttempt[]
   pickupCodes: PickupCode[]
@@ -152,6 +166,12 @@ interface AppState {
   setSmsBalance: (balance: number) => void
   createPaymentRequest: (r: Omit<FeePaymentRequest, 'id' | 'created_at'>) => FeePaymentRequest
   markPaymentRequestStatus: (id: string, status: FeePaymentRequestStatus, patch?: Partial<FeePaymentRequest>) => void
+  // Reconciliation: given a Paystack settlement CSV with `reference` + `amount`
+  // + `settled_on` columns, mark every matching FeePaymentRequest as settled.
+  // Returns counts so admin can verify before trusting the report.
+  reconcilePaystackSettlements: (rows: Array<{ reference: string; amount: number; settled_on?: string }>) => {
+    matched: number; unmatched: number; alreadySettled: number;
+  }
 
   // Course Groups
   addCourseGroup: (c: Omit<CourseGroup, 'id' | 'created_at'>) => CourseGroup
@@ -342,7 +362,11 @@ interface AppState {
 
   // Academic
   addHomework: (hw: Omit<HomeworkAssignment, 'id' | 'created_at'>) => void
+  updateHomework: (id: string, data: Partial<HomeworkAssignment>) => void
+  deleteHomework: (id: string) => void
   addLessonPlan: (lp: Omit<LessonPlan, 'id' | 'created_at'>) => void
+  updateLessonPlan: (id: string, data: Partial<LessonPlan>) => void
+  deleteLessonPlan: (id: string) => void
 
   // Admin
   addAnnouncement: (a: Omit<Announcement, 'id' | 'created_at'>) => void
@@ -351,9 +375,68 @@ interface AppState {
   // Feed
   addFeedPost: (p: Omit<FeedPost, 'id' | 'likes' | 'created_at'>) => void
   likePost: (id: string) => void
+  approveFeedPost: (id: string, moderator?: string) => void
+  rejectFeedPost: (id: string, moderator: string | undefined, reason: string) => void
+  deleteFeedPost: (id: string) => void
+
+  // Phase 15f: bus tracking
+  addBusRoute: (r: Omit<BusRoute, 'id' | 'created_at'>) => BusRoute
+  updateBusRoute: (id: string, data: Partial<BusRoute>) => void
+  deleteBusRoute: (id: string) => void
+  addBusStop: (s: Omit<BusStop, 'id'>) => BusStop
+  updateBusStop: (id: string, data: Partial<BusStop>) => void
+  deleteBusStop: (id: string) => void
+  startBusRun: (route_id: string, direction: BusRunDirection) => BusRun
+  arriveAtStop: (run_id: string, stop_id: string, lat?: number, lng?: number) => void
+  departStop: (run_id: string, stop_id: string, lat?: number, lng?: number) => void
+  completeBusRun: (run_id: string, lat?: number, lng?: number) => void
+  pingBusLocation: (run_id: string, lat: number, lng: number) => void
+  // Driver ticks who actually boarded at the current stop. Creates an
+  // AttendanceRecord (context: 'bus') and writes a BusEvent for the audit log.
+  recordBusBoarding: (run_id: string, student_id: string, kind: 'on' | 'off') => void
+  // Gate check-in: student arrives at school gate, kiosk records them present.
+  // Returns null if no student matches the supplied code/id.
+  gateCheckIn: (studentCodeOrId: string) => { ok: boolean; studentName?: string; alreadyToday?: boolean; reason?: string }
+
+  // Online assignment submissions
+  assignmentSubmissions: AssignmentSubmission[]
+  submitAssignment: (input: Omit<AssignmentSubmission, 'id' | 'submitted_at' | 'auto_score' | 'total_possible'>) => AssignmentSubmission
+  gradeAssignmentSubmission: (id: string, manual_score: number, gradedBy?: string) => void
+  // Staff time-clock
+  staffCheckInNow: (staff_id: string, staff_name: string, role_label?: string) => void
+  staffCheckOutNow: (staff_id: string) => void
+  // Excuse requests (doctor's note / police report etc.)
+  submitExcuseRequest: (req: Omit<ExcuseRequest, 'id' | 'status' | 'created_at'>) => ExcuseRequest
+  reviewExcuseRequest: (id: string, decision: 'approved' | 'declined', reviewer?: string, notes?: string) => void
+
+  // Lifecycle helpers — switch between demo data and a clean school setup.
+  wipeDemoData: () => void
+  restoreDemoData: () => void
+
+  // Library
+  addLibraryBook: (b: Omit<LibraryBook, 'id' | 'created_at'>) => LibraryBook
+  updateLibraryBook: (id: string, data: Partial<LibraryBook>) => void
+  deleteLibraryBook: (id: string) => void
+  issueLibraryBook: (input: Omit<LibraryLoan, 'id' | 'issued_at' | 'status' | 'returned_at'>) => void
+  returnLibraryBook: (loanId: string) => void
+
+  // Phase 15c: parent-teacher chat
+  getOrCreateChatThread: (input: {
+    family_id?: string
+    parent_name?: string
+    teacher_id?: string
+    teacher_name?: string
+    student_id?: string
+    student_name?: string
+    class_name?: string
+  }) => ChatThread
+  sendChatMessage: (threadId: string, sender_role: 'parent' | 'teacher', sender_id: string | undefined, sender_name: string | undefined, body: string, priority?: 'normal' | 'urgent') => ChatMessage | null
+  markChatThreadRead: (threadId: string, role: 'parent' | 'teacher') => void
+  acknowledgeUrgentMessage: (messageId: string) => void
 
   // Homework submissions
-  submitHomework: (homeworkId: string, studentId: string, studentName: string, fileName: string, fileType: string, fileSize: number) => void
+  submitHomework: (homeworkId: string, studentId: string, studentName: string, fileName: string, fileType: string, fileSize: number, fileDataUrl?: string) => void
+  gradeHomeworkSubmission: (submissionId: string, score: number, comment?: string, gradedBy?: string) => void
 
   // BECE
   recordBECEAttempt: (studentId: string, subject: string, score: number, total: number) => void
@@ -364,6 +447,9 @@ interface AppState {
 
   // Payroll
   generatePayroll: (month: number, year: number) => void
+  // Recompute net pay for a month using staff check-in days as the basis.
+  // Assumes 22 working days = a full month; staff with fewer check-ins get prorated.
+  proratePayrollByCheckIns: (month: number, year: number) => { adjusted: number }
   markPayrollPaid: (id: string) => void
 
   // Account management
@@ -401,11 +487,38 @@ export const useAppStore = create<AppState>()(
       canteenWallets: MOCK_CANTEEN_WALLETS,
       canteenTransactions: [],
       feedPosts: MOCK_FEED_POSTS,
+      chatThreads: [],
+      chatMessages: [],
+      busRoutes: [
+        // Demo route so a fresh install / driver demo has something to test.
+        // Admin can edit or delete it from /admin/transport.
+        { id: 'br-demo-a', name: 'Route A — Tema → School', bus_label: 'Bus #1 · GR 1234-22', driver_name: 'Mr. Kwesi', driver_phone: '0244987654', created_at: '2026-01-01T00:00:00Z' },
+      ],
+      busStops: [
+        { id: 'bs-demo-a-1', route_id: 'br-demo-a', name: 'Tema Community 1',  scheduled_pickup: '06:45', scheduled_dropoff: '15:30', order: 0 },
+        { id: 'bs-demo-a-2', route_id: 'br-demo-a', name: 'Spintex Junction',  scheduled_pickup: '07:05', scheduled_dropoff: '15:50', order: 1 },
+        { id: 'bs-demo-a-3', route_id: 'br-demo-a', name: 'East Legon Roundabout', scheduled_pickup: '07:20', scheduled_dropoff: '16:05', order: 2 },
+        { id: 'bs-demo-a-4', route_id: 'br-demo-a', name: 'School Gate',       scheduled_pickup: '07:45', scheduled_dropoff: '16:25', order: 3 },
+      ],
+      busRuns: [],
+      busEvents: [],
+      staffCheckIns: [],
+      excuseRequests: [],
+      libraryBooks: [],
+      libraryLoans: [],
+      assignmentSubmissions: [],
       payroll: MOCK_PAYROLL,
       beceAttempts: [],
       pickupCodes: [],
       homeworkSubmissions: [],
-      accounts: [],
+      accounts: [
+        // Seed real admin + principal accounts so the school can sign in on
+        // day one without relying on the "Demo" buttons. The admin should
+        // change these passwords immediately from /admin/accounts. The
+        // force_password_change flag prompts them on first sign-in.
+        { id: 'acct-admin-1',     full_name: 'School Administrator', email: 'admin@phoenixintl.school',     role: 'admin',     password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
+        { id: 'acct-principal-1', full_name: 'Principal',            email: 'principal@phoenixintl.school', role: 'principal', password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
+      ],
       quizQuestions: MOCK_QUIZ_QUESTIONS,
       schoolSettings: PHOENIX_SCHOOL_SETTINGS,
       classes: PHOENIX_CLASSES,
@@ -453,6 +566,112 @@ export const useAppStore = create<AppState>()(
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
+      })),
+
+      // ── Lifecycle: switch out of demo mode ──
+      // Clears every operational record so the school starts with an empty
+      // roster. Keeps: school settings, classes, subjects, signed-in admin /
+      // principal accounts, message templates (they're scaffolding, not data).
+      // Anything keyed by `is_demo` would be safer in production — for now
+      // this is a single decisive button gated behind a confirmation prompt.
+      wipeDemoData: () => set((st) => ({
+        students: [],
+        families: [],
+        guardians: [],
+        guardianLinks: [],
+        fees: [],
+        payments: [],
+        attendance: [],
+        grades: [],
+        homework: [],
+        homeworkSubmissions: [],
+        crecheLogs: [],
+        canteenWallets: [],
+        canteenTransactions: [],
+        feedPosts: [],
+        feePaymentRequests: [],
+        beceAttempts: [],
+        pickupCodes: [],
+        payroll: [],
+        lessonPlans: [],
+        announcements: [],
+        assessmentResults: [],
+        studentInterests: [],
+        employees: [],
+        financeTransactions: [],
+        enquiries: [],
+        dataUploads: [],
+        smartReports: [],
+        messageLogs: [],
+        chatThreads: [],
+        chatMessages: [],
+        excuseRequests: [],
+        staffCheckIns: [],
+        libraryBooks: [],
+        libraryLoans: [],
+        assignmentSubmissions: [],
+        busRoutes: [],
+        busStops: [],
+        busRuns: [],
+        busEvents: [],
+        // Keep the seeded admin + principal accounts so the school doesn't
+        // lock themselves out — but drop any demo / extra accounts.
+        accounts: st.accounts.filter((a) => a.id === 'acct-admin-1' || a.id === 'acct-principal-1'),
+      })),
+
+      // Repopulates the demo data — handy for staff training without
+      // re-installing the app.
+      restoreDemoData: () => set({
+        students: MOCK_STUDENTS,
+        families: MOCK_FAMILIES,
+        guardians: MOCK_GUARDIANS,
+        guardianLinks: MOCK_GUARDIAN_LINKS,
+        fees: MOCK_FEES,
+        payments: MOCK_PAYMENTS,
+        attendance: MOCK_ATTENDANCE,
+        grades: MOCK_GRADES,
+        homework: MOCK_HOMEWORK,
+        crecheLogs: MOCK_CRECHE_LOG,
+        canteenWallets: MOCK_CANTEEN_WALLETS,
+        feedPosts: MOCK_FEED_POSTS,
+        payroll: MOCK_PAYROLL,
+        lessonPlans: MOCK_LESSON_PLANS,
+        announcements: MOCK_ANNOUNCEMENTS,
+        studentInterests: MOCK_STUDENT_INTERESTS,
+        employees: MOCK_EMPLOYEES,
+        financeTransactions: MOCK_FINANCE_TRANSACTIONS,
+        enquiries: MOCK_ENQUIRIES,
+        dataUploads: MOCK_DATA_UPLOADS,
+        smartReports: MOCK_SMART_REPORTS,
+        messageLogs: MOCK_MESSAGE_LOGS,
+      }),
+
+      // ── Library ──
+      addLibraryBook: (b) => {
+        const book: LibraryBook = { ...b, id: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, created_at: new Date().toISOString() }
+        set((st) => ({ libraryBooks: [book, ...st.libraryBooks] }))
+        return book
+      },
+      updateLibraryBook: (id, data) => set((st) => ({
+        libraryBooks: st.libraryBooks.map((b) => b.id === id ? { ...b, ...data } : b),
+      })),
+      deleteLibraryBook: (id) => set((st) => ({
+        libraryBooks: st.libraryBooks.filter((b) => b.id !== id),
+        libraryLoans: st.libraryLoans.filter((l) => l.book_id !== id),
+      })),
+      issueLibraryBook: (input) => set((st) => {
+        const loan: LibraryLoan = {
+          ...input,
+          id: `loan-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          issued_at: new Date().toISOString(),
+          status: 'out',
+        }
+        return { libraryLoans: [loan, ...st.libraryLoans] }
+      }),
+      returnLibraryBook: (loanId) => set((st) => ({
+        libraryLoans: st.libraryLoans.map((l) => l.id === loanId
+          ? { ...l, status: 'returned' as const, returned_at: new Date().toISOString() }
+          : l),
       })),
 
       addClass: (c) => set((st) => ({
@@ -751,6 +970,37 @@ export const useAppStore = create<AppState>()(
           ? { ...r, status, ...(patch ?? {}), paid_at: status === 'paid' ? new Date().toISOString() : r.paid_at }
           : r),
       })),
+
+      reconcilePaystackSettlements: (rows) => {
+        const st = get()
+        let matched = 0, unmatched = 0, alreadySettled = 0
+        const refMap = new Map<string, { settled_on?: string; amount: number }>()
+        for (const r of rows) {
+          if (!r.reference) continue
+          refMap.set(r.reference.trim(), { settled_on: r.settled_on, amount: r.amount })
+        }
+        const updated = st.feePaymentRequests.map((req) => {
+          // Try to match by paystack_reference first; fall back to request id
+          // which is what we send as Paystack's `reference` when initiating.
+          const key = req.paystack_reference?.trim() ?? req.id
+          const hit = refMap.get(key)
+          if (!hit) { unmatched += 1; return req }
+          if (req.settled) { alreadySettled += 1; return req }
+          matched += 1
+          return {
+            ...req,
+            settled: true,
+            settled_at: hit.settled_on ?? new Date().toISOString(),
+            settlement_reference: key,
+          }
+        })
+        // unmatched counts CSV rows that didn't match any FeePaymentRequest.
+        unmatched = rows.length - matched - alreadySettled
+        if (matched > 0 || alreadySettled > 0) {
+          set({ feePaymentRequests: updated })
+        }
+        return { matched, unmatched, alreadySettled }
+      },
 
       addCourseGroup: (c) => {
         const id = `cg-${Date.now()}`
@@ -1485,10 +1735,13 @@ export const useAppStore = create<AppState>()(
       })),
       sendMessage: (input) => {
         const id = `mlog-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-        // Simulate dispatch (in real prod this would call Hubtel / email API / WhatsApp)
+        // Phoenix now uses in-app push instead of Hubtel SMS. We:
+        //   1. Record the message in the messageLogs audit trail.
+        //   2. Drop an Announcement so it shows up on every recipient's dashboard
+        //      (and gets picked up by the notification bell).
         const item: MessageLog = {
           id,
-          channel: input.channels[0] ?? 'sms',  // log primary channel; fanout would create one per channel
+          channel: input.channels[0] ?? 'sms',  // legacy field — kept for audit
           audience_kind: input.audience_kind,
           audience_description: input.audience_description,
           recipients: input.recipients.slice(0, 50),
@@ -1498,13 +1751,26 @@ export const useAppStore = create<AppState>()(
           template_id: input.template_id,
           status: input.recipients.length > 0 ? 'delivered' : 'failed',
           gateway_response: input.recipients.length > 0
-            ? `Dispatched to ${input.recipients.length} recipient${input.recipients.length === 1 ? '' : 's'} via ${input.channels.join(' + ')}`
+            ? `📲 In-app push to ${input.recipients.length} recipient${input.recipients.length === 1 ? '' : 's'}`
             : 'No recipients in audience',
           sent_at: new Date().toISOString(),
           sent_by_employee_id: input.sent_by_employee_id,
           created_at: new Date().toISOString(),
         }
-        set((st) => ({ messageLogs: [item, ...st.messageLogs] }))
+        set((st) => ({
+          messageLogs: [item, ...st.messageLogs],
+          // Surface the message on every dashboard via the announcements feed.
+          announcements: [{
+            id: `ann-msg-${id}`,
+            title: input.subject ?? input.audience_description ?? 'Message from the school',
+            content: input.body,
+            type: 'push' as const,
+            audience: (input.audience_kind === 'staff' ? 'teachers'
+              : input.audience_kind === 'students' ? 'students'
+              : 'all') as 'all' | 'parents' | 'teachers' | 'students',
+            created_at: new Date().toISOString(),
+          }, ...st.announcements],
+        }))
         return item
       },
 
@@ -1643,9 +1909,67 @@ export const useAppStore = create<AppState>()(
 
       saveAttendance: (records) => {
         const today = todayISO()
-        set((st) => {
-          const existing = st.attendance.filter((a) => a.date !== today || !records.find((r) => r.student_id === a.student_id))
-          return { attendance: [...existing, ...records] }
+        const st = get()
+        const template = st.messageTemplates.find((t) => t.trigger === 'absent_today' && t.is_active)
+        const schoolName = st.schoolSettings.name
+        const nowHM = new Date().toTimeString().slice(0, 5)
+
+        // Auto-stamp arrival_time for late marks so admins can audit punctuality.
+        records = records.map((r) =>
+          r.status === 'late' && !r.arrival_time ? { ...r, arrival_time: nowHM } : r)
+
+        const notified = records.map((r) => {
+          if (r.status !== 'absent' || r.parent_notified) return r
+          const student = st.students.find((s) => s.id === r.student_id)
+          if (!student || !template) return r
+
+          const recipients: string[] = []
+          const channels: MessageChannel[] = []
+          if (student.can_receive_sms !== false && template.channels.includes('sms')) {
+            const phone = student.parent_phone || student.mobile_no
+            if (phone) {
+              recipients.push(phone)
+              if (!channels.includes('sms')) channels.push('sms')
+            }
+          }
+          if (template.channels.includes('whatsapp')) {
+            const phone = student.parent_phone || student.mobile_no
+            if (phone) {
+              if (!recipients.includes(phone)) recipients.push(phone)
+              if (!channels.includes('whatsapp')) channels.push('whatsapp')
+            }
+          }
+          if (student.can_receive_email !== false && template.channels.includes('email') && student.email) {
+            recipients.push(student.email)
+            if (!channels.includes('email')) channels.push('email')
+          }
+
+          if (recipients.length === 0) return r
+
+          const body = (template.body ?? '')
+            .replace(/\{\{school_name\}\}/g, schoolName)
+            .replace(/\{\{full_name\}\}/g, student.full_name)
+            .replace(/\{\{first_name\}\}/g, student.full_name.split(' ')[0] ?? '')
+            .replace(/\{\{date\}\}/g, r.date)
+          const subject = template.subject
+            ?.replace(/\{\{school_name\}\}/g, schoolName)
+            .replace(/\{\{full_name\}\}/g, student.full_name)
+
+          get().sendMessage({
+            channels,
+            audience_kind: 'individuals',
+            audience_description: `Absence alert · ${student.full_name} (${student.class_name})`,
+            recipients,
+            subject,
+            body,
+            template_id: template.id,
+          })
+          return { ...r, parent_notified: true }
+        })
+
+        set((s) => {
+          const existing = s.attendance.filter((a) => a.date !== today || !notified.find((r) => r.student_id === a.student_id))
+          return { attendance: [...existing, ...notified] }
         })
       },
 
@@ -1674,7 +1998,17 @@ export const useAppStore = create<AppState>()(
         homework: [...st.homework, { ...hw, id: `hw${Date.now()}`, submission_count: 0, created_at: new Date().toISOString() }],
       })),
 
-      submitHomework: (homeworkId, studentId, studentName, fileName, fileType, fileSize) => {
+      updateHomework: (id, data) => set((st) => ({
+        homework: st.homework.map((h) => h.id === id ? { ...h, ...data } : h),
+      })),
+
+      deleteHomework: (id) => set((st) => ({
+        homework: st.homework.filter((h) => h.id !== id),
+        // Also clear any pending submissions so the teacher doesn't see ghost rows.
+        homeworkSubmissions: st.homeworkSubmissions.filter((s) => s.homework_id !== id),
+      })),
+
+      submitHomework: (homeworkId, studentId, studentName, fileName, fileType, fileSize, fileDataUrl) => {
         set((st) => {
           const alreadySubmitted = st.homeworkSubmissions.some(
             (s) => s.homework_id === homeworkId && s.student_id === studentId
@@ -1684,7 +2018,7 @@ export const useAppStore = create<AppState>()(
             return {
               homeworkSubmissions: st.homeworkSubmissions.map((s) =>
                 s.homework_id === homeworkId && s.student_id === studentId
-                  ? { ...s, file_name: fileName, file_type: fileType, file_size: fileSize, submitted_at: new Date().toISOString() }
+                  ? { ...s, file_name: fileName, file_type: fileType, file_size: fileSize, file_data_url: fileDataUrl, submitted_at: new Date().toISOString() }
                   : s
               ),
             }
@@ -1698,6 +2032,7 @@ export const useAppStore = create<AppState>()(
               file_name: fileName,
               file_type: fileType,
               file_size: fileSize,
+              file_data_url: fileDataUrl,
               submitted_at: new Date().toISOString(),
             }],
             homework: st.homework.map((h) =>
@@ -1707,8 +2042,25 @@ export const useAppStore = create<AppState>()(
         })
       },
 
+      gradeHomeworkSubmission: (submissionId, score, comment, gradedBy) => set((st) => ({
+        homeworkSubmissions: st.homeworkSubmissions.map((s) =>
+          s.id === submissionId
+            ? { ...s, score, teacher_comment: comment, graded_by: gradedBy, graded_at: new Date().toISOString() }
+            : s),
+      })),
+
       addLessonPlan: (lp) => set((st) => ({
         lessonPlans: [...st.lessonPlans, { ...lp, id: `lp${Date.now()}`, created_at: new Date().toISOString() }],
+      })),
+
+      updateLessonPlan: (id, data) => set((st) => ({
+        lessonPlans: st.lessonPlans.map((l) => l.id === id
+          ? { ...l, ...data, updated_at: new Date().toISOString() }
+          : l),
+      })),
+
+      deleteLessonPlan: (id) => set((st) => ({
+        lessonPlans: st.lessonPlans.filter((l) => l.id !== id),
       })),
 
       addAnnouncement: (a) => set((st) => ({
@@ -1720,12 +2072,424 @@ export const useAppStore = create<AppState>()(
       })),
 
       addFeedPost: (p) => set((st) => ({
-        feedPosts: [{ ...p, id: `fp${Date.now()}`, likes: 0, created_at: new Date().toISOString() }, ...st.feedPosts],
+        feedPosts: [{
+          ...p,
+          id: `fp${Date.now()}`,
+          likes: 0,
+          // Admins / principals self-publish; teachers and parents go to the
+          // moderation queue. Caller can override by passing an explicit status.
+          status: p.status ?? (p.author_role === 'admin' || p.author_role === 'principal' ? 'approved' : 'pending'),
+          created_at: new Date().toISOString(),
+        }, ...st.feedPosts],
       })),
 
       likePost: (id) => set((st) => ({
         feedPosts: st.feedPosts.map((p) => p.id === id ? { ...p, likes: p.likes + 1 } : p),
       })),
+
+      approveFeedPost: (id, moderator) => set((st) => ({
+        feedPosts: st.feedPosts.map((p) => p.id === id ? {
+          ...p,
+          status: 'approved',
+          moderated_by: moderator,
+          moderated_at: new Date().toISOString(),
+          rejection_reason: undefined,
+        } : p),
+      })),
+
+      rejectFeedPost: (id, moderator, reason) => set((st) => ({
+        feedPosts: st.feedPosts.map((p) => p.id === id ? {
+          ...p,
+          status: 'rejected',
+          moderated_by: moderator,
+          moderated_at: new Date().toISOString(),
+          rejection_reason: reason,
+        } : p),
+      })),
+
+      deleteFeedPost: (id) => set((st) => ({
+        feedPosts: st.feedPosts.filter((p) => p.id !== id),
+      })),
+
+      getOrCreateChatThread: (input) => {
+        const existing = get().chatThreads.find((t) =>
+          t.family_id === input.family_id &&
+          t.teacher_id === input.teacher_id &&
+          t.student_id === input.student_id
+        )
+        if (existing) {
+          // Refresh cached display fields in case names changed (e.g. teacher
+          // moved class). Keeps stale-name UI from confusing parents.
+          if (existing.teacher_name !== input.teacher_name || existing.student_name !== input.student_name) {
+            set((st) => ({
+              chatThreads: st.chatThreads.map((t) => t.id === existing.id
+                ? { ...t, teacher_name: input.teacher_name, student_name: input.student_name, class_name: input.class_name, parent_name: input.parent_name }
+                : t),
+            }))
+            return { ...existing, teacher_name: input.teacher_name, student_name: input.student_name, class_name: input.class_name, parent_name: input.parent_name }
+          }
+          return existing
+        }
+        const thread: ChatThread = {
+          id: `ct-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          family_id: input.family_id,
+          parent_name: input.parent_name,
+          teacher_id: input.teacher_id,
+          teacher_name: input.teacher_name,
+          student_id: input.student_id,
+          student_name: input.student_name,
+          class_name: input.class_name,
+          unread_for_parent: 0,
+          unread_for_teacher: 0,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ chatThreads: [thread, ...st.chatThreads] }))
+        return thread
+      },
+
+      sendChatMessage: (threadId, sender_role, sender_id, sender_name, body, priority) => {
+        const trimmed = body.trim()
+        if (!trimmed) return null
+        const msg: ChatMessage = {
+          id: `cm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          thread_id: threadId,
+          sender_role,
+          sender_id,
+          sender_name,
+          body: trimmed,
+          priority,
+          created_at: new Date().toISOString(),
+        }
+        const preview = (priority === 'urgent' ? '🚨 ' : '') + trimmed.slice(0, 80)
+        set((st) => ({
+          chatMessages: [...st.chatMessages, msg],
+          chatThreads: st.chatThreads.map((t) => t.id === threadId ? {
+            ...t,
+            last_message_at: msg.created_at,
+            last_message_preview: preview,
+            unread_for_parent: sender_role === 'teacher' ? t.unread_for_parent + 1 : t.unread_for_parent,
+            unread_for_teacher: sender_role === 'parent' ? t.unread_for_teacher + 1 : t.unread_for_teacher,
+          } : t),
+        }))
+        return msg
+      },
+
+      acknowledgeUrgentMessage: (messageId) => set((st) => ({
+        chatMessages: st.chatMessages.map((m) => m.id === messageId
+          ? { ...m, acknowledged_at: new Date().toISOString() }
+          : m),
+      })),
+
+      markChatThreadRead: (threadId, role) => set((st) => ({
+        chatThreads: st.chatThreads.map((t) => t.id === threadId ? {
+          ...t,
+          unread_for_parent: role === 'parent' ? 0 : t.unread_for_parent,
+          unread_for_teacher: role === 'teacher' ? 0 : t.unread_for_teacher,
+        } : t),
+      })),
+
+      // ── Phase 15f: bus tracking ──
+      addBusRoute: (r) => {
+        const route: BusRoute = { ...r, id: `br-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`, created_at: new Date().toISOString() }
+        set((st) => ({ busRoutes: [...st.busRoutes, route] }))
+        return route
+      },
+      updateBusRoute: (id, data) => set((st) => ({
+        busRoutes: st.busRoutes.map((r) => r.id === id ? { ...r, ...data } : r),
+      })),
+      deleteBusRoute: (id) => set((st) => ({
+        busRoutes: st.busRoutes.filter((r) => r.id !== id),
+        busStops: st.busStops.filter((s) => s.route_id !== id),
+      })),
+      addBusStop: (s) => {
+        const stop: BusStop = { ...s, id: `bs-${Date.now()}-${Math.random().toString(36).slice(2, 5)}` }
+        set((st) => ({ busStops: [...st.busStops, stop] }))
+        return stop
+      },
+      updateBusStop: (id, data) => set((st) => ({
+        busStops: st.busStops.map((s) => s.id === id ? { ...s, ...data } : s),
+      })),
+      deleteBusStop: (id) => set((st) => ({
+        busStops: st.busStops.filter((s) => s.id !== id),
+      })),
+
+      startBusRun: (route_id, direction) => {
+        const stops = get().busStops.filter((s) => s.route_id === route_id).sort((a, b) => a.order - b.order)
+        const firstStop = direction === 'pickup' ? stops[0] : stops[stops.length - 1]
+        const run: BusRun = {
+          id: `run-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          route_id,
+          direction,
+          date: new Date().toISOString().slice(0, 10),
+          status: 'in_progress',
+          started_at: new Date().toISOString(),
+          next_stop_id: firstStop?.id,
+        }
+        const event: BusEvent = {
+          id: `be-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          run_id: run.id,
+          kind: 'started',
+          note: direction === 'pickup' ? 'Morning pickup started' : 'Afternoon drop-off started',
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ busRuns: [run, ...st.busRuns], busEvents: [event, ...st.busEvents] }))
+        return run
+      },
+
+      arriveAtStop: (run_id, stop_id, lat, lng) => {
+        const stop = get().busStops.find((s) => s.id === stop_id)
+        const event: BusEvent = {
+          id: `be-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          run_id, kind: 'arrived_stop', stop_id, stop_name: stop?.name, lat, lng,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({
+          busEvents: [event, ...st.busEvents],
+          busRuns: st.busRuns.map((r) => r.id === run_id ? {
+            ...r,
+            current_stop_id: stop_id,
+            current_lat: lat ?? r.current_lat,
+            current_lng: lng ?? r.current_lng,
+            current_ping_at: new Date().toISOString(),
+          } : r),
+        }))
+      },
+
+      departStop: (run_id, stop_id, lat, lng) => {
+        const run = get().busRuns.find((r) => r.id === run_id)
+        if (!run) return
+        const stops = get().busStops.filter((s) => s.route_id === run.route_id).sort((a, b) => a.order - b.order)
+        const ordered = run.direction === 'pickup' ? stops : [...stops].reverse()
+        const idx = ordered.findIndex((s) => s.id === stop_id)
+        const next = idx >= 0 ? ordered[idx + 1] : undefined
+        const stop = stops.find((s) => s.id === stop_id)
+        const event: BusEvent = {
+          id: `be-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          run_id, kind: 'departed_stop', stop_id, stop_name: stop?.name, lat, lng,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({
+          busEvents: [event, ...st.busEvents],
+          busRuns: st.busRuns.map((r) => r.id === run_id ? {
+            ...r,
+            next_stop_id: next?.id,
+            current_lat: lat ?? r.current_lat,
+            current_lng: lng ?? r.current_lng,
+            current_ping_at: new Date().toISOString(),
+          } : r),
+        }))
+      },
+
+      completeBusRun: (run_id, lat, lng) => {
+        const event: BusEvent = {
+          id: `be-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          run_id, kind: 'completed', lat, lng,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({
+          busEvents: [event, ...st.busEvents],
+          busRuns: st.busRuns.map((r) => r.id === run_id ? {
+            ...r,
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            next_stop_id: undefined,
+            current_lat: lat ?? r.current_lat,
+            current_lng: lng ?? r.current_lng,
+            current_ping_at: new Date().toISOString(),
+          } : r),
+        }))
+      },
+
+      pingBusLocation: (run_id, lat, lng) => set((st) => ({
+        busRuns: st.busRuns.map((r) => r.id === run_id ? {
+          ...r,
+          current_lat: lat,
+          current_lng: lng,
+          current_ping_at: new Date().toISOString(),
+        } : r),
+      })),
+
+      gateCheckIn: (codeOrId) => {
+        const q = codeOrId.trim().toLowerCase()
+        if (!q) return { ok: false, reason: "Enter or scan a student ID" }
+        const st = get()
+        const student = st.students.find((s) =>
+          s.student_id.toLowerCase() === q || s.id.toLowerCase() === q
+        )
+        if (!student) return { ok: false, reason: "No student matches that code" }
+        const today = todayISO()
+        const nowHM = new Date().toTimeString().slice(0, 5)
+        const existing = st.attendance.find((a) => a.student_id === student.id && a.date === today)
+        if (existing) {
+          return { ok: true, studentName: student.full_name, alreadyToday: true }
+        }
+        set((s2) => ({
+          attendance: [...s2.attendance, {
+            id: `att-gate-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+            student_id: student.id,
+            student_name: student.full_name,
+            class_name: student.class_name,
+            date: today,
+            status: 'present' as const,
+            parent_notified: false,
+            marked_by: 'gate_kiosk',
+            context: 'gate' as const,
+            arrival_time: nowHM,
+          }],
+        }))
+        return { ok: true, studentName: student.full_name }
+      },
+
+      submitAssignment: (input) => {
+        const st = get()
+        const assignment = st.onlineAssignments.find((a) => a.id === input.assignment_id)
+        if (!assignment) {
+          // Should not happen — UI prevents it. Returns a stub so callers don't crash.
+          return { ...input, id: `as-fail-${Date.now()}`, submitted_at: new Date().toISOString() }
+        }
+        // Auto-grade multiple choice; tally total marks available.
+        let autoScore = 0
+        let totalPossible = 0
+        for (const q of assignment.questions) {
+          totalPossible += q.marks
+          if (q.kind === 'multiple_choice') {
+            const ans = input.answers.find((a) => a.question_id === q.id)
+            if (ans && ans.choice_index === q.correct_choice_index) autoScore += q.marks
+          }
+        }
+        const sub: AssignmentSubmission = {
+          ...input,
+          id: `asub-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          submitted_at: new Date().toISOString(),
+          auto_score: autoScore,
+          total_possible: totalPossible,
+        }
+        // Dedupe: one submission per student per assignment — replace if present.
+        set((s2) => ({
+          assignmentSubmissions: [
+            sub,
+            ...s2.assignmentSubmissions.filter((x) => !(x.assignment_id === sub.assignment_id && x.student_id === sub.student_id)),
+          ],
+        }))
+        return sub
+      },
+
+      gradeAssignmentSubmission: (id, manual_score, gradedBy) => set((st) => ({
+        assignmentSubmissions: st.assignmentSubmissions.map((s) =>
+          s.id === id
+            ? { ...s, manual_score, graded_by: gradedBy, graded_at: new Date().toISOString() }
+            : s),
+      })),
+
+      recordBusBoarding: (run_id, student_id, kind) => {
+        const st = get()
+        const student = st.students.find((s) => s.id === student_id)
+        if (!student) return
+        const today = todayISO()
+        // Dedupe today's classroom-vs-bus row so a teacher's classroom mark
+        // isn't overwritten — but if no record exists, this becomes the
+        // canonical present mark for the day with context='bus'.
+        const existingIdx = st.attendance.findIndex((a) => a.student_id === student_id && a.date === today)
+        const record = {
+          id: existingIdx >= 0 ? st.attendance[existingIdx].id : `att-bus-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          student_id,
+          student_name: student.full_name,
+          class_name: student.class_name,
+          date: today,
+          status: 'present' as const,
+          parent_notified: existingIdx >= 0 ? st.attendance[existingIdx].parent_notified : false,
+          marked_by: 'bus_driver',
+          context: 'bus' as const,
+        }
+        const nextAttendance = existingIdx >= 0
+          ? st.attendance.map((a, i) => i === existingIdx ? { ...a, context: 'bus' as const, marked_by: 'bus_driver' } : a)
+          : [...st.attendance, record]
+
+        const event = {
+          id: `be-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          run_id,
+          kind: 'arrived_stop' as const,
+          stop_id: undefined,
+          stop_name: kind === 'on' ? `${student.full_name} boarded` : `${student.full_name} alighted`,
+          created_at: new Date().toISOString(),
+        }
+        set({ attendance: nextAttendance, busEvents: [event, ...st.busEvents] })
+      },
+
+      staffCheckInNow: (staff_id, staff_name, role_label) => {
+        const today = todayISO()
+        const now = new Date().toISOString()
+        const existing = get().staffCheckIns.find((c) => c.staff_id === staff_id && c.date === today)
+        if (existing) return
+        const entry: StaffCheckIn = {
+          id: `sci-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          staff_id, staff_name, role_label, date: today, in_at: now,
+        }
+        set((st) => ({ staffCheckIns: [entry, ...st.staffCheckIns] }))
+      },
+
+      staffCheckOutNow: (staff_id) => {
+        const today = todayISO()
+        set((st) => ({
+          staffCheckIns: st.staffCheckIns.map((c) =>
+            c.staff_id === staff_id && c.date === today && !c.out_at
+              ? { ...c, out_at: new Date().toISOString() }
+              : c),
+        }))
+      },
+
+      submitExcuseRequest: (req) => {
+        const entry: ExcuseRequest = {
+          ...req,
+          id: `exc-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ excuseRequests: [entry, ...st.excuseRequests] }))
+        return entry
+      },
+
+      reviewExcuseRequest: (id, decision, reviewer, notes) => {
+        const st = get()
+        const req = st.excuseRequests.find((r) => r.id === id)
+        if (!req) return
+        const now = new Date().toISOString()
+        // If approved, retro-mark every attendance row in the date range as
+        // 'excused' (creating rows if they don't exist yet).
+        let nextAttendance = st.attendance
+        if (decision === 'approved') {
+          const student = st.students.find((s) => s.id === req.student_id)
+          const dates: string[] = []
+          const start = new Date(req.start_date)
+          const end = new Date(req.end_date)
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            dates.push(d.toISOString().slice(0, 10))
+          }
+          for (const date of dates) {
+            const idx = nextAttendance.findIndex((a) => a.student_id === req.student_id && a.date === date)
+            if (idx >= 0) {
+              nextAttendance = nextAttendance.map((a, i) => i === idx ? { ...a, status: 'excused' as const } : a)
+            } else if (student) {
+              nextAttendance = [...nextAttendance, {
+                id: `att-exc-${date}-${student.id}`,
+                student_id: student.id,
+                student_name: student.full_name,
+                class_name: student.class_name,
+                date,
+                status: 'excused' as const,
+                parent_notified: true,
+                marked_by: reviewer ?? 'admin',
+              }]
+            }
+          }
+        }
+        set({
+          attendance: nextAttendance,
+          excuseRequests: st.excuseRequests.map((r) => r.id === id
+            ? { ...r, status: decision, reviewed_by: reviewer, reviewed_at: now, review_notes: notes }
+            : r),
+        })
+      },
 
       recordBECEAttempt: (studentId, subject, score, total) => set((st) => ({
         beceAttempts: [...st.beceAttempts, { id: `ba${Date.now()}`, student_id: studentId, subject, score, total, percentage: Math.round((score / total) * 100), completed_at: new Date().toISOString() }],
@@ -1767,6 +2531,43 @@ export const useAppStore = create<AppState>()(
       markPayrollPaid: (id) => set((st) => ({
         payroll: st.payroll.map((p) => p.id === id ? { ...p, paid: true, paid_at: new Date().toISOString() } : p),
       })),
+
+      proratePayrollByCheckIns: (month, year) => {
+        const FULL_MONTH_DAYS = 22
+        const st = get()
+        const monthRows = st.payroll.filter((p) => p.month === month && p.year === year)
+        if (monthRows.length === 0) return { adjusted: 0 }
+        const monthPrefix = `${year}-${String(month).padStart(2, '0')}`
+        let adjusted = 0
+        const updates = new Map<string, Partial<Payroll>>()
+        for (const row of monthRows) {
+          const daysWorked = new Set(
+            st.staffCheckIns
+              .filter((c) => c.staff_id === row.teacher_id && c.date.startsWith(monthPrefix))
+              .map((c) => c.date)
+          ).size
+          if (daysWorked >= FULL_MONTH_DAYS) continue
+          const teacher = st.teachers.find((t) => t.id === row.teacher_id)
+          if (!teacher) continue
+          const proratedBasic = +(teacher.basic_salary * (daysWorked / FULL_MONTH_DAYS)).toFixed(2)
+          const paye = calculatePAYE(proratedBasic)
+          const ssnit = calculateSSNIT(proratedBasic)
+          updates.set(row.id, {
+            basic_salary: proratedBasic,
+            paye,
+            ssnit_employee: ssnit.employee,
+            ssnit_employer: ssnit.employer,
+            net_pay: +(proratedBasic + row.allowances - paye - ssnit.employee).toFixed(2),
+          })
+          adjusted += 1
+        }
+        if (adjusted > 0) {
+          set((s2) => ({
+            payroll: s2.payroll.map((p) => updates.has(p.id) ? { ...p, ...updates.get(p.id) } : p),
+          }))
+        }
+        return { adjusted }
+      },
 
       createAccount: (data) => {
         const password = `Phoenix${Math.floor(1000 + Math.random() * 9000)}`
@@ -1864,6 +2665,31 @@ export const useAppStore = create<AppState>()(
         ),
       })),
     }),
-    { name: 'phoenix-school-data' }
+    {
+      name: 'phoenix-school-data',
+      version: 2,
+      // Persist v1 (build 10–13) shipped with `accounts: []`. On upgrade we
+      // need to seed real admin + principal logins so the school can actually
+      // sign in. Anything else in the persisted state stays untouched.
+      migrate: (persisted, version) => {
+        if (!persisted || typeof persisted !== 'object') return persisted
+        const state = persisted as Record<string, unknown>
+        if (version < 2) {
+          const existing = Array.isArray(state.accounts) ? (state.accounts as Array<{ email?: string }>) : []
+          const hasAdmin     = existing.some((a) => a?.email?.toLowerCase() === 'admin@phoenixintl.school')
+          const hasPrincipal = existing.some((a) => a?.email?.toLowerCase() === 'principal@phoenixintl.school')
+          const adds: UserAccount[] = []
+          const now = new Date().toISOString()
+          if (!hasAdmin) {
+            adds.push({ id: 'acct-admin-1',     full_name: 'School Administrator', email: 'admin@phoenixintl.school',     role: 'admin',     password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: now })
+          }
+          if (!hasPrincipal) {
+            adds.push({ id: 'acct-principal-1', full_name: 'Principal',            email: 'principal@phoenixintl.school', role: 'principal', password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: now })
+          }
+          if (adds.length > 0) state.accounts = [...adds, ...existing]
+        }
+        return state
+      },
+    }
   )
 )

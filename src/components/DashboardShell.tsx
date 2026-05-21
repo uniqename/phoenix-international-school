@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import type { UserRole } from "@/lib/types";
+import NotificationBell from "@/components/NotificationBell";
 import toast from "react-hot-toast";
 
 interface NavItem { icon: string; label: string; href: string }
@@ -21,6 +22,7 @@ const ROLE_META: Record<UserRole, { title: string; color: string; icon: string }
   teacher:   { title: "Teacher Portal",   color: "#6B21A8", icon: "👩‍🏫" },
   parent:    { title: "Parent Portal",    color: "#2B55C9", icon: "👨‍👩‍👧" },
   student:   { title: "Student Portal",   color: "#8B35E0", icon: "🎒" },
+  driver:    { title: "Driver App",       color: "#D97706", icon: "🚌" },
 }
 
 export default function DashboardShell({ role, navItems, children }: Props) {
@@ -149,13 +151,16 @@ export default function DashboardShell({ role, navItems, children }: Props) {
       <aside className="hidden md:flex flex-col w-60 flex-shrink-0 sticky top-0 h-screen overflow-y-auto"
         style={{ background: "#0C0A1E", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="p-4 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-2.5 mb-4">
-            <img src="/logo.png" alt="Phoenix crest" className="w-9 h-11 object-contain shrink-0" />
-            <div>
-              <div className="text-white font-black text-xs leading-tight">Phoenix International</div>
-              <div className="text-[10px]" style={{ color: "#C4B5FD" }}>School Ghana</div>
-            </div>
-          </Link>
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/" className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="Phoenix crest" className="w-9 h-11 object-contain shrink-0" />
+              <div>
+                <div className="text-white font-black text-xs leading-tight">Phoenix International</div>
+                <div className="text-[10px]" style={{ color: "#C4B5FD" }}>School Ghana</div>
+              </div>
+            </Link>
+            <NotificationBell role={role} />
+          </div>
           <div className="flex items-center gap-2.5 p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white"
               style={{ background: meta.color }}>
@@ -209,18 +214,28 @@ export default function DashboardShell({ role, navItems, children }: Props) {
       </aside>
 
       {/* Mobile top bar — clears iPhone notch / Dynamic Island via safe-area inset */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4"
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3"
         style={{
           background: "#0C0A1E",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)",
           paddingBottom: "0.5rem",
         }}>
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Phoenix" className="w-7 h-8 object-contain" />
-          <span className="text-white font-black text-sm">Phoenix</span>
+        <div className="flex items-center gap-1.5">
+          {path !== `/${role}` && (
+            <button type="button" onClick={() => router.back()} aria-label="Go back"
+              className="px-2.5 py-1.5 rounded-lg text-[15px] font-bold leading-none"
+              style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}>
+              ←
+            </button>
+          )}
+          <Link href={`/${role}`} className="flex items-center gap-1.5">
+            <img src="/logo.png" alt="Phoenix" className="w-7 h-8 object-contain" />
+            <span className="text-white font-black text-sm">Phoenix</span>
+          </Link>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationBell role={role} />
           <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: meta.color + "30", color: "#fff", border: `1px solid ${meta.color}` }}>
             {meta.icon} {role}
           </span>
@@ -242,6 +257,14 @@ export default function DashboardShell({ role, navItems, children }: Props) {
       {/* Main — mobile clears notch + mobile top bar; desktop uses normal padding */}
       <div className="flex-1 min-w-0 min-h-screen">
         <main className="px-4 md:px-6 md:py-6 max-w-7xl mx-auto pt-[calc(env(safe-area-inset-top,0px)+4.5rem)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] md:pt-6 md:pb-6">
+          {/* Desktop back button — only when we're not on the role home */}
+          {path !== `/${role}` && (
+            <button type="button" onClick={() => router.back()}
+              className="hidden md:inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-lg text-xs font-bold"
+              style={{ background: "rgba(255,255,255,0.06)", color: "white", border: "1px solid rgba(255,255,255,0.12)" }}>
+              ← Back
+            </button>
+          )}
           {children}
         </main>
       </div>

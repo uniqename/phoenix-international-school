@@ -1,35 +1,63 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 
+// Principal and Admin share the same screens (the shell handles overlap at
+// DashboardShell.tsx:39). One tile, two sign-in shortcuts under it.
 const PORTALS = [
-  { label: "Principal Portal", sub: "Headmaster · Oversight",     href: "/login?role=principal", icon: "👔", from: "#2A1A05", to: "#F59E0B" },
-  { label: "Admin Portal",   sub: "School Office · Accountant",   href: "/login?role=admin",   icon: "🏛️", from: "#0C0A1E", to: "#1A3FA0" },
-  { label: "Teacher Portal", sub: "Class & Subject Teachers",     href: "/login?role=teacher", icon: "👩‍🏫", from: "#1E0B42", to: "#6B21A8" },
-  { label: "Parent Portal",  sub: "Parents & Guardians",          href: "/login?role=parent",  icon: "👨‍👩‍👧", from: "#0D1E5C", to: "#2B55C9" },
-  { label: "Student Portal", sub: "Primary through JHS 3",        href: "/login?role=student", icon: "🎒",  from: "#2D0F5C", to: "#8B35E0" },
+  { label: "Admin / Principal", sub: "Office · Oversight",      href: "/login?role=admin",   icon: "🏛️", from: "#0C0A1E", to: "#1A3FA0" },
+  { label: "Teacher Portal",    sub: "Class & Subject Teachers", href: "/login?role=teacher", icon: "👩‍🏫", from: "#1E0B42", to: "#6B21A8" },
+  { label: "Parent Portal",     sub: "Parents & Guardians",      href: "/login?role=parent",  icon: "👨‍👩‍👧", from: "#0D1E5C", to: "#2B55C9" },
+  { label: "Student Portal",    sub: "Primary through JHS 3",    href: "/login?role=student", icon: "🎒",  from: "#2D0F5C", to: "#8B35E0" },
 ];
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [stuck, setStuck] = useState(false);
 
   useEffect(() => {
     if (!loading && user) router.replace(`/${user.role}`);
   }, [user, loading, router]);
 
+  // If we're still loading after 5s something has hung (e.g. iOS WebView
+  // network issue). Surface a recovery option so the user isn't trapped on
+  // the bouncing logo.
+  useEffect(() => {
+    if (!loading) { setStuck(false); return; }
+    const t = window.setTimeout(() => setStuck(true), 5000);
+    return () => window.clearTimeout(t);
+  }, [loading]);
+
   if (loading) {
     return (
-      <div className="min-h-screen hero-bg flex items-center justify-center">
-        <img src="/logo.png" alt="Phoenix" className="w-20 h-24 object-contain animate-float opacity-80" />
+      <div className="min-h-screen hero-bg flex flex-col items-center justify-center p-6 safe-top safe-bottom">
+        <img src="/logo-transparent.png" alt="Phoenix" className="w-32 h-32 object-contain animate-float opacity-95" />
+        {stuck && (
+          <div className="mt-8 text-center max-w-xs">
+            <p className="text-xs text-white/70 mb-3">
+              Taking longer than usual to load. You can continue without signing in:
+            </p>
+            <button
+              type="button"
+              onClick={() => { try { window.location.reload(); } catch { /* noop */ } }}
+              className="btn-gold text-sm px-5 py-2"
+            >
+              🔁 Reload
+            </button>
+            <Link href="/login" className="block mt-3 text-xs font-bold text-yellow-300 underline">
+              Continue to sign-in →
+            </Link>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen hero-bg grid-pattern flex flex-col">
+    <div className="min-h-screen hero-bg grid-pattern flex flex-col safe-top safe-bottom">
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
 
         {/* Logo */}

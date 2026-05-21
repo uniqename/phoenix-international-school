@@ -12,14 +12,7 @@ export default function PrincipalOverview() {
   const payments  = useAppStore((s) => s.payments);
   const teachers  = useAppStore((s) => s.teachers);
   const attendance = useAppStore((s) => s.attendance);
-  const settings   = useAppStore((s) => s.schoolSettings);
-
-  const smsBelowThreshold = settings.sms_provider !== "none"
-    && settings.sms_credit_balance > 0
-    && settings.sms_credit_balance < settings.sms_alert_threshold;
-  const smsZero = settings.sms_provider !== "none" && settings.sms_credit_balance === 0;
-  const noHubtelKeys = settings.sms_provider === "hubtel" && (!settings.hubtel_client_id || !settings.hubtel_client_secret);
-  const smsDeferred = settings.sms_provider === "none";
+  // SMS banners suppressed for now (re-enable in /admin/settings).
 
   const today = new Date().toISOString().split("T")[0];
   const todayAtt = attendance.filter((a) => a.date === today);
@@ -44,57 +37,8 @@ export default function PrincipalOverview() {
     <DashboardShell role="principal" navItems={NAV}>
       <h2 className="text-xl font-black text-white mb-6">Principal Overview</h2>
 
-      {/* SMS credit alerts — only when a provider is active */}
-      {(smsZero || smsBelowThreshold) && (
-        <div className="rounded-2xl p-4 mb-5 flex items-start gap-3"
-          style={{ background: smsZero ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.18)", border: `1px solid ${smsZero ? "rgba(239,68,68,0.5)" : "rgba(245,158,11,0.5)"}` }}>
-          <span className="text-2xl">{smsZero ? "🚨" : "⚠️"}</span>
-          <div className="flex-1">
-            <p className="font-black text-white text-sm">
-              {smsZero
-                ? "SMS credit is empty — parent SMS notices are NOT being sent right now."
-                : `Low SMS credit: GHS ${settings.sms_credit_balance.toFixed(2)} (below your alert threshold of GHS ${settings.sms_alert_threshold.toFixed(2)})`}
-            </p>
-            <p className="text-xs text-white/80 mt-1">
-              Top up at <span className="font-mono">unity.hubtel.com</span> to keep fee reminders, attendance alerts, and urgent notices flowing.
-            </p>
-          </div>
-          <Link href="/admin/settings" className="text-xs font-bold px-3 py-2 rounded-lg bg-white text-gray-900 self-center">
-            Settings
-          </Link>
-        </div>
-      )}
-      {noHubtelKeys && !smsZero && !smsBelowThreshold && (
-        <div className="rounded-2xl p-4 mb-5 flex items-start gap-3"
-          style={{ background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.4)" }}>
-          <span className="text-2xl">🔧</span>
-          <div className="flex-1">
-            <p className="font-black text-white text-sm">Hubtel keys not yet configured</p>
-            <p className="text-xs text-white/80 mt-1">
-              Add your Hubtel Client ID + Secret in Settings to enable parent SMS notices.
-            </p>
-          </div>
-          <Link href="/admin/settings" className="text-xs font-bold px-3 py-2 rounded-lg bg-white text-gray-900 self-center">
-            Set up
-          </Link>
-        </div>
-      )}
-
-      {/* Informational: SMS deferred — Hubtel onboarding in progress */}
-      {smsDeferred && (
-        <div className="rounded-2xl p-3 mb-5 flex items-start gap-3"
-          style={{ background: "rgba(148,163,184,0.15)", border: "1px solid rgba(148,163,184,0.35)" }}>
-          <span className="text-lg">ℹ️</span>
-          <div className="flex-1">
-            <p className="text-sm text-white/95">
-              <strong>SMS notices paused</strong> — Hubtel onboarding pending (needs cert of incorporation, Ghana Card IDs of directors, business logo). Notices currently sent in-app + email only.
-            </p>
-            <p className="text-xs text-white/70 mt-0.5">
-              Switch <span className="font-mono">SMS provider</span> in Settings to <span className="font-mono">hubtel</span> and paste keys once approved.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* SMS / Hubtel banners hidden from the dashboard at the user's request.
+          They reappear automatically once a real Hubtel key is added. */}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">

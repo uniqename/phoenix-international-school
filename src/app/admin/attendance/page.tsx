@@ -193,6 +193,8 @@ export default function AttendanceAdminPage() {
                     <th className="text-left px-4 py-3 font-semibold">Student</th>
                     <th className="text-left px-4 py-3 font-semibold">Class</th>
                     <th className="text-left px-4 py-3 font-semibold">Status</th>
+                    <th className="text-left px-4 py-3 font-semibold">Detail</th>
+                    <th className="text-left px-4 py-3 font-semibold">Marked by</th>
                     <th className="text-left px-4 py-3 font-semibold">Parent Notified</th>
                   </tr>
                 </thead>
@@ -211,6 +213,15 @@ export default function AttendanceAdminPage() {
                             {st.emoji} {st.label}
                           </span>
                         </td>
+                        <td className="px-4 py-3 text-xs text-gray-600">
+                          {a.arrival_time && <div>🕐 Arrived {a.arrival_time}</div>}
+                          {a.context === "bus" && <div className="text-purple-600">🚌 On bus</div>}
+                          {a.reason && <div className="italic">"{a.reason}"</div>}
+                          {!a.arrival_time && a.context !== "bus" && !a.reason && <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600">
+                          {a.marked_by ?? <span className="text-gray-300">—</span>}
+                        </td>
                         <td className="px-4 py-3">
                           {a.status === "absent" ? (
                             a.parent_notified
@@ -225,7 +236,7 @@ export default function AttendanceAdminPage() {
                       </tr>
                     );
                   }) : (
-                    <tr><td colSpan={4} className="text-center py-8 text-gray-400 text-sm">No attendance records for this date/class.</td></tr>
+                    <tr><td colSpan={6} className="text-center py-8 text-gray-400 text-sm">No attendance records for this date/class.</td></tr>
                   )}
                 </tbody>
               </table>

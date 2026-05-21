@@ -5,7 +5,76 @@ import { TEACHER_NAV as NAV } from "@/lib/teacherNav";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { SUBJECTS_BY_LEVEL, CLASSES } from "@/lib/utils";
+import HomeworkDetailModal from "@/components/HomeworkDetailModal";
+import type { HomeworkAssignment, HomeworkSubmission } from "@/lib/types";
 import toast from "react-hot-toast";
+
+// Inline grade-a-submission row. Tap "Grade" → reveal score + comment fields.
+function SubmissionRow({ sub, fmtSize, onGrade }: {
+  sub: HomeworkSubmission;
+  fmtSize: (n: number) => string;
+  onGrade: (score: number, comment?: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [score, setScore]       = useState<string>(sub.score != null ? String(sub.score) : "");
+  const [comment, setComment]   = useState<string>(sub.teacher_comment ?? "");
+
+  const handleSave = () => {
+    const n = parseInt(score, 10);
+    if (isNaN(n) || n < 0 || n > 100) { toast.error("Score must be 0–100"); return; }
+    onGrade(n, comment.trim() || undefined);
+    setExpanded(false);
+  };
+
+  const isGraded = sub.score != null;
+
+  return (
+    <div className="p-2 rounded-lg bg-gray-50">
+      <div className="flex items-center gap-2 text-xs">
+        <span className={`font-bold ${isGraded ? "text-blue-500" : "text-green-500"}`}>{isGraded ? "📝" : "✅"}</span>
+        <span className="font-semibold text-gray-800 flex-1 truncate">{sub.student_name}</span>
+        {sub.file_data_url ? (
+          <a href={sub.file_data_url} download={sub.file_name}
+            className="text-blue-700 font-bold truncate max-w-[120px] underline">{sub.file_name}</a>
+        ) : (
+          <span className="text-gray-500 truncate max-w-[120px]">{sub.file_name}</span>
+        )}
+        <span className="text-gray-400 flex-shrink-0">{fmtSize(sub.file_size)}</span>
+        {isGraded && (
+          <span className="text-[11px] font-black px-1.5 py-0.5 rounded-md"
+            style={{ background: "rgba(16,185,129,0.15)", color: "#065f46" }}>{sub.score}/100</span>
+        )}
+        <button type="button" onClick={() => setExpanded((v) => !v)}
+          className="text-[10px] font-bold px-2 py-1 rounded-md ml-1"
+          style={{ background: isGraded ? "rgba(99,102,241,0.12)" : "#1A0E4D", color: isGraded ? "#1A0E4D" : "white" }}>
+          {expanded ? "Hide" : isGraded ? "Edit grade" : "Grade"}
+        </button>
+      </div>
+      {expanded && (
+        <div className="mt-2 grid grid-cols-1 sm:grid-cols-[80px_1fr_auto] gap-2 items-start">
+          <input type="number" min={0} max={100} value={score}
+            aria-label="Score out of 100"
+            placeholder="0–100"
+            onChange={(e) => setScore(e.target.value)}
+            className="w-full px-2 py-1.5 rounded-md border border-gray-200 text-sm text-gray-900" />
+          <input value={comment}
+            aria-label="Comment"
+            placeholder="Optional comment to the student"
+            onChange={(e) => setComment(e.target.value)}
+            className="w-full px-2 py-1.5 rounded-md border border-gray-200 text-sm text-gray-900" />
+          <button type="button" onClick={handleSave}
+            className="text-xs font-bold px-3 py-1.5 rounded-md"
+            style={{ background: "#10b981", color: "white" }}>
+            Save grade
+          </button>
+        </div>
+      )}
+      {sub.teacher_comment && !expanded && (
+        <p className="text-[11px] text-gray-500 italic mt-1">💬 {sub.teacher_comment}</p>
+      )}
+    </div>
+  );
+}
 
 
 function levelFromClass(className: string): string {
@@ -20,6 +89,9 @@ export default function HomeworkPage() {
   const { user }    = useAuth();
   const homework            = useAppStore((s) => s.homework);
   const addHomework         = useAppStore((s) => s.addHomework);
+  const updateHomework      = useAppStore((s) => s.updateHomework);
+  const deleteHomework      = useAppStore((s) => s.deleteHomework);
+  const gradeHomeworkSubmission = useAppStore((s) => s.gradeHomeworkSubmission);
   const addAnnouncement     = useAppStore((s) => s.addAnnouncement);
   const homeworkSubmissions = useAppStore((s) => s.homeworkSubmissions);
   const teachers            = useAppStore((s) => s.teachers);
@@ -36,6 +108,39 @@ export default function HomeworkPage() {
   const [showForm, setShowForm]   = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState({ subject: subjects[0], title: "", description: "", due_date: "", video_url: "" });
+  const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
+  const [editingHw, setEditingHw] = useState<HomeworkAssignment | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", description: "", due_date: "", video_url: "" });
+
+  const openEdit = (hw: HomeworkAssignment) => {
+    setEditingHw(hw);
+    setEditForm({
+      title: hw.title,
+      description: hw.description ?? "",
+      due_date: hw.due_date,
+      video_url: hw.video_url ?? "",
+    });
+    setHwDetail(null);
+  };
+  const handleSaveEdit = () => {
+    if (!editingHw) return;
+    if (!editForm.title.trim() || !editForm.due_date) { toast.error("Title and due date are required"); return; }
+    updateHomework(editingHw.id, {
+      title: editForm.title.trim(),
+      description: editForm.description.trim() || undefined,
+      due_date: editForm.due_date,
+      video_url: editForm.video_url.trim() || undefined,
+    });
+    setEditingHw(null);
+    toast.success("Homework updated");
+  };
+  const handleDelete = (hw: HomeworkAssignment) => {
+    if (!window.confirm(`Delete "${hw.title}"? Any student submissions will also be removed.`)) return;
+    deleteHomework(hw.id);
+    setHwDetail(null);
+    setEditingHw(null);
+    toast.success("Homework deleted");
+  };
 
   const notifyClass = (hw: typeof homework[number]) => {
     addAnnouncement({
@@ -160,16 +265,20 @@ export default function HomeworkPage() {
           const isExpanded     = expandedId === hw.id;
           return (
             <div key={hw.id} className="glass rounded-2xl p-5">
-              <div className="flex items-start justify-between mb-2">
-                <span className="text-xs font-black px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(0,48,135,0.08)", color: "#003087" }}>{hw.subject}</span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isOverdue ? "text-red-500" : "text-orange-500"}`}
-                  style={{ background: isOverdue ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)" }}>
-                  {isOverdue ? "⏰ Overdue" : `Due: ${hw.due_date}`}
-                </span>
-              </div>
-              <h3 className="font-black text-gray-900 mt-2 mb-1">{hw.title}</h3>
-              {hw.description && <p className="text-xs text-gray-500 mb-2">{hw.description}</p>}
+              <button type="button" onClick={() => setHwDetail(hw)}
+                className="w-full text-left">
+                <div className="flex items-start justify-between mb-2">
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                    style={{ background: "rgba(0,48,135,0.08)", color: "#003087" }}>{hw.subject}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isOverdue ? "text-red-500" : "text-orange-500"}`}
+                    style={{ background: isOverdue ? "rgba(239,68,68,0.08)" : "rgba(245,158,11,0.08)" }}>
+                    {isOverdue ? "⏰ Overdue" : `Due: ${hw.due_date}`}
+                  </span>
+                </div>
+                <h3 className="font-black text-gray-900 mt-2 mb-1 underline decoration-dotted">{hw.title}</h3>
+                {hw.description && <p className="text-xs text-gray-500 mb-2 line-clamp-2">{hw.description}</p>}
+                <p className="text-[10px] text-blue-700 font-bold mb-2">Tap for details & actions →</p>
+              </button>
               {hw.video_url && (
                 <a href={hw.video_url} target="_blank" rel="noreferrer"
                   className="text-xs text-blue-600 font-bold flex items-center gap-1 mb-2 hover:underline">
@@ -210,15 +319,11 @@ export default function HomeworkPage() {
               {isExpanded && hwSubs.length > 0 && (
                 <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-3">
                   {hwSubs.map((sub) => (
-                    <div key={sub.id} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-gray-50">
-                      <span className="text-green-500 font-bold">✅</span>
-                      <span className="font-semibold text-gray-800 flex-1 truncate">{sub.student_name}</span>
-                      <span className="text-gray-500 truncate max-w-[120px]">{sub.file_name}</span>
-                      <span className="text-gray-400 flex-shrink-0">{fmtSize(sub.file_size)}</span>
-                      <span className="text-gray-400 flex-shrink-0">
-                        {new Date(sub.submitted_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </div>
+                    <SubmissionRow key={sub.id} sub={sub} fmtSize={fmtSize}
+                      onGrade={(score, comment) => {
+                        gradeHomeworkSubmission(sub.id, score, comment, user?.full_name);
+                        toast.success(`Graded ${sub.student_name?.split(" ")[0]} · ${score}/100`);
+                      }} />
                   ))}
                 </div>
               )}
@@ -226,6 +331,63 @@ export default function HomeworkPage() {
           );
         })}
       </div>
+
+      <HomeworkDetailModal
+        homework={hwDetail}
+        onEdit={() => hwDetail && openEdit(hwDetail)}
+        onDelete={() => hwDetail && handleDelete(hwDetail)}
+        onClose={() => setHwDetail(null)}
+      />
+
+      {editingHw && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(12,10,30,0.7)" }}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="font-black text-gray-900 text-lg mb-4">✏️ Edit homework</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Title *</label>
+                <input value={editForm.title}
+                  aria-label="Homework title"
+                  placeholder="Homework title"
+                  onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Due date *</label>
+                <input type="date" value={editForm.due_date}
+                  aria-label="Due date"
+                  onChange={(e) => setEditForm((p) => ({ ...p, due_date: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Instructions</label>
+                <textarea rows={4} value={editForm.description}
+                  aria-label="Homework instructions"
+                  placeholder="Detailed instructions for students and parents…"
+                  onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none resize-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Video / link</label>
+                <input value={editForm.video_url}
+                  onChange={(e) => setEditForm((p) => ({ ...p, video_url: e.target.value }))}
+                  placeholder="https://…"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none" />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button type="button" onClick={() => setEditingHw(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600">
+                Cancel
+              </button>
+              <button type="button" onClick={handleSaveEdit} className="btn-gold flex-1 py-2.5 text-sm">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

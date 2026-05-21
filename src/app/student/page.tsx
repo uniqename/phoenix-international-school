@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, calculateAggregate, aggregateRating } from "@/lib/utils";
+import HomeworkDetailModal from "@/components/HomeworkDetailModal";
+import FeedPostModal from "@/components/FeedPostModal";
+import LessonDetailModal from "@/components/LessonDetailModal";
+import ProfilePhotoUploader from "@/components/ProfilePhotoUploader";
+import type { HomeworkAssignment, FeedPost, LessonPlan } from "@/lib/types";
 import toast from "react-hot-toast";
 
 function fmtSize(bytes: number) {
@@ -17,8 +22,12 @@ const NAV = [
   { icon: "🏠", label: "Dashboard",    href: "/student" },
   { icon: "📊", label: "My Grades",    href: "/student#grades" },
   { icon: "📚", label: "Homework",     href: "/student#homework" },
-  { icon: "🎓", label: "BECE Prep",    href: "/bece" },
+  { icon: "📝", label: "Assignments",  href: "/student/assignments" },
+  { icon: "💻", label: "Lessons",      href: "/student#lessons" },
+  { icon: "🎓", label: "Practice",     href: "/bece" },
+  { icon: "💬", label: "Messages",     href: "/student/chat" },
   { icon: "📸", label: "School Feed",  href: "/student#feed" },
+  { icon: "📖", label: "Library",      href: "/library" },
 ];
 
 export default function StudentPortal() {
@@ -33,6 +42,10 @@ export default function StudentPortal() {
   const submitHomeworkFn    = useAppStore((s) => s.submitHomework);
 
   const [pendingFiles, setPendingFiles] = useState<Record<string, File | null>>({});
+  const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
+  const [feedDetail, setFeedDetail] = useState<FeedPost | null>(null);
+  const [lessonDetail, setLessonDetail] = useState<LessonPlan | null>(null);
+  const lessons = useAppStore((s) => s.lessonPlans);
 
   const student    = students.find((s) => s.full_name === user?.full_name) ?? students[0];
   const myGrades   = grades.filter((g) => g.student_id === student?.id);
@@ -46,9 +59,24 @@ export default function StudentPortal() {
   const handleSubmit = (hwId: string) => {
     const file = pendingFiles[hwId];
     if (!file || !student) return;
-    submitHomeworkFn(hwId, student.id, student.full_name, file.name, file.type, file.size);
-    setPendingFiles((p) => ({ ...p, [hwId]: null }));
-    toast.success("Homework submitted successfully!");
+    // Cap files at ~10 MB so we don't blow up localStorage. Anything bigger
+    // should be shared via WhatsApp/email — we save the metadata only.
+    const TEN_MB = 10 * 1024 * 1024;
+    if (file.size > TEN_MB) {
+      submitHomeworkFn(hwId, student.id, student.full_name, file.name, file.type, file.size);
+      setPendingFiles((p) => ({ ...p, [hwId]: null }));
+      toast("File saved as note only — too large to attach. Send via WhatsApp to your teacher.", { duration: 6000 });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : undefined;
+      submitHomeworkFn(hwId, student.id, student.full_name, file.name, file.type, file.size, dataUrl);
+      setPendingFiles((p) => ({ ...p, [hwId]: null }));
+      toast.success("Homework submitted! Your teacher can now download it.");
+    };
+    reader.onerror = () => toast.error("Couldn't read the file. Try a smaller one.");
+    reader.readAsDataURL(file);
   };
 
   const aggregate = myGrades.length ? calculateAggregate(myGrades) : null;
@@ -62,10 +90,12 @@ export default function StudentPortal() {
       {/* Hero */}
       <div className="rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-4"
         style={{ background: "linear-gradient(135deg, #E5B800, #FFD700)" }}>
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-          style={{ background: "rgba(0,0,0,0.1)" }}>
-          {student?.gender === "female" ? "👧" : "👦"}
-        </div>
+        {student && (
+          <ProfilePhotoUploader studentId={student.id}
+            currentUrl={student.photo_url}
+            fallbackEmoji={student.gender === "female" ? "👧" : "👦"}
+            size={72} rounded="2xl" />
+        )}
         <div className="flex-1 text-center sm:text-left">
           <h2 className="text-xl font-black text-black mb-0.5">{student?.full_name ?? user?.full_name}</h2>
           <p className="text-yellow-800 text-sm mb-2">{student?.class_name} · {student?.student_id}</p>
@@ -78,7 +108,11 @@ export default function StudentPortal() {
         <Link href="/bece"
           className="whitespace-nowrap text-sm px-5 py-2.5 rounded-full font-black flex-shrink-0"
           style={{ background: "#0A1628", color: "#FFD700" }}>
-          BECE Practice →
+          {student?.level === "jhs" ? "BECE Practice →"
+            : student?.level === "primary" ? "Practice Quiz →"
+            : student?.level === "kg" ? "Fun Activities →"
+            : student?.level === "creche" || student?.level === "nursery" ? "Story Time →"
+            : "Practice →"}
         </Link>
       </div>
 
@@ -131,16 +165,20 @@ export default function StudentPortal() {
                 return (
                   <div key={hw.id} className="p-3 rounded-xl"
                     style={{ background: overdue ? "rgba(239,68,68,0.05)" : "rgba(0,48,135,0.05)" }}>
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-xs font-black text-gray-800">{hw.subject}</span>
-                      <span className={`text-[10px] font-bold ${overdue ? "text-red-500" : "text-orange-500"}`}>
-                        {overdue ? "Overdue" : `Due ${hw.due_date}`}
-                      </span>
-                    </div>
-                    <div className="text-xs font-semibold text-gray-700 mb-0.5">{hw.title}</div>
-                    {hw.description && (
-                      <div className="text-[11px] text-gray-500 mb-1">{hw.description}</div>
-                    )}
+                    <button type="button" onClick={() => setHwDetail(hw)}
+                      className="w-full text-left">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-xs font-black text-gray-800">{hw.subject}</span>
+                        <span className={`text-[10px] font-bold ${overdue ? "text-red-500" : "text-orange-500"}`}>
+                          {overdue ? "Overdue" : `Due ${hw.due_date}`}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-gray-700 mb-0.5 underline decoration-dotted">{hw.title}</div>
+                      {hw.description && (
+                        <div className="text-[11px] text-gray-500 mb-1 line-clamp-2">{hw.description}</div>
+                      )}
+                      <div className="text-[10px] text-blue-700 font-bold mb-1">Tap for full instructions →</div>
+                    </button>
                     {hw.video_url && (
                       <a href={hw.video_url} target="_blank" rel="noreferrer"
                         className="text-[11px] text-blue-600 font-bold hover:underline mb-1 block">
@@ -234,25 +272,120 @@ export default function StudentPortal() {
         </div>
       )}
 
+      {/* My gate check-in code — show this at the school gate every morning */}
+      {student && (
+        <div className="glass rounded-2xl p-5 mb-5 flex items-center gap-4 flex-wrap">
+          <div className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">My check-in code</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=8&data=${encodeURIComponent(student.student_id)}`}
+              alt="Gate QR code"
+              className="rounded-lg bg-white p-1"
+              width={140} height={140} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-2xl font-mono font-black text-gray-900 break-all">{student.student_id}</p>
+            <p className="text-xs text-gray-600 mt-2">
+              Show this code (or the number above) at the school gate every morning. The kiosk will mark you present and stamp your arrival time.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Lessons — pulls from teacher Lesson Planner */}
+      <div id="lessons" className="glass rounded-2xl p-5 mb-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="font-black text-gray-900">💻 My Lessons</h3>
+          <span className="text-[10px] text-gray-500">Recorded + planned by your teachers</span>
+        </div>
+        {(() => {
+          // Students only see published lessons (teacher draft mode hides them).
+          const myLessons = lessons.filter((l) =>
+            l.class_name === student?.class_name && l.is_published !== false);
+          if (myLessons.length === 0) {
+            return <p className="text-sm text-gray-400 text-center py-4">No lessons added yet — your teacher will publish them here.</p>;
+          }
+          return (
+            <div className="grid sm:grid-cols-2 gap-3">
+              {myLessons.slice(0, 8).map((l) => (
+                <button type="button" key={l.id}
+                  onClick={() => setLessonDetail(l)}
+                  className="w-full text-left p-3 rounded-xl transition-all hover:shadow-md hover:scale-[1.01]"
+                  style={{ background: "rgba(107,33,168,0.06)", border: "1px solid rgba(107,33,168,0.15)" }}>
+                  {l.cover_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.cover_image_url} alt={l.strand}
+                      className="w-full h-24 object-cover rounded-lg mb-2" />
+                  )}
+                  <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#6B21A8" }}>
+                    📘 {l.subject}{l.week_number ? ` · Wk ${l.week_number}` : ""}
+                  </div>
+                  <div className="text-sm font-bold text-gray-900 mt-0.5">{l.strand}</div>
+                  <div className="text-xs text-gray-600">{l.sub_strand}</div>
+                  {l.objectives && <div className="text-[11px] text-gray-500 mt-1 line-clamp-2 whitespace-pre-wrap">{l.objectives}</div>}
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {l.primary_video_url && <span className="text-[10px] font-bold text-red-600">🎥 Video</span>}
+                    {l.experiment && <span className="text-[10px] font-bold text-emerald-700">🧪 Experiment</span>}
+                    {(l.attachments?.length ?? 0) > 0 && <span className="text-[10px] font-bold text-blue-700">📎 {l.attachments!.length}</span>}
+                    <span className="text-[10px] text-blue-700 font-bold ml-auto">Tap to open →</span>
+                  </div>
+                  {l.teacher_name && <div className="text-[10px] text-gray-400 mt-1.5">— {l.teacher_name}</div>}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
       {/* Feed */}
       <div id="feed" className="glass rounded-2xl p-5">
         <h3 className="font-black text-gray-900 mb-3">📸 School Feed</h3>
         <div className="space-y-2">
-          {feedPosts.slice(0, 3).map((p) => (
-            <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-              <div className="min-w-0">
+          {feedPosts.filter((p) => (p.status ?? "approved") === "approved").slice(0, 5).map((p) => (
+            <button type="button" key={p.id}
+              onClick={() => setFeedDetail(p)}
+              className="w-full text-left flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all">
+              <div className="min-w-0 flex-1">
                 <div className="font-bold text-gray-900 text-sm truncate">{p.title}</div>
-                <div className="text-[10px] text-gray-400">{p.author_name}</div>
+                {p.content && <div className="text-[11px] text-gray-600 line-clamp-1">{p.content}</div>}
+                <div className="text-[10px] text-gray-400 mt-0.5">{p.author_name} · Tap to read →</div>
               </div>
-              <button type="button" onClick={() => likePost(p.id)}
-                className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full ml-2 flex-shrink-0"
+              <span onClick={(e) => { e.stopPropagation(); likePost(p.id); }}
+                className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full ml-2 flex-shrink-0 cursor-pointer"
                 style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
                 ❤️ {p.likes}
-              </button>
-            </div>
+              </span>
+            </button>
           ))}
         </div>
       </div>
+
+      <HomeworkDetailModal
+        homework={hwDetail}
+        mySubmission={hwDetail && student ? Object.values(mySubmissions).find((s) => s.homework_id === hwDetail.id) : undefined}
+        onSubmitWork={() => {
+          if (!hwDetail) return;
+          // Scroll the matching homework card into view; the user picks a file there.
+          setHwDetail(null);
+          setTimeout(() => {
+            const el = document.getElementById("homework");
+            el?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }}
+        onClose={() => setHwDetail(null)}
+      />
+
+      <FeedPostModal
+        post={feedDetail}
+        onLike={() => feedDetail && likePost(feedDetail.id)}
+        onClose={() => setFeedDetail(null)}
+      />
+
+      <LessonDetailModal
+        lesson={lessonDetail}
+        onClose={() => setLessonDetail(null)}
+      />
     </DashboardShell>
   );
 }

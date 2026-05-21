@@ -1,12 +1,16 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, formatGHS, todayISO } from "@/lib/utils";
-import type { Fee, Payment } from "@/lib/types";
+import type { Fee, Payment, HomeworkAssignment, FeedPost, LessonPlan } from "@/lib/types";
 import { hubtelInitiateCheckout } from "@/lib/hubtel";
 import { paystackInlineCheckout } from "@/lib/paystack";
+import HomeworkDetailModal from "@/components/HomeworkDetailModal";
+import FeedPostModal from "@/components/FeedPostModal";
+import LessonDetailModal from "@/components/LessonDetailModal";
+import ProfilePhotoUploader from "@/components/ProfilePhotoUploader";
 import toast from "react-hot-toast";
 
 const NAV = [
@@ -18,6 +22,10 @@ const NAV = [
   { icon: "🍼", label: "Daily Log",    href: "/parent#dailylog" },
   { icon: "🔐", label: "Pick-up Code", href: "/parent#pickup" },
   { icon: "📸", label: "School Feed",  href: "/parent#feed" },
+  { icon: "💬", label: "Chat Teacher", href: "/parent#chat" },
+  { icon: "🚌", label: "Bus Tracking",  href: "/parent#bus" },
+  { icon: "💻", label: "Lessons",       href: "/parent#lessons" },
+  { icon: "📋", label: "Submit Excuse", href: "/parent#excuse" },
 ];
 
 export default function ParentPortal() {
@@ -36,7 +44,18 @@ export default function ParentPortal() {
   const likePost              = useAppStore((s) => s.likePost);
   const announcements         = useAppStore((s) => s.announcements);
   const getOrCreatePickupCode = useAppStore((s) => s.getOrCreatePickupCode);
+  const teachers              = useAppStore((s) => s.teachers);
+  const busRoutes             = useAppStore((s) => s.busRoutes);
+  const busStops              = useAppStore((s) => s.busStops);
+  const busRuns               = useAppStore((s) => s.busRuns);
+  const chatThreads           = useAppStore((s) => s.chatThreads);
+  const chatMessages          = useAppStore((s) => s.chatMessages);
+  const acknowledgeUrgentMessage = useAppStore((s) => s.acknowledgeUrgentMessage);
+  const getOrCreateChatThread = useAppStore((s) => s.getOrCreateChatThread);
+  const sendChatMessage       = useAppStore((s) => s.sendChatMessage);
+  const markChatThreadRead    = useAppStore((s) => s.markChatThreadRead);
   const computeFamilyDiscount = useAppStore((s) => s.computeFamilyDiscount);
+  const discountPolicy        = useAppStore((s) => s.discountPolicy);
   const settings              = useAppStore((s) => s.schoolSettings);
   const createPaymentRequest  = useAppStore((s) => s.createPaymentRequest);
   const markPaymentRequestStatus = useAppStore((s) => s.markPaymentRequestStatus);
@@ -53,7 +72,15 @@ export default function ParentPortal() {
   const children = familyChildren.length > 0 ? familyChildren : students.slice(0, 1);
   const [activeChildIdx, setActiveChildIdx] = useState(0);
   const child = children[Math.min(activeChildIdx, children.length - 1)];
-  const familyDiscount = parentFamily ? computeFamilyDiscount(parentFamily.id) : 0;
+  // Discount fallback: when no Family row exists yet, still honour the tiered
+  // policy by counting siblings the parent_name / parent_phone matches.
+  const familyDiscount = (() => {
+    if (parentFamily) return computeFamilyDiscount(parentFamily.id);
+    if (!discountPolicy.active || familyChildren.length < 1) return 0;
+    const tiers = [...discountPolicy.tiers].sort((a, b) => b.sibling_count - a.sibling_count);
+    const tier = tiers.find((t) => familyChildren.length >= t.sibling_count);
+    return tier?.percent ?? 0;
+  })();
 
   // Pickup code — generated once and stored in Zustand (teachers can verify it)
   const [todayCode, setTodayCode] = useState("------");
@@ -62,9 +89,154 @@ export default function ParentPortal() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [child?.id]);
 
+  // Phase 15c — parent can chat with the child's class teacher AND with the
+  // principal. We keep two separate threads so messages don't bleed across.
+  const [chatRecipient, setChatRecipient] = useState<'teacher' | 'principal'>('teacher');
+
+  const classTeacher = useMemo(
+    () => teachers.find((t) => t.class_name === child?.class_name),
+    [teachers, child?.class_name],
+  );
+
+  // Use a stable family identifier even when no Family row is linked yet
+  // (otherwise the chat got stuck on "Loading…" forever for unmigrated demo
+  // accounts). Falls back to the user's id / email so the thread is unique.
+  const familyKey = parentFamily?.id ?? `solo-${user?.id ?? user?.email ?? "parent"}`;
+  const parentDisplay = parentFamily?.family_name ?? user?.full_name ?? "Parent";
+
+  const teacherThread = useMemo(() => {
+    if (!child || !classTeacher) return null;
+    return getOrCreateChatThread({
+      family_id: familyKey,
+      parent_name: parentDisplay,
+      teacher_id: classTeacher.id,
+      teacher_name: classTeacher.full_name,
+      student_id: child.id,
+      student_name: child.full_name,
+      class_name: child.class_name,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [child?.id, classTeacher?.id, familyKey]);
+
+  const principalThread = useMemo(() => {
+    if (!child) return null;
+    return getOrCreateChatThread({
+      family_id: familyKey,
+      parent_name: parentDisplay,
+      teacher_id: 'principal',           // sentinel id so principal threads dedupe
+      teacher_name: 'Principal',
+      student_id: child.id,
+      student_name: child.full_name,
+      class_name: child.class_name,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [child?.id, familyKey]);
+
+  const chatThread = chatRecipient === 'teacher' ? teacherThread : principalThread;
+  const recipientName = chatRecipient === 'teacher' ? classTeacher?.full_name : 'Principal';
+
+  const conversation = useMemo(
+    () => chatMessages
+      .filter((m) => m.thread_id === chatThread?.id)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    [chatMessages, chatThread?.id],
+  );
+
+  useEffect(() => {
+    if (chatThread && chatThread.unread_for_parent > 0) {
+      markChatThreadRead(chatThread.id, 'parent');
+    }
+  }, [chatThread, markChatThreadRead]);
+
+  const [chatDraft, setChatDraft] = useState("");
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+  }, [conversation.length, chatThread?.id]);
+
+  const sendChat = () => {
+    if (!chatThread || !chatDraft.trim()) return;
+    sendChatMessage(chatThread.id, 'parent', user?.id, parentDisplay, chatDraft);
+    setChatDraft("");
+  };
+
+  // Phase 15f — live bus for the active child today. We match a route by the
+  // child's family being assigned to it; until that link exists, fall back to
+  // showing any active run so the parent can at least see the school bus.
+  const today = todayISO();
+  const liveBusRun = useMemo(
+    () => busRuns.find((r) => r.date === today && r.status === "in_progress"),
+    [busRuns, today],
+  );
+  const liveBusRoute = busRoutes.find((r) => r.id === liveBusRun?.route_id);
+  const liveBusNextStop = busStops.find((s) => s.id === liveBusRun?.next_stop_id);
+  const liveBusCurrentStop = busStops.find((s) => s.id === liveBusRun?.current_stop_id);
+
   // Pay modal — can be opened from any fee row or the global button
   const [payModal, setPayModal] = useState(false);
   const [targetFee, setTargetFee] = useState<Fee | null>(null);
+
+  // Homework detail modal — opened by tapping a homework row.
+  const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
+  const [feedDetail, setFeedDetail] = useState<FeedPost | null>(null);
+  const [lessonDetail, setLessonDetail] = useState<LessonPlan | null>(null);
+  const lessonPlans = useAppStore((s) => s.lessonPlans);
+  const addFeedPost = useAppStore((s) => s.addFeedPost);
+  const [feedSubmit, setFeedSubmit] = useState({ open: false, title: "", content: "", image: "" });
+  const submitParentFeedPost = () => {
+    if (!feedSubmit.title.trim()) { toast.error("Add a title"); return; }
+    addFeedPost({
+      title: feedSubmit.title.trim(),
+      content: feedSubmit.content.trim() || undefined,
+      image_url: feedSubmit.image.trim() || undefined,
+      author_name: parentDisplay,
+      author_role: 'parent',
+    });
+    setFeedSubmit({ open: false, title: "", content: "", image: "" });
+    toast("📨 Sent to school admin for approval — you'll see it on the feed once they tap Approve.", { duration: 6000 });
+  };
+
+  // Excuse-from-school form state
+  const submitExcuseRequest = useAppStore((s) => s.submitExcuseRequest);
+  const excuseRequests      = useAppStore((s) => s.excuseRequests);
+  const [excuseKind, setExcuseKind] = useState<'medical' | 'family' | 'religious' | 'bereavement' | 'travel' | 'other'>('medical');
+  const [excuseStart, setExcuseStart] = useState(todayISO());
+  const [excuseEnd, setExcuseEnd]     = useState(todayISO());
+  const [excuseReason, setExcuseReason] = useState("");
+  const [excuseFile, setExcuseFile] = useState<{ name: string; dataUrl: string } | null>(null);
+  const myExcuses = excuseRequests.filter((r) => r.student_id === child?.id).slice(0, 5);
+
+  const handleExcuseFile = (f: File) => {
+    if (f.size > 10 * 1024 * 1024) { toast.error("File too big — max 10 MB. Use a smaller PDF or photo."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setExcuseFile({ name: f.name, dataUrl: reader.result });
+      }
+    };
+    reader.readAsDataURL(f);
+  };
+  const submitExcuse = () => {
+    if (!child) return;
+    if (!excuseReason.trim()) { toast.error("Add a short reason"); return; }
+    if (new Date(excuseEnd) < new Date(excuseStart)) { toast.error("End date can't be before start date"); return; }
+    submitExcuseRequest({
+      student_id: child.id,
+      student_name: child.full_name,
+      class_name: child.class_name,
+      family_id: parentFamily?.id,
+      submitted_by_email: user?.email,
+      kind: excuseKind,
+      start_date: excuseStart,
+      end_date: excuseEnd,
+      reason: excuseReason.trim(),
+      document_name: excuseFile?.name,
+      document_data_url: excuseFile?.dataUrl,
+    });
+    toast.success("✅ Excuse sent — the school will review it shortly.");
+    setExcuseReason("");
+    setExcuseFile(null);
+  };
   const [payForm, setPayForm] = useState<{
     amount: string; method: Payment["method"]; reference: string;
   }>({ amount: "", method: "mtn_momo", reference: "" });
@@ -123,7 +295,8 @@ export default function ParentPortal() {
       });
       const result = await paystackInlineCheckout({
         publicKey: settings.paystack_public_key,
-        amountGhs: amt,
+        amount: amt,
+        currency: "GHS",
         email: user?.email ?? parentFamily?.primary_email ?? "parent@phoenixintl.school",
         reference: req.id,
         subaccount: settings.paystack_subaccount_code,
@@ -218,8 +391,54 @@ export default function ParentPortal() {
 
   const feeStatusColor = totalBalance <= 0 ? "#22c55e" : totalBalance < totalDue * 0.5 ? "#f59e0b" : "#ef4444";
 
+  // Urgent-message nag: find any unacknowledged urgent chat messages in this
+  // family's threads. Show a banner at the top of the dashboard until each one
+  // is tapped "I've read it". Survives reload — acknowledgement is persisted.
+  const familyChildIds = children.map((c) => c.id);
+  const myThreadIds = chatThreads
+    .filter((t) => familyChildIds.includes(t.student_id ?? ""))
+    .map((t) => t.id);
+  const urgentUnread = chatMessages.filter((m) =>
+    myThreadIds.includes(m.thread_id) &&
+    m.priority === "urgent" &&
+    m.sender_role === "teacher" &&
+    !m.acknowledged_at
+  ).sort((a, b) => b.created_at.localeCompare(a.created_at));
+
   return (
     <DashboardShell role="parent" navItems={NAV}>
+
+      {urgentUnread.length > 0 && (
+        <div className="rounded-2xl p-4 mb-4 animate-pulse"
+          style={{ background: "linear-gradient(135deg,#7f1d1d,#dc2626)", border: "2px solid rgba(252,165,165,0.7)" }}>
+          <div className="flex items-start gap-3">
+            <span className="text-3xl">🚨</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-white text-sm uppercase tracking-wider">Urgent message from the school</p>
+              <p className="text-sm text-white/95 mt-1 whitespace-pre-wrap">{urgentUnread[0].body}</p>
+              <p className="text-[11px] text-red-100 mt-1.5">
+                {urgentUnread[0].sender_name ?? "School"} · {new Date(urgentUnread[0].created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </p>
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <a href="/parent#chat"
+                  className="text-xs font-bold px-3 py-2 rounded-lg"
+                  style={{ background: "white", color: "#7f1d1d" }}>
+                  💬 Open chat &amp; reply
+                </a>
+                <button type="button"
+                  onClick={() => acknowledgeUrgentMessage(urgentUnread[0].id)}
+                  className="text-xs font-bold px-3 py-2 rounded-lg"
+                  style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.4)" }}>
+                  ✅ I&apos;ve read it
+                </button>
+              </div>
+              {urgentUnread.length > 1 && (
+                <p className="text-[10px] text-red-100 mt-2">+{urgentUnread.length - 1} more urgent message{urgentUnread.length - 1 === 1 ? "" : "s"} after this one.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Family banner + child selector ── */}
       {children.length > 1 && (
@@ -246,7 +465,7 @@ export default function ParentPortal() {
           </div>
         </div>
       )}
-      {children.length === 1 && parentFamily && familyDiscount > 0 && (
+      {children.length === 1 && familyDiscount > 0 && (
         <div className="rounded-xl px-4 py-2 mb-4 text-xs font-bold text-emerald-800"
           style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.25)" }}>
           💰 Sibling discount: {familyDiscount}% applied to fees
@@ -256,10 +475,11 @@ export default function ParentPortal() {
       {/* ── Child Hero ── */}
       <div className="rounded-3xl p-5 mb-6 flex flex-col sm:flex-row items-center sm:items-start gap-4"
         style={{ background: "linear-gradient(135deg, #0C0A1E, #1A3FA0)" }}>
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-          style={{ background: "rgba(255,255,255,0.15)" }}>
-          {child.gender === "female" ? "👧" : "👦"}
-        </div>
+        <ProfilePhotoUploader studentId={child.id}
+          currentUrl={child.photo_url}
+          fallbackEmoji={child.gender === "female" ? "👧" : "👦"}
+          size={72} rounded="2xl" />
+
         <div className="flex-1 text-center sm:text-left">
           <h2 className="text-xl font-black text-white mb-0.5">{child.full_name}</h2>
           <p className="text-sm mb-2" style={{ color: "rgba(196,181,253,0.8)" }}>{child.class_name} · {child.student_id}</p>
@@ -500,7 +720,9 @@ export default function ParentPortal() {
               const overdue    = new Date(hw.due_date) < new Date();
               const submission = homeworkSubmissions.find((s) => s.homework_id === hw.id && s.student_id === child.id);
               return (
-                <div key={hw.id} className="rounded-xl p-3"
+                <button type="button" key={hw.id}
+                  onClick={() => setHwDetail(hw)}
+                  className="w-full text-left rounded-xl p-3 transition-all hover:shadow-md hover:scale-[1.01]"
                   style={{ background: overdue ? "rgba(239,68,68,0.04)" : "rgba(26,63,160,0.04)", border: `1px solid ${overdue ? "rgba(239,68,68,0.12)" : "rgba(26,63,160,0.1)"}` }}>
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="text-xs font-black text-gray-800">{hw.subject}</div>
@@ -509,21 +731,59 @@ export default function ParentPortal() {
                     </span>
                   </div>
                   <div className="text-xs text-gray-700 font-semibold">{hw.title}</div>
-                  {hw.description && <div className="text-[11px] text-gray-500 mt-0.5">{hw.description}</div>}
+                  {hw.description && <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{hw.description}</div>}
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    {hw.video_url && (
-                      <a href={hw.video_url} target="_blank" rel="noreferrer"
-                        className="text-[11px] text-blue-600 font-bold hover:underline">📹 Watch</a>
-                    )}
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${submission ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-600"}`}>
-                      {submission ? `✅ Submitted · ${submission.file_name}` : "⏳ Not submitted"}
+                      {submission ? `✅ Submitted` : "⏳ Not submitted"}
                     </span>
+                    <span className="text-[10px] text-blue-700 font-bold ml-auto">Tap for details →</span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
         )}
+      </div>
+
+      {/* What's being taught this week (parent view of teacher lesson plans) */}
+      <div id="lessons" className="glass rounded-2xl p-5 mb-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="font-black text-gray-900">💻 What {child.full_name.split(" ")[0]} is learning this week</h3>
+          <span className="text-[10px] text-gray-500">Published by the class teacher</span>
+        </div>
+        {(() => {
+          const myLessons = lessonPlans
+            .filter((l) => l.class_name === child.class_name && l.is_published !== false)
+            .slice(0, 6);
+          if (myLessons.length === 0) {
+            return <p className="text-sm text-gray-400 text-center py-4">No lessons published yet — the teacher will add them here.</p>;
+          }
+          return (
+            <div className="grid sm:grid-cols-2 gap-3">
+              {myLessons.map((l) => (
+                <button type="button" key={l.id} onClick={() => setLessonDetail(l)}
+                  className="text-left p-3 rounded-xl transition-all hover:shadow-md hover:scale-[1.01]"
+                  style={{ background: "rgba(107,33,168,0.06)", border: "1px solid rgba(107,33,168,0.15)" }}>
+                  {l.cover_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.cover_image_url} alt={l.strand}
+                      className="w-full h-20 object-cover rounded-lg mb-2" />
+                  )}
+                  <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#6B21A8" }}>
+                    📘 {l.subject}{l.week_number ? ` · Wk ${l.week_number}` : ""}
+                  </div>
+                  <div className="text-sm font-bold text-gray-900 mt-0.5">{l.strand}</div>
+                  <div className="text-xs text-gray-600">{l.sub_strand}</div>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {l.primary_video_url && <span className="text-[10px] font-bold text-red-600">🎥 Video</span>}
+                    {l.experiment && <span className="text-[10px] font-bold text-emerald-700">🧪 Try at home</span>}
+                    <span className="text-[10px] text-blue-700 font-bold ml-auto">Tap to follow along →</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Crèche Daily Log */}
@@ -577,27 +837,304 @@ export default function ParentPortal() {
         </div>
       </div>
 
+      {/* Pickup history — past 30 days */}
+      <PickupHistoryBlock studentId={child.id} />
+
+
       {/* School Feed */}
       <div id="feed" className="glass rounded-2xl p-5">
-        <h3 className="font-black text-gray-900 mb-4">📸 School Feed</h3>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h3 className="font-black text-gray-900">📸 School Feed</h3>
+          <button type="button" onClick={() => setFeedSubmit((s) => ({ ...s, open: !s.open }))}
+            className="text-xs font-bold px-3 py-1.5 rounded-full"
+            style={{ background: feedSubmit.open ? "rgba(239,68,68,0.1)" : "rgba(168,85,247,0.1)", color: feedSubmit.open ? "#b91c1c" : "#6B21A8" }}>
+            {feedSubmit.open ? "✕ Cancel" : "+ Share a moment"}
+          </button>
+        </div>
+        {feedSubmit.open && (
+          <div className="rounded-xl p-3 mb-3"
+            style={{ background: "rgba(168,85,247,0.04)", border: "1px solid rgba(168,85,247,0.18)" }}>
+            <input value={feedSubmit.title}
+              aria-label="Post title"
+              placeholder="Title (e.g. Sports Day team photo)"
+              onChange={(e) => setFeedSubmit((s) => ({ ...s, title: e.target.value }))}
+              className="w-full mb-2 px-3 py-2 rounded-lg text-sm text-gray-900 border border-gray-200" />
+            <textarea value={feedSubmit.content} rows={2}
+              aria-label="Caption"
+              placeholder="Caption (optional)"
+              onChange={(e) => setFeedSubmit((s) => ({ ...s, content: e.target.value }))}
+              className="w-full mb-2 px-3 py-2 rounded-lg text-sm text-gray-900 border border-gray-200 resize-none" />
+            <input value={feedSubmit.image}
+              aria-label="Image URL"
+              placeholder="Image URL (optional)"
+              onChange={(e) => setFeedSubmit((s) => ({ ...s, image: e.target.value }))}
+              className="w-full mb-2 px-3 py-2 rounded-lg text-sm text-gray-900 border border-gray-200" />
+            <p className="text-[10px] text-gray-500 mb-2">Your post goes to the admin for approval before parents and students can see it.</p>
+            <button type="button" onClick={submitParentFeedPost} className="btn-gold text-xs px-4 py-2">
+              📨 Send for approval
+            </button>
+          </div>
+        )}
         <div className="space-y-3">
-          {feedPosts.slice(0, 4).map((p) => (
-            <div key={p.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
-              <div className="text-2xl">📸</div>
+          {feedPosts.filter((p) => (p.status ?? "approved") === "approved").slice(0, 4).map((p) => {
+            const firstImage = p.image_url || p.image_urls?.[0];
+            const imageCount = [p.image_url, ...(p.image_urls ?? [])].filter(Boolean).length;
+            return (
+            <button type="button" key={p.id}
+              onClick={() => setFeedDetail(p)}
+              className="w-full text-left flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all">
+              {firstImage ? (
+                <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={firstImage} alt={p.title} className="w-full h-full object-cover" />
+                  {imageCount > 1 && (
+                    <span className="absolute bottom-0 right-0 text-[9px] font-bold px-1 rounded-tl"
+                      style={{ background: "rgba(0,0,0,0.65)", color: "white" }}>+{imageCount - 1}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="text-2xl w-14 h-14 flex items-center justify-center bg-purple-50 rounded-lg flex-shrink-0">📸</div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-gray-900 text-sm">{p.title}</div>
                 {p.content && <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">{p.content}</div>}
-                <div className="text-[10px] text-gray-400 mt-1">{p.author_name}</div>
+                <div className="text-[10px] text-gray-400 mt-1">{p.author_name} · Tap to read →</div>
               </div>
-              <button type="button" onClick={() => likePost(p.id)}
-                className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full"
+              <span onClick={(e) => { e.stopPropagation(); likePost(p.id); }}
+                className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full cursor-pointer"
                 style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
                 ❤️ {p.likes}
-              </button>
-            </div>
-          ))}
+              </span>
+            </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* Bus tracking */}
+      <div id="bus" className="glass rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="font-black text-gray-900">🚌 Bus Tracking</h3>
+          {liveBusRun && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">🟢 LIVE</span>}
+        </div>
+        {!liveBusRun ? (
+          <p className="text-xs text-gray-500">No bus run in progress right now. You&apos;ll see live status here when the driver starts the run.</p>
+        ) : (
+          <div className="space-y-2">
+            <div className="rounded-xl p-3"
+              style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)" }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-emerald-800">{liveBusRoute?.name ?? "Bus run"}</span>
+                <span className="text-[10px] text-emerald-700">
+                  {liveBusRun.direction === "pickup" ? "🌅 Morning pickup" : "🌇 Afternoon drop-off"}
+                </span>
+              </div>
+              {liveBusCurrentStop && !liveBusNextStop ? (
+                <p className="text-sm text-gray-700">
+                  Currently at <span className="font-bold">{liveBusCurrentStop.name}</span>
+                </p>
+              ) : liveBusNextStop ? (
+                <p className="text-sm text-gray-700">
+                  Next stop: <span className="font-bold">{liveBusNextStop.name}</span>
+                  {liveBusNextStop.scheduled_pickup && liveBusRun.direction === "pickup" && (
+                    <span className="text-xs text-gray-500"> · scheduled {liveBusNextStop.scheduled_pickup}</span>
+                  )}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-700">All stops complete — bus heading back to school 🏫</p>
+              )}
+              <p className="text-[10px] text-gray-400 mt-1">
+                Last update {liveBusRun.current_ping_at ? new Date(liveBusRun.current_ping_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "just now"}
+                {liveBusRoute?.driver_name && ` · Driver ${liveBusRoute.driver_name}`}
+                {liveBusRoute?.bus_label && ` · ${liveBusRoute.bus_label}`}
+              </p>
+            </div>
+            {liveBusRoute?.driver_phone && (
+              <a href={`tel:${liveBusRoute.driver_phone}`}
+                className="block w-full text-center text-xs font-bold py-2 rounded-xl"
+                style={{ background: "rgba(26,14,77,0.06)", color: "#1A0E4D", border: "1px solid rgba(26,14,77,0.15)" }}>
+                📞 Call driver — {liveBusRoute.driver_phone}
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Submit excuse note */}
+      <div id="excuse" className="glass rounded-2xl p-5">
+        <h3 className="font-black text-gray-900 mb-1">📋 Submit an excuse note</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          For absences (sickness, family matters, etc.). Attach a doctor&apos;s note, police report or any supporting document. The school will review and update {child.full_name}&apos;s attendance.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3 mb-3">
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">Type *</span>
+            <select aria-label="Excuse type" value={excuseKind}
+              onChange={(e) => setExcuseKind(e.target.value as typeof excuseKind)}
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-900">
+              <option value="medical">🩺 Medical / doctor&apos;s note</option>
+              <option value="family">👨‍👩‍👧 Family matter</option>
+              <option value="religious">🕊 Religious observance</option>
+              <option value="bereavement">🕯 Bereavement</option>
+              <option value="travel">✈️ Travel</option>
+              <option value="other">📄 Other</option>
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block">
+              <span className="text-xs font-bold text-gray-600">From *</span>
+              <input type="date" aria-label="Start date" value={excuseStart}
+                onChange={(e) => setExcuseStart(e.target.value)}
+                className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-900" />
+            </label>
+            <label className="block">
+              <span className="text-xs font-bold text-gray-600">To *</span>
+              <input type="date" aria-label="End date" value={excuseEnd}
+                onChange={(e) => setExcuseEnd(e.target.value)}
+                className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-900" />
+            </label>
+          </div>
+        </div>
+        <label className="block mb-3">
+          <span className="text-xs font-bold text-gray-600">Reason *</span>
+          <textarea aria-label="Reason" rows={3}
+            value={excuseReason}
+            onChange={(e) => setExcuseReason(e.target.value)}
+            placeholder="e.g. Kwame is unwell with malaria, doctor recommends 2 days bed rest."
+            className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-900 resize-none" />
+        </label>
+        <div className="flex items-center gap-3 flex-wrap mb-3">
+          <label className="cursor-pointer text-xs font-bold px-3 py-2 rounded-lg"
+            style={{ background: "rgba(26,63,160,0.08)", color: "#1A3FA0", border: "1px solid rgba(26,63,160,0.25)" }}>
+            📎 Attach document (PDF or photo, ≤ 10 MB)
+            <input type="file" className="hidden" accept="image/*,application/pdf"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleExcuseFile(f); e.target.value = ""; }} />
+          </label>
+          {excuseFile && (
+            <span className="text-xs text-emerald-700 font-bold">✅ {excuseFile.name}
+              <button type="button" onClick={() => setExcuseFile(null)} className="ml-2 text-red-500">✕</button>
+            </span>
+          )}
+        </div>
+        <button type="button" onClick={submitExcuse} className="btn-gold text-sm py-2.5 px-6">
+          Submit excuse for review
+        </button>
+
+        {myExcuses.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-xs font-bold text-gray-600 mb-2">Recent excuses</p>
+            <ul className="space-y-1.5">
+              {myExcuses.map((r) => (
+                <li key={r.id} className="flex items-center gap-2 text-xs">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: r.status === 'pending' ? "rgba(245,158,11,0.15)" : r.status === 'approved' ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+                      color: r.status === 'pending' ? "#92400e" : r.status === 'approved' ? "#065f46" : "#b91c1c",
+                    }}>
+                    {r.status}
+                  </span>
+                  <span className="text-gray-700">{r.start_date}{r.end_date !== r.start_date ? `–${r.end_date}` : ""}</span>
+                  <span className="text-gray-500 truncate">{r.reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Chat with class teacher */}
+      <div id="chat" className="glass rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="font-black text-gray-900">💬 Messages</h3>
+          {classTeacher && chatRecipient === 'teacher' && (
+            <span className="text-xs text-gray-500">{classTeacher.full_name} · {child.class_name}</span>
+          )}
+        </div>
+
+        {/* Recipient tabs */}
+        <div className="flex gap-2 mb-3">
+          <button type="button" onClick={() => setChatRecipient('teacher')}
+            className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+            style={{
+              background: chatRecipient === 'teacher' ? "#1A0E4D" : "rgba(26,14,77,0.06)",
+              color: chatRecipient === 'teacher' ? "white" : "#1A0E4D",
+              border: `1px solid ${chatRecipient === 'teacher' ? "#1A0E4D" : "rgba(26,14,77,0.18)"}`,
+            }}>
+            👩‍🏫 Class Teacher{classTeacher ? "" : " (unassigned)"}
+          </button>
+          <button type="button" onClick={() => setChatRecipient('principal')}
+            className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+            style={{
+              background: chatRecipient === 'principal' ? "#1A0E4D" : "rgba(26,14,77,0.06)",
+              color: chatRecipient === 'principal' ? "white" : "#1A0E4D",
+              border: `1px solid ${chatRecipient === 'principal' ? "#1A0E4D" : "rgba(26,14,77,0.18)"}`,
+            }}>
+            👔 Principal
+          </button>
+        </div>
+
+        {chatRecipient === 'teacher' && !classTeacher ? (
+          <p className="text-xs text-gray-500">No class teacher assigned for {child.class_name} yet — switch to <span className="font-bold">Principal</span> to send a message instead.</p>
+        ) : (
+          <>
+            <div ref={chatScrollRef}
+              className="max-h-72 overflow-y-auto rounded-xl p-3 mb-3 space-y-2"
+              style={{ background: "rgba(26,14,77,0.03)", border: "1px solid rgba(26,14,77,0.08)" }}>
+              {conversation.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-4">Start the conversation — {recipientName ?? "they"} will see this on their portal.</p>
+              ) : conversation.map((m) => {
+                const mine = m.sender_role === 'parent';
+                return (
+                  <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                    <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm"
+                      style={{
+                        background: mine ? "#1A0E4D" : "#ffffff",
+                        color: mine ? "white" : "#1f2937",
+                        border: mine ? "none" : "1px solid #e5e7eb",
+                      }}>
+                      <p className="whitespace-pre-wrap">{m.body}</p>
+                      <p className={`text-[9px] mt-0.5 ${mine ? "text-purple-200" : "text-gray-400"}`}>
+                        {m.sender_name ?? m.sender_role} · {new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <input value={chatDraft}
+                onChange={(e) => setChatDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
+                placeholder={`Message ${recipientName ?? "school"}…`}
+                className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none" />
+              <button type="button" onClick={sendChat} className="btn-gold text-xs px-4">Send</button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Homework detail modal — opens when any homework row is tapped */}
+      <HomeworkDetailModal
+        homework={hwDetail}
+        mySubmission={hwDetail ? homeworkSubmissions.find((s) => s.homework_id === hwDetail.id && s.student_id === child.id) : undefined}
+        onSubmitWork={() => {
+          if (!hwDetail) return;
+          toast("📎 Upload coming next phase — for now, send to your teacher directly.", { duration: 5000 });
+          setHwDetail(null);
+        }}
+        onClose={() => setHwDetail(null)}
+      />
+
+      <FeedPostModal
+        post={feedDetail}
+        onLike={() => feedDetail && likePost(feedDetail.id)}
+        onClose={() => setFeedDetail(null)}
+      />
+
+      <LessonDetailModal
+        lesson={lessonDetail}
+        onClose={() => setLessonDetail(null)}
+      />
 
       {/* ── Payment Modal ── */}
       {payModal && (
@@ -635,14 +1172,15 @@ export default function ParentPortal() {
                 <input type="number" value={payForm.amount}
                   onChange={(e) => setPayForm((p) => ({ ...p, amount: e.target.value }))}
                   placeholder="0.00"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2"
                   style={{ "--tw-ring-color": "#1A3FA0" } as React.CSSProperties} />
               </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Payment Method</label>
                 <select aria-label="Payment method" value={payForm.method}
                   onChange={(e) => setPayForm((p) => ({ ...p, method: e.target.value as Payment["method"] }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none">
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none">
                   <option value="mtn_momo">📱 MTN MoMo</option>
                   <option value="telecel">📱 Telecel Cash</option>
                   <option value="at_money">📱 AT Money</option>
@@ -666,7 +1204,7 @@ export default function ParentPortal() {
                 <input value={payForm.reference}
                   onChange={(e) => setPayForm((p) => ({ ...p, reference: e.target.value }))}
                   placeholder={payForm.method === "bank" ? "Bank transaction ID" : "MoMo reference / optional"}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none" />
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none" />
               </div>
             </div>
             <div className="flex gap-3 mt-5">
@@ -682,5 +1220,31 @@ export default function ParentPortal() {
         </div>
       )}
     </DashboardShell>
+  );
+}
+
+function PickupHistoryBlock({ studentId }: { studentId: string }) {
+  const codes = useAppStore((s) => s.pickupCodes);
+  const cutoffMs = Date.now() - 30 * 86400000;
+  const history = codes
+    .filter((c) => c.student_id === studentId && c.used)
+    .filter((c) => c.used_at ? new Date(c.used_at).getTime() >= cutoffMs : true)
+    .sort((a, b) => (b.used_at ?? "").localeCompare(a.used_at ?? ""));
+  if (history.length === 0) return null;
+  return (
+    <div className="glass rounded-2xl p-4 mt-3">
+      <h4 className="font-bold text-gray-900 text-sm mb-2">🕒 Recent pickups (last 30 days)</h4>
+      <ul className="space-y-1.5">
+        {history.slice(0, 10).map((c) => (
+          <li key={c.id} className="flex items-center justify-between text-xs">
+            <span className="text-gray-700">
+              {c.used_at ? new Date(c.used_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : c.valid_date}
+              {c.picked_up_by_name && <> · <span className="font-bold">{c.picked_up_by_name}</span>{c.picked_up_by_relationship ? ` (${c.picked_up_by_relationship})` : ""}</>}
+            </span>
+            {c.verified_by && <span className="text-[10px] text-gray-400">by {c.verified_by}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

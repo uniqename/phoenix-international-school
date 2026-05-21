@@ -58,7 +58,7 @@ export default function LibraryPage() {
   };
 
   return (
-    <div className="min-h-screen hero-bg grid-pattern flex flex-col">
+    <div className="min-h-screen hero-bg grid-pattern flex flex-col safe-top safe-bottom">
 
       {/* ── Top bar ── */}
       <header className="flex items-center justify-between px-8 py-4 border-b border-white/10">

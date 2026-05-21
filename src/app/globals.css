@@ -36,6 +36,23 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Form controls must always be legible regardless of the surrounding surface
+   color. Without this, inputs inherit the light-purple body foreground and
+   become invisible on the white modal cards (e.g. parent payment modal). */
+input, textarea, select {
+  color: #111827;        /* gray-900 */
+  background-color: #fff;
+}
+input::placeholder, textarea::placeholder {
+  color: #9ca3af;        /* gray-400 */
+}
+
+/* Standalone full-screen pages (login, bece, driver, library, offline) that
+   don't render inside DashboardShell still need to clear the iPhone notch /
+   Dynamic Island. Use the `.safe-top` utility on the outermost wrapper. */
+.safe-top { padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem); }
+.safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+
 /* ── Glass surfaces ── */
 .glass {
   background: rgba(255, 255, 255, 0.97);

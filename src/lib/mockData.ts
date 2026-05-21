@@ -20,10 +20,12 @@ export const MOCK_USERS: UserProfile[] = [
   { id: 'teacher-1', email: 'teacher@phoenixgh.edu', full_name: 'Mrs. Adjoa Koomson', role: 'teacher', phone: '0244234567' },
   { id: 'parent-1', email: 'parent@phoenixgh.edu', full_name: 'Mr. Kwame Asante', role: 'parent', phone: '0244345678' },
   { id: 'student-1', email: 'student@phoenixgh.edu', full_name: 'Kwame Asante Jr.', role: 'student', phone: '' },
+  { id: 'driver-1', email: 'driver@phoenixgh.edu', full_name: 'Mr. Kwesi (Bus Driver)', role: 'driver', phone: '0244987654' },
 ]
 
 export const MOCK_STUDENTS: Student[] = [
-  { id: 's1', student_id: 'JHS-2024-001', full_name: 'Kwame Asante Jr.', dob: '2010-03-15', gender: 'male', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mr. Kwame Asante', parent_phone: '0244345678', fee_status: 'cleared', created_at: '2024-01-05T00:00:00Z' },
+  { id: 's1', student_id: 'JHS-2024-001', full_name: 'Kwame Asante Jr.', dob: '2010-03-15', gender: 'male', level: 'jhs', class_name: 'JHS 3A', family_id: 'fam-asante', parent_name: 'Mr. Kwame Asante', parent_phone: '0244345678', fee_status: 'cleared', created_at: '2024-01-05T00:00:00Z' },
+  { id: 's1b', student_id: 'PR-2024-008', full_name: 'Adwoa Asante', dob: '2014-09-12', gender: 'female', level: 'primary', class_name: 'Primary 5B', family_id: 'fam-asante', parent_name: 'Mr. Kwame Asante', parent_phone: '0244345678', fee_status: 'cleared', created_at: '2024-01-05T00:00:00Z' },
   { id: 's2', student_id: 'JHS-2024-002', full_name: 'Abena Frimpong', dob: '2010-07-22', gender: 'female', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mrs. Frimpong', parent_phone: '0201456789', fee_status: 'cleared', created_at: '2024-01-05T00:00:00Z' },
   { id: 's3', student_id: 'JHS-2024-003', full_name: 'Yaw Mensah', dob: '2011-01-10', gender: 'male', level: 'jhs', class_name: 'JHS 3A', parent_name: 'Mr. Mensah', parent_phone: '0277567890', fee_status: 'outstanding', created_at: '2024-01-05T00:00:00Z' },
   { id: 's4', student_id: 'PR-2024-001', full_name: 'Ama Boateng', dob: '2013-05-18', gender: 'female', level: 'primary', class_name: 'Primary 5B', parent_name: 'Mrs. Boateng', parent_phone: '0244678901', fee_status: 'cleared', created_at: '2024-01-06T00:00:00Z' },
@@ -197,6 +199,27 @@ export const MOCK_QUIZ_QUESTIONS: QuizQuestion[] = [
   { id:"qq-r3", subject:"RME", question:"Which of these is a traditional Ghanaian festival?",                               options:["Diwali","Odwira","Eid al-Fitr","Christmas"],                                  answer:1, explanation:"Odwira is a traditional Akan festival of purification and thanksgiving.", source:"BECE Sample", created_at:D },
   { id:"qq-r4", subject:"RME", question:"The pillar of Islam that requires fasting is called:",                             options:["Salah","Zakat","Sawm","Hajj"],                                                answer:2, explanation:"Sawm is the Islamic practice of fasting, particularly during the month of Ramadan.", source:"BECE Sample", created_at:D },
   { id:"qq-r5", subject:"RME", question:"The Ten Commandments were given to which prophet?",                                options:["Abraham","David","Jesus","Moses"],                                            answer:3, explanation:"According to the Bible, God gave the Ten Commandments to Moses on Mount Sinai.", source:"BECE Sample", created_at:D },
+
+  // ── Primary level practice (Primary 4–6) ──
+  { id:"qq-pm1", subject:"Mathematics", level:"primary", question:"What is 7 × 8?",                                  options:["54","56","48","64"],                              answer:1, explanation:"7 × 8 = 56", source:"Primary Practice", created_at:D },
+  { id:"qq-pm2", subject:"Mathematics", level:"primary", question:"What is 100 − 47?",                               options:["43","53","63","57"],                              answer:1, explanation:"100 − 47 = 53", source:"Primary Practice", created_at:D },
+  { id:"qq-pm3", subject:"Mathematics", level:"primary", question:"How many sides does a triangle have?",            options:["2","3","4","5"],                                  answer:1, explanation:"A triangle has 3 sides.", source:"Primary Practice", created_at:D },
+  { id:"qq-pm4", subject:"Mathematics", level:"primary", question:"Half of 24 is…",                                  options:["10","12","14","16"],                              answer:1, explanation:"24 ÷ 2 = 12", source:"Primary Practice", created_at:D },
+  { id:"qq-pm5", subject:"Mathematics", level:"primary", question:"Which is larger: 3/4 or 1/2?",                    options:["1/2","3/4","They're equal","Can't tell"],         answer:1, explanation:"3/4 = 0.75, 1/2 = 0.5", source:"Primary Practice", created_at:D },
+  { id:"qq-pe1", subject:"English Language", level:"primary", question:"Choose the correct word: I _____ to school every day.", options:["goes","go","going","gone"],          answer:1, explanation:"With 'I', we use the base verb: I go.", source:"Primary Practice", created_at:D },
+  { id:"qq-pe2", subject:"English Language", level:"primary", question:"Which word is a noun?",                       options:["Run","Quick","Book","Loudly"],                    answer:2, explanation:"A noun is a person, place or thing. 'Book' is a thing.", source:"Primary Practice", created_at:D },
+  { id:"qq-pe3", subject:"English Language", level:"primary", question:"What is the plural of 'child'?",              options:["Childs","Children","Childrens","Child's"],        answer:1, explanation:"The plural of 'child' is 'children'.", source:"Primary Practice", created_at:D },
+  { id:"qq-ps1", subject:"Integrated Science", level:"primary", question:"How many legs does a spider have?",         options:["6","8","10","4"],                                 answer:1, explanation:"Spiders are arachnids — they have 8 legs.", source:"Primary Practice", created_at:D },
+  { id:"qq-ps2", subject:"Integrated Science", level:"primary", question:"What do plants need to make food?",         options:["Only water","Sunlight, water and CO₂","Just soil","Cold air"], answer:1, explanation:"Plants make food through photosynthesis using sunlight, water and carbon dioxide.", source:"Primary Practice", created_at:D },
+  { id:"qq-pss1", subject:"Social Studies", level:"primary", question:"What is the capital city of Ghana?",           options:["Kumasi","Accra","Tamale","Cape Coast"],           answer:1, explanation:"Accra is the capital city of Ghana.", source:"Primary Practice", created_at:D },
+  { id:"qq-pss2", subject:"Social Studies", level:"primary", question:"How many regions does Ghana have?",            options:["10","14","16","12"],                              answer:2, explanation:"Ghana has 16 administrative regions as of 2019.", source:"Primary Practice", created_at:D },
+
+  // ── KG level practice (KG 1–2) ──
+  { id:"qq-km1", subject:"Mathematics", level:"kg", question:"What comes after 5?",                                  options:["4","6","7","3"],                                  answer:1, explanation:"5, then 6!", source:"KG Practice", created_at:D },
+  { id:"qq-km2", subject:"Mathematics", level:"kg", question:"How many fingers are on one hand?",                    options:["3","4","5","6"],                                  answer:2, explanation:"5 fingers on each hand.", source:"KG Practice", created_at:D },
+  { id:"qq-km3", subject:"Mathematics", level:"kg", question:"Which is bigger?",                                     options:["🐘 Elephant","🐭 Mouse","Same size","Can't see"], answer:0, explanation:"The elephant is much bigger than the mouse!", source:"KG Practice", created_at:D },
+  { id:"qq-ke1", subject:"English Language", level:"kg", question:"Which animal says 'Moo'?",                         options:["Dog","Cow","Cat","Fish"],                         answer:1, explanation:"Cows say moo!", source:"KG Practice", created_at:D },
+  { id:"qq-ke2", subject:"English Language", level:"kg", question:"What colour is the sun?",                          options:["Blue","Green","Yellow","Red"],                    answer:2, explanation:"The sun looks yellow when it shines!", source:"KG Practice", created_at:D },
 ]
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -308,7 +331,20 @@ export const PHOENIX_DISCOUNT_POLICY: DiscountPolicy = {
   ],
 }
 
-export const MOCK_FAMILIES: Family[] = []
+export const MOCK_FAMILIES: Family[] = [
+  // Demo family — the demo parent (parent@phoenixgh.edu) has two children:
+  // Kwame Jr (JHS 3A) and Adwoa (Primary 5B). Lets the multi-child switcher
+  // and sibling-discount logic render in demos.
+  {
+    id: 'fam-asante',
+    family_name: 'Asante Family',
+    family_code: 'ASA-001',
+    primary_parent_id: 'parent-1',
+    primary_email: 'parent@phoenixgh.edu',
+    primary_phone: '0244345678',
+    created_at: '2024-01-05T00:00:00Z',
+  },
+]
 
 // Course Groups — separate from Class. A student can be in JHS 1 + Science group.
 // Schools often use this for elective tracks or scholarship cohorts.

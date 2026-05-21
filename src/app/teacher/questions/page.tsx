@@ -12,6 +12,7 @@ const SUBJECTS = ["Mathematics", "English Language", "Integrated Science", "Soci
 
 const BLANK_FORM = {
   subject: "Mathematics",
+  level: "jhs" as "creche" | "nursery" | "kg" | "primary" | "jhs" | "any",
   year: "",
   question: "",
   optionA: "",
@@ -21,6 +22,15 @@ const BLANK_FORM = {
   answer: "0" as "0" | "1" | "2" | "3",
   explanation: "",
   source: "BECE Sample",
+};
+
+const LEVEL_LABELS: Record<string, string> = {
+  creche: "Crèche",
+  nursery: "Nursery",
+  kg: "KG",
+  primary: "Primary",
+  jhs: "JHS / BECE",
+  any: "All levels",
 };
 
 type CsvRow = { subject: string; year: string; question: string; optionA: string; optionB: string; optionC: string; optionD: string; answer: string; explanation: string; source: string };
@@ -59,6 +69,7 @@ export default function TeacherQuestionsPage() {
     }
     addQuestion({
       subject: form.subject,
+      level: form.level,
       year: form.year ? parseInt(form.year) : undefined,
       question: form.question.trim(),
       options: [form.optionA.trim(), form.optionB.trim(), form.optionC.trim(), form.optionD.trim()],
@@ -276,13 +287,23 @@ export default function TeacherQuestionsPage() {
             <h2 className="font-black text-gray-900 mb-1">Add a Question Manually</h2>
             <p className="text-sm text-gray-500 mb-5">Your students will see this in the BECE Pasco Simulator immediately.</p>
             <form onSubmit={handleAdd} className="space-y-4">
-              <div className="grid sm:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1">Subject *</label>
                   <select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border text-sm focus:outline-none focus:ring-2"
+                    aria-label="Subject"
+                    className="w-full px-3 py-2 rounded-xl border text-sm text-gray-900 focus:outline-none focus:ring-2"
                     style={{ borderColor: "rgba(0,48,135,0.15)" } as React.CSSProperties}>
                     {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">Level *</label>
+                  <select value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value as typeof form.level })}
+                    aria-label="Level"
+                    className="w-full px-3 py-2 rounded-xl border text-sm text-gray-900 focus:outline-none focus:ring-2"
+                    style={{ borderColor: "rgba(0,48,135,0.15)" } as React.CSSProperties}>
+                    {Object.entries(LEVEL_LABELS).map(([v, label]) => <option key={v} value={v}>{label}</option>)}
                   </select>
                 </div>
                 <div>

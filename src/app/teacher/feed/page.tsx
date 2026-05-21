@@ -8,18 +8,31 @@ import toast from "react-hot-toast";
 
 
 export default function TeacherFeedPage() {
-  const feedPosts   = useAppStore((s) => s.feedPosts);
-  const addFeedPost = useAppStore((s) => s.addFeedPost);
-  const likePost    = useAppStore((s) => s.likePost);
-  const { user }    = useAuth();
+  const allFeedPosts = useAppStore((s) => s.feedPosts);
+  const addFeedPost  = useAppStore((s) => s.addFeedPost);
+  const likePost     = useAppStore((s) => s.likePost);
+  const { user }     = useAuth();
 
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: "", content: "", image_url: "" });
 
+  // Teacher sees approved posts publicly, plus their own pending/rejected items.
+  const feedPosts = allFeedPosts.filter((p) => {
+    const status = p.status ?? "approved";
+    if (status === "approved") return true;
+    return p.author_name === user?.full_name;
+  });
+
   const handlePost = () => {
     if (!form.title.trim()) { toast.error("Title required"); return; }
-    addFeedPost({ title: form.title, content: form.content, image_url: form.image_url || undefined, author_name: user?.full_name });
-    toast.success("Post published to School Feed");
+    addFeedPost({
+      title: form.title,
+      content: form.content,
+      image_url: form.image_url || undefined,
+      author_name: user?.full_name,
+      author_role: 'teacher',
+    });
+    toast("📨 Sent to admin for approval — you'll see it here marked Pending until it's reviewed.", { duration: 6000 });
     setForm({ title: "", content: "", image_url: "" });
     setShowModal(false);
   };
@@ -42,7 +55,11 @@ export default function TeacherFeedPage() {
             <div className="text-4xl mb-3">📸</div>
             <p className="text-gray-500 text-sm">No posts yet. Be the first to share something!</p>
           </div>
-        ) : feedPosts.map((p) => (
+        ) : feedPosts.map((p) => {
+          const status = p.status ?? "approved";
+          const isOwnPending = status === "pending" && p.author_name === user?.full_name;
+          const isOwnRejected = status === "rejected" && p.author_name === user?.full_name;
+          return (
           <div key={p.id} className="glass rounded-2xl overflow-hidden card-hover">
             {p.image_url && (
               <div className="h-40 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-4xl">
@@ -50,6 +67,12 @@ export default function TeacherFeedPage() {
               </div>
             )}
             <div className="p-4">
+              {isOwnPending && (
+                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 mb-1.5">⏳ Awaiting admin approval</span>
+              )}
+              {isOwnRejected && (
+                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 mb-1.5">✖ Not approved{p.rejection_reason ? ` — ${p.rejection_reason}` : ""}</span>
+              )}
               <h3 className="font-black text-gray-900 mb-1.5">{p.title}</h3>
               {p.content && <p className="text-sm text-gray-600 mb-3 line-clamp-3">{p.content}</p>}
               <div className="flex items-center justify-between">
@@ -65,7 +88,8 @@ export default function TeacherFeedPage() {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {showModal && (

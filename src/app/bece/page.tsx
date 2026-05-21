@@ -22,6 +22,14 @@ export default function BECESimulator() {
   const recordBECEAttempt = useAppStore((s) => s.recordBECEAttempt);
 
   const student = students.find((s) => s.full_name === user?.full_name) ?? students[0];
+  const studentLevel = student?.level ?? "jhs";
+
+  // Only show questions tagged for this student's level (or 'any' / untagged).
+  const myQuestions = quizQuestions.filter((q) =>
+    !q.level || q.level === "any" || q.level === studentLevel
+  );
+  // Subjects narrow to those that actually have questions at this level.
+  const visibleSubjects = SUBJECTS.filter((s) => myQuestions.some((q) => q.subject === s));
 
   const [selectedSubj, setSelectedSubj] = useState<string | null>(null);
   const [currentQ, setCurrentQ]         = useState(0);
@@ -31,7 +39,7 @@ export default function BECESimulator() {
   const [done, setDone]                 = useState(false);
   const [answers, setAnswers]           = useState<(number | null)[]>([]);
 
-  const qs = selectedSubj ? quizQuestions.filter((q) => q.subject === selectedSubj) : [];
+  const qs = selectedSubj ? myQuestions.filter((q) => q.subject === selectedSubj) : [];
 
   function startSubject(s: string) {
     setSelectedSubj(s);
@@ -71,25 +79,19 @@ export default function BECESimulator() {
   const pct = qs.length ? Math.round((score / qs.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen" style={{ background: "#0A1628" }}>
+    <div className="min-h-screen safe-top safe-bottom" style={{ background: "#0A1628" }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <Link href="/student" className="text-blue-400 hover:text-white text-sm transition-colors">← Student Portal</Link>
-          <span className="text-white/20">|</span>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🎓</span>
-            <div>
-              <div className="text-white font-black text-sm">BECE &apos;Pasco&apos; Simulator</div>
-              <div className="text-blue-400 text-xs">Phoenix International School Ghana</div>
-            </div>
+      <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 gap-3">
+        <Link href="/student"
+          className="text-blue-400 hover:text-white text-sm transition-colors flex-shrink-0">← Back</Link>
+        <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
+          <span className="text-xl flex-shrink-0">🎓</span>
+          <div className="min-w-0">
+            <div className="text-white font-black text-xs truncate">Practice / BECE Simulator</div>
+            <div className="text-blue-400 text-[10px] truncate">Phoenix International School Ghana</div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs px-3 py-1 rounded-full font-bold"
-            style={{ background: "rgba(255,215,0,0.15)", color: "#FFD700" }}>
-            WAEC BECE Format
-          </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Link href="/" className="nav-link text-xs">Home</Link>
         </div>
       </header>
@@ -99,18 +101,30 @@ export default function BECESimulator() {
           <>
             <div className="text-center mb-12">
               <div className="text-5xl mb-4">📚</div>
-              <h1 className="text-3xl font-black text-white mb-3">Choose a Subject</h1>
-              <p className="text-blue-300">Practice BECE past questions in CBT mode — just like the real exam.</p>
-              <div className="flex flex-wrap gap-3 justify-center mt-4">
-                <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(255,215,0,0.1)", color: "#FFD700" }}>⏱️ Timed Practice</span>
-                <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(0,212,255,0.1)", color: "#00D4FF" }}>📊 Instant Explanations</span>
-                <span className="text-xs px-3 py-1 rounded-full" style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e" }}>🎯 Weakness Tracking</span>
-              </div>
+              <h1 className="text-3xl font-black text-white mb-3">
+                {studentLevel === "jhs" ? "BECE Practice" : studentLevel === "primary" ? "Practice Quizzes" : "Fun Practice"}
+              </h1>
+              <p className="text-blue-300">
+                {studentLevel === "jhs"
+                  ? "Practice BECE past questions in CBT mode — just like the real exam."
+                  : studentLevel === "primary"
+                  ? "Practice your subjects with quick quizzes — your teachers added these for you."
+                  : "Fun questions for you to try with a grown-up."}
+              </p>
             </div>
 
+            {visibleSubjects.length === 0 && (
+              <div className="rounded-2xl p-8 text-center mb-6"
+                style={{ background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.25)" }}>
+                <div className="text-3xl mb-2">📝</div>
+                <p className="text-white font-bold mb-1">No practice questions for your level yet.</p>
+                <p className="text-blue-300 text-xs">Your teachers will add some on <span className="font-mono">/teacher/questions</span> soon. Come back later!</p>
+              </div>
+            )}
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {SUBJECTS.map((s) => {
-                const count = quizQuestions.filter((q) => q.subject === s).length;
+              {visibleSubjects.map((s) => {
+                const count = myQuestions.filter((q) => q.subject === s).length;
                 const c = COLORS[s] || { from: "#003087", to: "#1565C0" };
                 return (
                   <button key={s} type="button" onClick={() => startSubject(s)}

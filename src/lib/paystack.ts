@@ -18,7 +18,7 @@ declare global {
 interface PaystackInlineOptions {
   key: string;
   email: string;
-  amount: number; // pesewas (GHS * 100)
+  amount: number; // pesewas (GHS × 100)
   currency: string;
   ref: string;
   channels?: string[];
@@ -51,7 +51,8 @@ async function loadPaystackScript(): Promise<boolean> {
 
 export interface PaystackCheckoutInput {
   publicKey: string;
-  amountGhs: number;
+  amount: number;   // GHS
+  currency?: 'GHS'; // GHS-only for now
   email: string;
   reference: string;
   subaccount?: string;
@@ -78,7 +79,7 @@ export async function paystackInlineCheckout(input: PaystackCheckoutInput): Prom
     const handler = window.PaystackPop!.setup({
       key: input.publicKey,
       email: input.email,
-      amount: Math.round(input.amountGhs * 100),
+      amount: Math.round(input.amount * 100),
       currency: "GHS",
       ref: input.reference,
       channels: ["mobile_money", "card", "bank", "ussd", "bank_transfer"],

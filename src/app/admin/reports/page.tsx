@@ -5,6 +5,7 @@ import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import type { AssessmentGrade, AssessmentResult, AssessmentTemplate, Student } from "@/lib/types";
+import { draftReportCardRemark, buildClipboardPrompt } from "@/lib/aiReportCard";
 import toast from "react-hot-toast";
 
 const GRADE_COLORS: Record<AssessmentGrade, string> = {
@@ -126,6 +127,13 @@ export default function AdminReportsPage() {
                     key={r.id}
                     template={tmpl}
                     result={r}
+                    student={student}
+                    term={term}
+                    academicYear={settings.current_academic_year}
+                    schoolName={settings.name}
+                    aiEnabled={settings.ai_drafting_enabled !== false && !!settings.anthropic_api_key}
+                    anthropicApiKey={settings.anthropic_api_key}
+                    aiModel={settings.ai_model}
                     onHeadmasterRemark={(text) => {
                       setHeadmasterRemark(r.id, text, user?.full_name);
                       toast.success("Headmaster's remark saved");
@@ -168,15 +176,72 @@ export default function AdminReportsPage() {
 }
 
 function ResultSection({
-  template, result, onHeadmasterRemark, onLockUnlock,
+  template, result, student, term, academicYear, schoolName,
+  aiEnabled, anthropicApiKey, aiModel,
+  onHeadmasterRemark, onLockUnlock,
 }: {
   template: AssessmentTemplate;
   result: AssessmentResult;
+  student: Student;
+  term: 1 | 2 | 3;
+  academicYear: string;
+  schoolName: string;
+  aiEnabled: boolean;
+  anthropicApiKey?: string;
+  aiModel?: string;
   onHeadmasterRemark: (text: string) => void;
   onLockUnlock: () => void;
 }) {
   const markers = [...template.markers].sort((a, b) => a.order - b.order);
   const [remarkDraft, setRemarkDraft] = useState(result.headmaster_remark ?? "");
+  const [aiBusy, setAiBusy] = useState(false);
+
+  const buildDraftInput = () => ({
+    schoolName,
+    studentName: student.full_name,
+    className: student.class_name,
+    term,
+    academicYear,
+    markers: markers.map((m) => ({
+      name: m.name,
+      grade: result.entries.find((e) => e.marker_id === m.id)?.grade ?? null,
+    })),
+    voice: 'headmaster' as const,
+  });
+
+  // Free flow — copies a ready-made prompt to the clipboard and opens
+  // claude.ai in a new tab. Head pastes, reads the draft, copies it back.
+  // Zero cost, no API key.
+  const handleAiCopyPrompt = async () => {
+    const prompt = buildClipboardPrompt(buildDraftInput());
+    try {
+      await navigator.clipboard.writeText(prompt);
+    } catch {
+      toast.error("Couldn't copy. Long-press the prompt below to copy manually.");
+      // Surface the prompt in the textarea as a fallback.
+      setRemarkDraft(prompt);
+      return;
+    }
+    try { window.open("https://claude.ai/new", "_blank", "noopener"); } catch { /* noop */ }
+    toast.success("✨ Prompt copied! Paste it into Claude, then copy the draft back here.", { duration: 6000 });
+  };
+
+  // Paid flow — only available when an Anthropic API key is configured.
+  const handleAiDraft = async () => {
+    if (!anthropicApiKey) {
+      toast.error("Anthropic API key not set. Use '📋 Copy AI prompt' instead.");
+      return;
+    }
+    setAiBusy(true);
+    const res = await draftReportCardRemark(anthropicApiKey, buildDraftInput(), aiModel);
+    setAiBusy(false);
+    if (!res.ok) {
+      toast.error(res.error ?? "AI draft failed");
+      return;
+    }
+    setRemarkDraft(res.text ?? "");
+    toast.success("✨ Draft ready — edit then click outside to save");
+  };
 
   return (
     <div className="mb-6">
@@ -225,12 +290,35 @@ function ResultSection({
           )}
         </div>
         <div className="rounded-lg border bg-indigo-50 p-3">
-          <p className="text-xs font-medium text-indigo-800 mb-1">Headmaster&apos;s Remark</p>
+          <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+            <p className="text-xs font-medium text-indigo-800">Headmaster&apos;s Remark</p>
+            <div className="flex gap-1.5 print:hidden">
+              <button
+                type="button"
+                onClick={handleAiCopyPrompt}
+                className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-700"
+                title="Copies a ready prompt and opens claude.ai (free) — paste, then copy the draft back here"
+              >
+                📋 Copy AI prompt
+              </button>
+              {aiEnabled && (
+                <button
+                  type="button"
+                  disabled={aiBusy}
+                  onClick={handleAiDraft}
+                  className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-600 text-white disabled:opacity-60"
+                  title="One-tap draft via your configured Anthropic API key"
+                >
+                  {aiBusy ? "✨ Drafting…" : "🤖 Auto-draft"}
+                </button>
+              )}
+            </div>
+          </div>
           <p className="text-sm whitespace-pre-wrap print:block hidden">{result.headmaster_remark || <em className="text-gray-400">—</em>}</p>
           <textarea
             className="w-full mt-1 px-2 py-1.5 rounded border border-indigo-200 text-sm bg-white print:hidden"
             rows={3}
-            placeholder="Add the headmaster's comments here"
+            placeholder="Add the headmaster's comments here — or click '🤖 Draft with AI' to start from a personalised draft"
             value={remarkDraft}
             onChange={(e) => setRemarkDraft(e.target.value)}
             onBlur={() => { if (remarkDraft !== (result.headmaster_remark ?? "")) onHeadmasterRemark(remarkDraft); }}

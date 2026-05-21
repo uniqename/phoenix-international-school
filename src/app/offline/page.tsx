@@ -1,7 +1,7 @@
 "use client";
 export default function OfflinePage() {
   return (
-    <div className="min-h-screen hero-bg flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen hero-bg flex flex-col items-center justify-center p-6 safe-top safe-bottom">
       <div className="text-center max-w-sm w-full">
         <div className="text-6xl mb-5 animate-float">🦅</div>
         <h1 className="text-2xl font-black text-white mb-2">You&apos;re Offline</h1>
