@@ -15,6 +15,19 @@ import type { BusRunDirection } from "@/lib/types";
 export default function DriverPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' && navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   // Only drivers, admins or principals can open the driver app. Anyone else
   // gets bounced back to login so the public can't start fake bus runs.
   useEffect(() => {
@@ -32,12 +45,13 @@ export default function DriverPage() {
       </div>
     );
   }
-  return <DriverPageInner />;
+  return <DriverPageInner isOnline={isOnline} />;
 }
 
-function DriverPageInner() {
+function DriverPageInner({ isOnline }: { isOnline: boolean }) {
   const { logout } = useAuth();
   const router2 = useRouter();
+  const pingDriver = useAppStore((s) => s.pingDriver);
   const handleSignOut = async () => {
     await logout();
     router2.replace("/login");
@@ -190,6 +204,12 @@ function DriverPageInner() {
           </section>
         ) : (
           <>
+            {!isOnline && (
+              <section className="rounded-2xl p-3 text-center" style={{ background: "rgba(239,68,68,0.18)", border: "1px solid rgba(239,68,68,0.4)" }}>
+                <p className="text-xs text-red-300">📴 No internet connection — recording events only</p>
+              </section>
+            )}
+
             <section className="rounded-2xl p-4 text-center" style={{ background: "rgba(16,185,129,0.18)", border: "1px solid rgba(16,185,129,0.4)" }}>
               <p className="text-xs text-emerald-200 mb-1">🟢 LIVE — {activeRun.direction === "pickup" ? "Morning pickup" : "Afternoon drop-off"}</p>
               {currentStop ? (
@@ -198,6 +218,13 @@ function DriverPageInner() {
                   <p className="text-2xl font-black">{currentStop.name}</p>
                   {(atStop ? currentStop.scheduled_pickup : currentStop.scheduled_pickup) && activeRun.direction === "pickup" && (
                     <p className="text-[11px] text-emerald-300 mt-1">Scheduled: {currentStop.scheduled_pickup}</p>
+                  )}
+                  {!atStop && currentStop && (
+                    <a href={`https://maps.google.com/?q=${encodeURIComponent(currentStop.name ?? "next stop")}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="block text-[10px] text-blue-300 font-bold mt-2 hover:underline">
+                      🗺️ Open in Maps
+                    </a>
                   )}
                 </>
               ) : (
@@ -223,11 +250,22 @@ function DriverPageInner() {
               </section>
             )}
 
-            <button type="button" onClick={() => setShowRoll((r) => !r)}
-              className="w-full py-3 rounded-xl font-bold text-sm"
-              style={{ background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700" }}>
-              {showRoll ? "Hide roll call" : "🎒 Mark students on/off bus"}
-            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setShowRoll((r) => !r)}
+                className="flex-1 py-3 rounded-xl font-bold text-sm"
+                style={{ background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700" }}>
+                {showRoll ? "Hide roll call" : "🎒 Mark students on/off bus"}
+              </button>
+              <button type="button"
+                onClick={() => {
+                  activeRun && pingDriver(activeRun.route_id ?? "", "Driver", "🆘 EMERGENCY — Driver needs immediate assistance");
+                  toast.success("SOS sent to school admin — immediate assistance requested.");
+                }}
+                className="flex-1 py-3 rounded-xl font-bold text-sm animate-pulse"
+                style={{ background: "rgba(239,68,68,0.25)", border: "2px solid #ef4444", color: "#fca5a5" }}>
+                🆘 SOS
+              </button>
+            </div>
 
             {showRoll && (
               <section className="rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.06)" }}>
