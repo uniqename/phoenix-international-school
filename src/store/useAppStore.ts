@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware'
 import type {
   Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
-  CanteenWallet, CanteenTransaction, FeedPost, Payroll, BECEAttempt, PickupCode,
+  CanteenWallet, CanteenTransaction, FeedPost, FeedComment, Payroll, BECEAttempt, PickupCode,
   ChatThread, ChatMessage,
   BusRoute, BusStop, BusRun, BusEvent, BusRunDirection,
   StaffCheckIn, ExcuseRequest,
@@ -67,6 +67,7 @@ interface AppState {
   canteenWallets: CanteenWallet[]
   canteenTransactions: CanteenTransaction[]
   feedPosts: FeedPost[]
+  feedComments: FeedComment[]
   chatThreads: ChatThread[]
   chatMessages: ChatMessage[]
   busRoutes: BusRoute[]
@@ -373,11 +374,14 @@ interface AppState {
   addCrecheLog: (log: Omit<CrecheLog, 'id'>) => void
 
   // Feed
-  addFeedPost: (p: Omit<FeedPost, 'id' | 'likes' | 'created_at'>) => void
-  likePost: (id: string) => void
+  addFeedPost: (p: Omit<FeedPost, 'id' | 'likes' | 'liked_by' | 'created_at'>) => void
+  toggleLikePost: (postId: string, userId: string) => void
   approveFeedPost: (id: string, moderator?: string) => void
   rejectFeedPost: (id: string, moderator: string | undefined, reason: string) => void
   deleteFeedPost: (id: string) => void
+  addComment: (postId: string, comment: Omit<FeedComment, 'id' | 'post_id' | 'created_at'>) => FeedComment
+  deleteComment: (commentId: string) => void
+  editComment: (commentId: string, body: string) => void
 
   // Phase 15f: bus tracking
   addBusRoute: (r: Omit<BusRoute, 'id' | 'created_at'>) => BusRoute
@@ -589,6 +593,7 @@ export const useAppStore = create<AppState>()(
         canteenWallets: [],
         canteenTransactions: [],
         feedPosts: [],
+        feedComments: [],
         feePaymentRequests: [],
         beceAttempts: [],
         pickupCodes: [],
@@ -2076,15 +2081,25 @@ export const useAppStore = create<AppState>()(
           ...p,
           id: `fp${Date.now()}`,
           likes: 0,
-          // Admins / principals self-publish; teachers and parents go to the
-          // moderation queue. Caller can override by passing an explicit status.
+          liked_by: [],
           status: p.status ?? (p.author_role === 'admin' || p.author_role === 'principal' ? 'approved' : 'pending'),
           created_at: new Date().toISOString(),
         }, ...st.feedPosts],
       })),
 
-      likePost: (id) => set((st) => ({
-        feedPosts: st.feedPosts.map((p) => p.id === id ? { ...p, likes: p.likes + 1 } : p),
+      toggleLikePost: (postId, userId) => set((st) => ({
+        feedPosts: st.feedPosts.map((p) => {
+          if (p.id !== postId) return p
+          const alreadyLiked = p.liked_by?.includes(userId)
+          const newLikedBy = alreadyLiked
+            ? p.liked_by!.filter((id) => id !== userId)
+            : [...(p.liked_by || []), userId]
+          return {
+            ...p,
+            liked_by: newLikedBy,
+            likes: newLikedBy.length,
+          }
+        }),
       })),
 
       approveFeedPost: (id, moderator) => set((st) => ({
@@ -2109,6 +2124,28 @@ export const useAppStore = create<AppState>()(
 
       deleteFeedPost: (id) => set((st) => ({
         feedPosts: st.feedPosts.filter((p) => p.id !== id),
+        feedComments: st.feedComments.filter((c) => c.post_id !== id),
+      })),
+
+      addComment: (postId, comment) => {
+        const newComment: FeedComment = {
+          ...comment,
+          id: `fc${Date.now()}`,
+          post_id: postId,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ feedComments: [...st.feedComments, newComment] }))
+        return newComment
+      },
+
+      deleteComment: (commentId) => set((st) => ({
+        feedComments: st.feedComments.filter((c) => c.id !== commentId),
+      })),
+
+      editComment: (commentId, body) => set((st) => ({
+        feedComments: st.feedComments.map((c) =>
+          c.id === commentId ? { ...c, body } : c,
+        ),
       })),
 
       getOrCreateChatThread: (input) => {

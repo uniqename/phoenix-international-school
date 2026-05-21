@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 export default function TeacherFeedPage() {
   const allFeedPosts = useAppStore((s) => s.feedPosts);
   const addFeedPost  = useAppStore((s) => s.addFeedPost);
-  const likePost     = useAppStore((s) => s.likePost);
+  const toggleLikePost = useAppStore((s) => s.toggleLikePost);
   const { user }     = useAuth();
 
   const [showModal, setShowModal] = useState(false);
@@ -80,10 +80,13 @@ export default function TeacherFeedPage() {
                   {p.author_name && <span className="font-medium">{p.author_name} · </span>}
                   {new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                 </div>
-                <button type="button" onClick={() => likePost(p.id)}
-                  className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full transition-all"
-                  style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
-                  ❤️ {p.likes}
+                <button type="button" onClick={() => user && toggleLikePost(p.id, user.id)}
+                  className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full transition-all ${
+                    p.liked_by?.includes(user?.id || '')
+                      ? 'bg-red-50 text-red-600'
+                      : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
+                  }`}>
+                  {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
                 </button>
               </div>
             </div>

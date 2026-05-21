@@ -37,7 +37,7 @@ export default function StudentPortal() {
   const homework   = useAppStore((s) => s.homework);
   const beceAttempts = useAppStore((s) => s.beceAttempts);
   const feedPosts  = useAppStore((s) => s.feedPosts);
-  const likePost   = useAppStore((s) => s.likePost);
+  const toggleLikePost = useAppStore((s) => s.toggleLikePost);
   const homeworkSubmissions = useAppStore((s) => s.homeworkSubmissions);
   const submitHomeworkFn    = useAppStore((s) => s.submitHomework);
 
@@ -351,11 +351,16 @@ export default function StudentPortal() {
                 {p.content && <div className="text-[11px] text-gray-600 line-clamp-1">{p.content}</div>}
                 <div className="text-[10px] text-gray-400 mt-0.5">{p.author_name} · Tap to read →</div>
               </div>
-              <span onClick={(e) => { e.stopPropagation(); likePost(p.id); }}
-                className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full ml-2 flex-shrink-0 cursor-pointer"
-                style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
-                ❤️ {p.likes}
-              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); user && toggleLikePost(p.id, user.id); }}
+                className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full ml-2 flex-shrink-0 transition ${
+                  p.liked_by?.includes(user?.id || '')
+                    ? 'bg-red-50 text-red-600'
+                    : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
+                }`}>
+                {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
+              </button>
             </button>
           ))}
         </div>
@@ -378,7 +383,7 @@ export default function StudentPortal() {
 
       <FeedPostModal
         post={feedDetail}
-        onLike={() => feedDetail && likePost(feedDetail.id)}
+        onLike={() => feedDetail && user && toggleLikePost(feedDetail.id, user.id)}
         onClose={() => setFeedDetail(null)}
       />
 
