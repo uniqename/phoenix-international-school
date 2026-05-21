@@ -45,5 +45,6 @@ export const ADMIN_NAV = [
   { icon: "📊", label: "Smart Reports",   href: "/admin/smart-reports" },
   { icon: "📤", label: "Data Uploads",    href: "/admin/data-uploads" },
   { icon: "📬", label: "Enquiries",       href: "/admin/enquiries" },
+  { icon: "📋", label: "Audit Logs",      href: "/admin/audit-logs" },
   { icon: "⚙️", label: "School Settings", href: "/admin/settings" },
 ];

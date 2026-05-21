@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
@@ -8,6 +8,10 @@ import toast from "react-hot-toast";
 export default function SettingsPage() {
   const settings = useAppStore((s) => s.schoolSettings);
   const updateSettings = useAppStore((s) => s.updateSchoolSettings);
+  const restoreData = useAppStore((s) => s.restoreData);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [restoreModal, setRestoreModal] = useState(false);
+  const [restoreFile, setRestoreFile] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: settings.name,
@@ -16,10 +20,6 @@ export default function SettingsPage() {
     phones: settings.phones.join(", "),
     email: settings.email,
     website: settings.website ?? "",
-    // Hubtel SMS retired — kept as no-op so persisted settings still satisfy the type.
-    hubtel_payments_merchant_id: settings.hubtel_payments_merchant_id ?? "",
-    hubtel_settlement_bank: settings.hubtel_settlement_bank ?? "",
-    hubtel_settlement_account: settings.hubtel_settlement_account ?? "",
     payment_provider: settings.payment_provider,
     paystack_public_key: settings.paystack_public_key ?? "",
     paystack_secret_key: settings.paystack_secret_key ?? "",
@@ -49,10 +49,6 @@ export default function SettingsPage() {
       phones,
       email: form.email.trim(),
       website: form.website.trim() || undefined,
-      // Hubtel SMS fields removed; app now uses in-app push notifications.
-      hubtel_payments_merchant_id: form.hubtel_payments_merchant_id.trim() || undefined,
-      hubtel_settlement_bank: form.hubtel_settlement_bank.trim() || undefined,
-      hubtel_settlement_account: form.hubtel_settlement_account.trim() || undefined,
       payment_provider: form.payment_provider,
       paystack_public_key: form.paystack_public_key.trim() || undefined,
       paystack_secret_key: form.paystack_secret_key.trim() || undefined,
@@ -108,8 +104,7 @@ export default function SettingsPage() {
               value={form.payment_provider}
               onChange={(e) => setForm({ ...form, payment_provider: e.target.value as typeof form.payment_provider })}
             >
-              <option value="paystack">Paystack (recommended while Hubtel KYC is pending)</option>
-              <option value="hubtel">Hubtel Receive Money</option>
+              <option value="paystack">Paystack (recommended)</option>
               <option value="none">None (cash only — admin records every payment)</option>
             </select>
           </Field>
@@ -142,22 +137,13 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {form.payment_provider === "hubtel" && (
-            <div className="rounded-lg border bg-amber-50 border-amber-200 p-3 text-xs text-amber-900">
-              <p className="font-semibold mb-1">Hubtel pending KYC</p>
-              <p>
-                Hubtel asked for: company registration document, business logo, Ghana Card IDs of directors (front + back), and director contact details. Submit those at <span className="font-mono">unity.hubtel.com</span>, wait for the dedicated Relationship Manager email, then paste the Hubtel Client ID + Secret + Payments Merchant Number below. Use Paystack until then.
-              </p>
-            </div>
-          )}
-
         </section>
 
         <section className="glass rounded-2xl p-5 space-y-3">
           <div>
             <h2 className="font-semibold">📢 In-app notifications</h2>
             <p className="text-xs text-gray-500 mt-1">
-              Phoenix uses <strong>in-app push notifications</strong> instead of SMS. When you send a message from <span className="font-mono">/admin/messaging</span>, it reaches parents and staff via the 🔔 bell on their dashboard and (when they have notifications enabled) as a phone alert. <strong>No SMS credits to top up.</strong> Hubtel SMS can be added later if you ever decide you want it.
+              Phoenix uses <strong>in-app push notifications</strong> to reach parents and staff via the 🔔 bell on their dashboard and (when they have notifications enabled) as a phone alert. No external SMS service needed.
             </p>
           </div>
           <ul className="text-xs text-gray-600 space-y-1 list-disc pl-4">
@@ -243,6 +229,124 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
+
+        {/* Backup & Restore */}
+        <section className="glass rounded-2xl p-5 space-y-3">
+          <h2 className="font-semibold">💾 Backup &amp; Restore</h2>
+          <p className="text-xs text-gray-500">
+            Download a complete backup of all school data (students, fees, grades, etc.) as a JSON file. Use this to migrate data between devices or as a safety copy. Restore anytime to bring back a previous version.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button type="button"
+              onClick={() => {
+                const state = useAppStore.getState();
+                const backup = {
+                  timestamp: new Date().toISOString(),
+                  version: "1.0.2",
+                  data: {
+                    students: state.students,
+                    teachers: state.teachers,
+                    fees: state.fees,
+                    payments: state.payments,
+                    attendance: state.attendance,
+                    grades: state.grades,
+                    homework: state.homework,
+                    chatThreads: state.chatThreads,
+                    chatMessages: state.chatMessages,
+                    families: state.families,
+                    userActivityLogs: state.userActivityLogs,
+                    paymentPlans: state.paymentPlans,
+                    excuseRequests: state.excuseRequests,
+                    libraryBooks: state.libraryBooks,
+                    libraryLoans: state.libraryLoans,
+                    calendarEvents: state.calendarEvents,
+                  },
+                };
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `phoenix-backup-${new Date().toISOString().split("T")[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success("✅ Backup downloaded");
+              }}
+              className="text-sm font-bold px-4 py-2 rounded-lg"
+              style={{ background: "rgba(34,197,94,0.15)", color: "#166534", border: "1px solid rgba(34,197,94,0.35)" }}>
+              💾 Download backup
+            </button>
+            <button type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-sm font-bold px-4 py-2 rounded-lg"
+              style={{ background: "rgba(59,130,246,0.15)", color: "#1e40af", border: "1px solid rgba(59,130,246,0.35)" }}>
+              📥 Restore from file
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              aria-label="Restore from backup file"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  try {
+                    const content = ev.target?.result as string;
+                    setRestoreFile(content);
+                    setRestoreModal(true);
+                  } catch (err) {
+                    toast.error("Failed to read file");
+                  }
+                };
+                reader.readAsText(file);
+              }}
+            />
+          </div>
+        </section>
+
+        {/* Restore confirmation modal */}
+        {restoreModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(12,10,30,0.7)" }}>
+            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+              <h3 className="font-black text-gray-900 text-lg mb-2">Restore backup?</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                This will overwrite all current data (students, fees, grades, etc.) with the backup data. <strong>This cannot be undone</strong> — make sure you have a recent backup of your current data first.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRestoreModal(false);
+                    setRestoreFile(null);
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-900 font-bold hover:bg-gray-50">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!restoreFile) return;
+                    try {
+                      const backup = JSON.parse(restoreFile);
+                      restoreData(backup.data);
+                      toast.success("✅ Data restored successfully");
+                      setRestoreModal(false);
+                      setRestoreFile(null);
+                      window.location.reload();
+                    } catch (err) {
+                      toast.error("Failed to restore: invalid backup file");
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg text-white font-bold"
+                  style={{ background: "#dc2626" }}>
+                  Restore
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2">
           <button type="button" className="btn-secondary" onClick={() => window.location.reload()}>Discard</button>

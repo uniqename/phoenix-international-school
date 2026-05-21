@@ -6,7 +6,6 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, formatGHS, todayISO } from "@/lib/utils";
 import type { Fee, Payment, HomeworkAssignment, FeedPost, LessonPlan } from "@/lib/types";
-import { hubtelInitiateCheckout } from "@/lib/hubtel";
 import { paystackInlineCheckout } from "@/lib/paystack";
 import HomeworkDetailModal from "@/components/HomeworkDetailModal";
 import FeedPostModal from "@/components/FeedPostModal";
@@ -65,6 +64,9 @@ export default function ParentPortal() {
   const createPaymentRequest  = useAppStore((s) => s.createPaymentRequest);
   const markPaymentRequestStatus = useAppStore((s) => s.markPaymentRequestStatus);
   const calendarEvents        = useAppStore((s) => s.calendarEvents);
+  const typingUsers           = useAppStore((s) => s.typingUsers);
+  const setUserTyping         = useAppStore((s) => s.setUserTyping);
+  const clearTypingAfterDelay = useAppStore((s) => s.clearTypingAfterDelay);
 
   // Find the parent's family by email or phone (either primary or secondary parent)
   const parentFamily = families.find((f) =>
@@ -428,53 +430,6 @@ export default function ParentPortal() {
       return;
     }
 
-    if (goesViaGateway && settings.payment_provider === "hubtel") {
-      const reqMethod = (payForm.method === "mtn_momo" || payForm.method === "telecel" || payForm.method === "at_money") ? "hubtel_momo" : "hubtel_bank";
-      const req = createPaymentRequest({
-        student_id: child.id,
-        fee_id: targetFee?.id,
-        family_id: parentFamily?.id,
-        amount: amt,
-        method: reqMethod,
-        channel: payForm.method,
-        phone_or_ref: payForm.reference || undefined,
-        status: "pending",
-      });
-      const result = await hubtelInitiateCheckout(
-        {
-          clientId: settings.hubtel_client_id ?? "",
-          clientSecret: settings.hubtel_client_secret ?? "",
-          merchantId: settings.hubtel_payments_merchant_id,
-        },
-        {
-          amount: amt,
-          description: `${targetFee?.fee_type ?? "Fees"} — ${child.full_name} (${child.class_name})`,
-          clientReference: req.id,
-          customer: {
-            name: parentFamily?.family_name ?? user?.full_name ?? "Parent",
-            email: user?.email,
-            phone: parentFamily?.primary_phone ?? parentFamily?.secondary_phone ?? user?.phone,
-          },
-          callbackUrl: typeof window !== "undefined" ? `${window.location.origin}/parent?paid=${req.id}` : "",
-          returnUrl: typeof window !== "undefined" ? `${window.location.origin}/parent?ref=${req.id}` : "",
-        },
-      );
-      if (!result.ok) {
-        markPaymentRequestStatus(req.id, "failed", { error: result.error });
-        toast.error(`Could not start payment: ${result.error ?? "Hubtel checkout unavailable"}`);
-        return;
-      }
-      markPaymentRequestStatus(req.id, "pending", {
-        hubtel_invoice_id: result.invoiceId,
-        hubtel_checkout_url: result.checkoutUrl,
-      });
-      if (result.checkoutUrl && typeof window !== "undefined") {
-        window.open(result.checkoutUrl, "_blank", "noopener");
-      }
-      toast.success(`📲 Payment request sent. Approve the MoMo prompt on your phone, or complete checkout in the new tab. We'll confirm here when it clears.`, { duration: 8000 });
-      setPayModal(false);
-      return;
-    }
 
     recordPayment(child.id, amt, payForm.method, payForm.reference || undefined);
     toast.success(`Payment of ${formatGHS(amt)} recorded — admin will confirm receipt.`);
@@ -1435,6 +1390,14 @@ export default function ParentPortal() {
                   </div>
                 );
               })}
+              {Object.values(typingUsers).filter((t) => t.threadId === chatThread?.id && t.userId !== user?.id).map((t) => (
+                <div key={t.userId} className="flex justify-start">
+                  <div className="max-w-[80%] rounded-2xl px-3 py-2 text-sm italic text-gray-500"
+                    style={{ background: "rgba(26,14,77,0.05)" }}>
+                    ✍️ {t.userName} is typing…
+                  </div>
+                </div>
+              ))}
             </div>
             {chatFile && (
               <div className="mb-2 p-2 rounded-lg bg-blue-50 flex items-center justify-between text-xs">
@@ -1444,7 +1407,13 @@ export default function ParentPortal() {
             )}
             <div className="flex gap-2">
               <input value={chatDraft}
-                onChange={(e) => setChatDraft(e.target.value)}
+                onChange={(e) => {
+                  setChatDraft(e.target.value);
+                  if (chatThread && user?.id) {
+                    setUserTyping(chatThread.id, user.id, user.full_name || 'Parent');
+                    clearTypingAfterDelay(user.id);
+                  }
+                }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
                 placeholder={`Message ${recipientName ?? "school"}…`}
                 className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none" />

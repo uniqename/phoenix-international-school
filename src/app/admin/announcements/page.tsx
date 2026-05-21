@@ -6,11 +6,10 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { CLASSES } from "@/lib/utils";
 import type { Announcement } from "@/lib/types";
-import { hubtelSendSms, hubtelGetBalance, estimateSmsCost } from "@/lib/hubtel";
 import toast from "react-hot-toast";
 
 
-const TYPE_ICONS: Record<string, string> = { push: "🔔", sms: "📱", both: "📣", internal: "📋" };
+const TYPE_ICONS: Record<string, string> = { push: "🔔", internal: "📋" };
 const AUD_LABELS: Record<string, string> = { all: "Everyone", parents: "Parents", teachers: "Teachers", students: "Students", specific_class: "Specific Class" };
 
 export default function AnnouncementsPage() {
@@ -27,91 +26,13 @@ export default function AnnouncementsPage() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<{
     title: string; content: string; type: Announcement["type"]; audience: Announcement["audience"]; class_name: string;
-  }>({ title: "", content: "", type: "both", audience: "all", class_name: "" });
+  }>({ title: "", content: "", type: "push", audience: "all", class_name: "" });
 
-  // Collect recipient phone numbers for SMS based on audience selection
-  function collectSmsRecipients(audience: Announcement["audience"], className?: string): string[] {
-    if (audience === "teachers") return []; // No teacher phone field in current schema
-    const relevantStudents = audience === "specific_class"
-      ? students.filter((s) => s.class_name === className)
-      : students;
-    const phones = new Set<string>();
-    for (const s of relevantStudents) {
-      const fam = s.family_id ? families.find((f) => f.id === s.family_id) : null;
-      if (fam?.primary_phone) phones.add(fam.primary_phone);
-      if (fam?.secondary_phone) phones.add(fam.secondary_phone);
-      if (!fam && s.parent_phone) phones.add(s.parent_phone);
-    }
-    return Array.from(phones);
-  }
-
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!form.title.trim() || !form.content.trim()) { toast.error("Title and message are required"); return; }
     addAnnouncement({ ...form, created_by: user?.full_name });
-
-    const wantsSms = (form.type === "sms" || form.type === "both") && settings.sms_provider !== "none";
-    if (!wantsSms) {
-      toast.success(`📢 ${AUD_LABELS[form.audience]} notified (in-app)`);
-      setForm({ title: "", content: "", type: "both", audience: "all", class_name: "" });
-      setShowModal(false);
-      return;
-    }
-
-    const recipients = collectSmsRecipients(form.audience, form.class_name);
-    if (recipients.length === 0) {
-      toast(`${AUD_LABELS[form.audience]} notified in-app — no SMS phone numbers on file for this audience`, { icon: "ℹ️" });
-      setForm({ title: "", content: "", type: "both", audience: "all", class_name: "" });
-      setShowModal(false);
-      return;
-    }
-
-    const smsBody = `${settings.name}: ${form.title}\n${form.content}`;
-    const segments = Math.max(1, Math.ceil(smsBody.length / 160));
-    const cost = estimateSmsCost(recipients.length, segments);
-
-    if (settings.sms_credit_balance > 0 && settings.sms_credit_balance < cost) {
-      toast.error(`⚠️ Insufficient SMS credit: GHS ${settings.sms_credit_balance.toFixed(2)} on balance, ~GHS ${cost.toFixed(2)} needed. Top up at unity.hubtel.com.`, { duration: 8000 });
-      return;
-    }
-
-    const log = logSms({
-      to: recipients,
-      body: smsBody,
-      audience: AUD_LABELS[form.audience] + (form.class_name ? ` (${form.class_name})` : ""),
-      cost_estimate: cost,
-      status: "pending",
-      provider: settings.sms_provider,
-    });
-
-    const creds = {
-      clientId: settings.hubtel_client_id ?? "",
-      clientSecret: settings.hubtel_client_secret ?? "",
-      senderId: settings.sms_sender_id,
-    };
-
-    // Send to each recipient (Hubtel SMS API is one number per request)
-    let sentCount = 0;
-    let failedCount = 0;
-    for (const to of recipients) {
-      const result = await hubtelSendSms(creds, { to, body: smsBody });
-      if (result.ok) sentCount++;
-      else failedCount++;
-    }
-
-    updateSmsStatus(log.id, {
-      status: failedCount === 0 ? "sent" : failedCount === recipients.length ? "failed" : "sent",
-      sent_at: new Date().toISOString(),
-      error: failedCount > 0 ? `${failedCount}/${recipients.length} failed` : undefined,
-    });
-
-    // Refresh balance after send
-    const bal = await hubtelGetBalance(creds);
-    if (bal.ok && typeof bal.balanceGhs === "number") setSmsBalance(bal.balanceGhs);
-
-    if (sentCount > 0) toast.success(`📨 SMS sent to ${sentCount} parent${sentCount === 1 ? "" : "s"} (cost ~GHS ${cost.toFixed(2)})`);
-    if (failedCount > 0) toast.error(`${failedCount} SMS failed — check Hubtel dashboard or sender ID approval`);
-
-    setForm({ title: "", content: "", type: "both", audience: "all", class_name: "" });
+    toast.success(`📢 ${AUD_LABELS[form.audience]} notified (in-app push)`);
+    setForm({ title: "", content: "", type: "push", audience: "all", class_name: "" });
     setShowModal(false);
   };
 
@@ -167,13 +88,11 @@ export default function AnnouncementsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">Send Via</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">Type</label>
                   <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as Announcement["type"] }))}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none">
-                    <option value="both">📣 SMS + Push</option>
-                    <option value="push">🔔 Push Only</option>
-                    <option value="sms">📱 SMS Only</option>
-                    <option value="internal">📋 Internal</option>
+                    <option value="push">🔔 Push Notification</option>
+                    <option value="internal">📋 Internal Note</option>
                   </select>
                 </div>
                 <div>

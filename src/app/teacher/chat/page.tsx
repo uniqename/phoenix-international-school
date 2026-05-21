@@ -24,6 +24,9 @@ export default function TeacherChatPage() {
   const allMessages = useAppStore((s) => s.chatMessages);
   const sendChatMessage = useAppStore((s) => s.sendChatMessage);
   const markChatThreadRead = useAppStore((s) => s.markChatThreadRead);
+  const typingUsers = useAppStore((s) => s.typingUsers);
+  const setUserTyping = useAppStore((s) => s.setUserTyping);
+  const clearTypingAfterDelay = useAppStore((s) => s.clearTypingAfterDelay);
 
   const myThreads = useMemo(() => {
     const mine = threads.filter((t) =>
@@ -139,6 +142,14 @@ export default function TeacherChatPage() {
                     </div>
                   );
                 })}
+                {Object.values(typingUsers).filter((t) => t.threadId === activeId && t.userId !== user?.id).map((t) => (
+                  <div key={t.userId} className="flex justify-start">
+                    <div className="max-w-[75%] rounded-2xl px-3 py-2 text-sm italic text-gray-400"
+                      style={{ background: "rgba(255,255,255,0.04)" }}>
+                      ✍️ {t.userName} is typing…
+                    </div>
+                  </div>
+                ))}
               </div>
               <footer className="p-3 border-t border-white/10 space-y-2">
                 {showTemplates && (
@@ -159,7 +170,13 @@ export default function TeacherChatPage() {
                 )}
                 <div className="flex gap-2">
                   <input value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
+                    onChange={(e) => {
+                      setDraft(e.target.value);
+                      if (activeId && user?.id) {
+                        setUserTyping(activeId, user.id, user.full_name || 'Teacher');
+                        clearTypingAfterDelay(user.id);
+                      }
+                    }}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                     placeholder="Type a message…"
                     className="flex-1 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none" />

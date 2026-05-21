@@ -133,6 +133,7 @@ interface AppState {
   enquiries: Enquiry[]
   dataUploads: DataUpload[]
   smartReports: SmartReport[]
+  typingUsers: Record<string, { threadId: string; userId: string; userName: string; typingSince: number }>
 
   // School configuration
   updateSchoolSettings: (data: Partial<SchoolSettings>) => void
@@ -423,6 +424,7 @@ interface AppState {
   // Lifecycle helpers — switch between demo data and a clean school setup.
   wipeDemoData: () => void
   restoreDemoData: () => void
+  restoreData: (data: any) => void
 
   // Library
   addLibraryBook: (b: Omit<LibraryBook, 'id' | 'created_at'>) => LibraryBook
@@ -469,6 +471,9 @@ interface AppState {
   acknowledgeUrgentMessage: (messageId: string) => void
   deleteChatMessage: (messageId: string) => void
   archiveChatThread: (threadId: string) => void
+  setUserTyping: (threadId: string, userId: string, userName: string) => void
+  clearUserTyping: (userId: string) => void
+  clearTypingAfterDelay: (userId: string, delayMs?: number) => void
 
   // Homework submissions
   submitHomework: (homeworkId: string, studentId: string, studentName: string, fileName: string, fileType: string, fileSize: number, fileDataUrl?: string) => void
@@ -610,6 +615,7 @@ export const useAppStore = create<AppState>()(
       enquiries: MOCK_ENQUIRIES,
       dataUploads: MOCK_DATA_UPLOADS,
       smartReports: MOCK_SMART_REPORTS,
+      typingUsers: {},
 
       updateSchoolSettings: (data) => set((st) => ({
         schoolSettings: { ...st.schoolSettings, ...data },
@@ -698,6 +704,26 @@ export const useAppStore = create<AppState>()(
         smartReports: MOCK_SMART_REPORTS,
         messageLogs: MOCK_MESSAGE_LOGS,
       }),
+
+      // Restore from backup file — allows restoring any previously backed-up state
+      restoreData: (data) => set((st) => ({
+        students: data.students ?? st.students,
+        teachers: data.teachers ?? st.teachers,
+        fees: data.fees ?? st.fees,
+        payments: data.payments ?? st.payments,
+        attendance: data.attendance ?? st.attendance,
+        grades: data.grades ?? st.grades,
+        homework: data.homework ?? st.homework,
+        chatThreads: data.chatThreads ?? st.chatThreads,
+        chatMessages: data.chatMessages ?? st.chatMessages,
+        families: data.families ?? st.families,
+        userActivityLogs: data.userActivityLogs ?? st.userActivityLogs,
+        paymentPlans: data.paymentPlans ?? st.paymentPlans,
+        excuseRequests: data.excuseRequests ?? st.excuseRequests,
+        libraryBooks: data.libraryBooks ?? st.libraryBooks,
+        libraryLoans: data.libraryLoans ?? st.libraryLoans,
+        calendarEvents: data.calendarEvents ?? st.calendarEvents,
+      })),
 
       // ── Library ──
       addLibraryBook: (b) => {
@@ -2422,6 +2448,29 @@ export const useAppStore = create<AppState>()(
         chatThreads: st.chatThreads.filter((t) => t.id !== threadId),
         chatMessages: st.chatMessages.filter((m) => m.thread_id !== threadId),
       })),
+
+      setUserTyping: (threadId, userId, userName) => set((st) => ({
+        typingUsers: {
+          ...st.typingUsers,
+          [userId]: { threadId, userId, userName, typingSince: Date.now() },
+        },
+      })),
+
+      clearUserTyping: (userId) => set((st) => {
+        const newTypingUsers = { ...st.typingUsers }
+        delete newTypingUsers[userId]
+        return { typingUsers: newTypingUsers }
+      }),
+
+      clearTypingAfterDelay: (userId, delayMs = 3000) => {
+        setTimeout(() => {
+          set((st) => {
+            const newTypingUsers = { ...st.typingUsers }
+            delete newTypingUsers[userId]
+            return { typingUsers: newTypingUsers }
+          })
+        }, delayMs)
+      },
 
       // ── Phase 15f: bus tracking ──
       addBusRoute: (r) => {
