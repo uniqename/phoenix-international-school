@@ -166,15 +166,28 @@ export default function ParentPortal() {
   }, [chatThread, markChatThreadRead]);
 
   const [chatDraft, setChatDraft] = useState("");
+  const [chatFile, setChatFile] = useState<{ name: string; dataUrl: string } | null>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
   }, [conversation.length, chatThread?.id]);
 
+  const handleChatFile = (f: File) => {
+    if (f.size > 10 * 1024 * 1024) { toast.error("File too big — max 10 MB"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setChatFile({ name: f.name, dataUrl: reader.result });
+      }
+    };
+    reader.readAsDataURL(f);
+  };
+
   const sendChat = () => {
-    if (!chatThread || !chatDraft.trim()) return;
-    sendChatMessage(chatThread.id, 'parent', user?.id, parentDisplay, chatDraft);
+    if (!chatThread || (!chatDraft.trim() && !chatFile)) return;
+    sendChatMessage(chatThread.id, 'parent', user?.id, parentDisplay, chatDraft || "(file shared)", undefined, chatFile?.dataUrl, chatFile?.name);
     setChatDraft("");
+    setChatFile(null);
   };
 
   // Phase 15f — live bus for the active child today. We match a route by the
@@ -1276,6 +1289,11 @@ export default function ParentPortal() {
                         border: mine ? "none" : "1px solid #e5e7eb",
                       }}>
                       <p className="whitespace-pre-wrap">{m.body}</p>
+                      {m.file_url && m.file_name && (
+                        <a href={m.file_url} download={m.file_name} className={`block text-xs mt-1 font-bold underline ${mine ? "text-purple-200" : "text-blue-600"}`}>
+                          📎 {m.file_name}
+                        </a>
+                      )}
                       <p className={`text-[9px] mt-0.5 ${mine ? "text-purple-200" : "text-gray-400"}`}>
                         {m.sender_name ?? m.sender_role} · {new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                       </p>
@@ -1284,12 +1302,22 @@ export default function ParentPortal() {
                 );
               })}
             </div>
+            {chatFile && (
+              <div className="mb-2 p-2 rounded-lg bg-blue-50 flex items-center justify-between text-xs">
+                <span className="text-blue-700 font-bold">📎 {chatFile.name}</span>
+                <button type="button" onClick={() => setChatFile(null)} className="text-red-600 font-bold">✕</button>
+              </div>
+            )}
             <div className="flex gap-2">
               <input value={chatDraft}
                 onChange={(e) => setChatDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
                 placeholder={`Message ${recipientName ?? "school"}…`}
                 className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none" />
+              <label className="cursor-pointer text-xs font-bold px-3 py-2.5 rounded-xl border border-gray-200 text-blue-700 hover:bg-blue-50">
+                📎
+                <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleChatFile(f); e.target.value = ""; }} />
+              </label>
               <button type="button" onClick={sendChat} className="btn-gold text-xs px-4">Send</button>
             </div>
           </>
