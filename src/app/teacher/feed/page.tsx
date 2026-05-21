@@ -113,7 +113,7 @@ export default function TeacherFeedPage() {
                     if (user) {
                       addComment(p.id, {
                         author_name: user.full_name,
-                        author_role: user.role,
+                        author_role: 'teacher',
                         body,
                       });
                     }

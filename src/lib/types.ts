@@ -1245,6 +1245,28 @@ export interface BECEAttempt {
   completed_at: string
 }
 
+export interface StudentAchievement {
+  id: string
+  student_id: string
+  badge_type: 'perfect_attendance_5' | 'perfect_attendance_30' | 'homework_100' | 'great_grades_a' | 'practice_streak_7' | 'practice_streak_30'
+  badge_name: string
+  description: string
+  emoji: string
+  unlocked_at: string
+}
+
+export interface StudentEngagement {
+  id: string
+  student_id: string
+  practice_streak: number                // current consecutive days of practice
+  practice_streak_started: string
+  homework_submitted_count: number
+  homework_on_time_count: number
+  achievements: StudentAchievement[]
+  total_points: number
+  last_activity: string
+}
+
 export interface HomeworkSubmission {
   id: string
   homework_id: string

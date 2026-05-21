@@ -5,6 +5,7 @@ import type {
   Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
   CanteenWallet, CanteenTransaction, FeedPost, FeedComment, Payroll, BECEAttempt, PickupCode,
+  StudentEngagement, StudentAchievement,
   ChatThread, ChatMessage,
   BusRoute, BusStop, BusRun, BusEvent, BusRunDirection,
   StaffCheckIn, ExcuseRequest,
@@ -80,6 +81,7 @@ interface AppState {
   libraryLoans: LibraryLoan[]
   payroll: Payroll[]
   beceAttempts: BECEAttempt[]
+  studentEngagements: StudentEngagement[]
   pickupCodes: PickupCode[]
   homeworkSubmissions: HomeworkSubmission[]
   accounts: UserAccount[]
@@ -493,6 +495,7 @@ export const useAppStore = create<AppState>()(
       canteenWallets: MOCK_CANTEEN_WALLETS,
       canteenTransactions: [],
       feedPosts: MOCK_FEED_POSTS,
+      feedComments: [],
       chatThreads: [],
       chatMessages: [],
       busRoutes: [
@@ -515,6 +518,7 @@ export const useAppStore = create<AppState>()(
       assignmentSubmissions: [],
       payroll: MOCK_PAYROLL,
       beceAttempts: [],
+      studentEngagements: [],
       pickupCodes: [],
       homeworkSubmissions: [],
       accounts: [
@@ -598,6 +602,7 @@ export const useAppStore = create<AppState>()(
         feedComments: [],
         feePaymentRequests: [],
         beceAttempts: [],
+        studentEngagements: [],
         pickupCodes: [],
         payroll: [],
         lessonPlans: [],
@@ -2553,6 +2558,81 @@ export const useAppStore = create<AppState>()(
       recordBECEAttempt: (studentId, subject, score, total) => set((st) => ({
         beceAttempts: [...st.beceAttempts, { id: `ba${Date.now()}`, student_id: studentId, subject, score, total, percentage: Math.round((score / total) * 100), completed_at: new Date().toISOString() }],
       })),
+
+      getOrCreateStudentEngagement: (studentId: string) => {
+        const st = get()
+        let engagement = st.studentEngagements.find((e) => e.student_id === studentId)
+        if (!engagement) {
+          engagement = {
+            id: `se${Date.now()}`,
+            student_id: studentId,
+            practice_streak: 0,
+            practice_streak_started: new Date().toISOString(),
+            homework_submitted_count: 0,
+            homework_on_time_count: 0,
+            achievements: [],
+            total_points: 0,
+            last_activity: new Date().toISOString(),
+          }
+          set((s) => ({ studentEngagements: [...s.studentEngagements, engagement!] }))
+        }
+        return engagement
+      },
+
+      recordPracticeAttempt: (studentId: string) => {
+        const st = get()
+        const engagement = st.studentEngagements.find((e) => e.student_id === studentId) || get().getOrCreateStudentEngagement(studentId)
+        if (!engagement) return
+        const today = new Date().toISOString().slice(0, 10)
+        const lastDay = engagement.practice_streak_started.slice(0, 10)
+        const isConsecutive = new Date(today).getTime() - new Date(lastDay).getTime() <= 86400000
+        const newStreak = isConsecutive ? engagement.practice_streak + 1 : 1
+        set((s) => ({
+          studentEngagements: s.studentEngagements.map((e) =>
+            e.student_id === studentId
+              ? {
+                  ...e,
+                  practice_streak: newStreak,
+                  practice_streak_started: isConsecutive ? e.practice_streak_started : new Date().toISOString(),
+                  total_points: e.total_points + 10,
+                  last_activity: new Date().toISOString(),
+                }
+              : e
+          ),
+        }))
+      },
+
+      awardAchievement: (studentId: string, badgeType: 'perfect_attendance_5' | 'perfect_attendance_30' | 'homework_100' | 'great_grades_a' | 'practice_streak_7' | 'practice_streak_30') => {
+        const badges: Record<string, {name: string; description: string; emoji: string}> = {
+          'perfect_attendance_5': { name: '5-Day Perfect', description: '5 days of perfect attendance', emoji: '🎖️' },
+          'perfect_attendance_30': { name: 'Perfect Month', description: '30 days of perfect attendance', emoji: '⭐' },
+          'homework_100': { name: 'Homework Master', description: '100% homework submission', emoji: '✨' },
+          'great_grades_a': { name: 'Straight A\'s', description: 'All A grades this term', emoji: '🏆' },
+          'practice_streak_7': { name: 'Week Warrior', description: '7-day practice streak', emoji: '🔥' },
+          'practice_streak_30': { name: 'Legend', description: '30-day practice streak', emoji: '👑' },
+        }
+        const badge = badges[badgeType]
+        const achievement: StudentAchievement = {
+          id: `ach${Date.now()}`,
+          student_id: studentId,
+          badge_type: badgeType,
+          badge_name: badge.name,
+          description: badge.description,
+          emoji: badge.emoji,
+          unlocked_at: new Date().toISOString(),
+        }
+        set((st) => ({
+          studentEngagements: st.studentEngagements.map((e) =>
+            e.student_id === studentId
+              ? {
+                  ...e,
+                  achievements: [...(e.achievements || []), achievement],
+                  total_points: e.total_points + 100,
+                }
+              : e
+          ),
+        }))
+      },
 
       addTeacher: (t) => set((st) => ({
         teachers: [...st.teachers, { ...t, id: `t${Date.now()}` }],

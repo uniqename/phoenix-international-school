@@ -1,141 +1,62 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
-import { useAuth } from "@/context/AuthContext";
-import type { ExcuseStatus } from "@/lib/types";
 import toast from "react-hot-toast";
 
-const KIND_LABEL: Record<string, string> = {
-  medical: "🩺 Medical / doctor's note",
-  family: "👨‍👩‍👧 Family matter",
-  religious: "🕊 Religious observance",
-  bereavement: "🕯 Bereavement",
-  travel: "✈️ Travel",
-  other: "📄 Other",
-};
-
 export default function ExcusesPage() {
-  const { user } = useAuth();
-  const excuseRequests = useAppStore((s) => s.excuseRequests);
-  const reviewExcuseRequest = useAppStore((s) => s.reviewExcuseRequest);
+  const excuses = useAppStore((s) => s.excuseRequests);
+  const reviewExcuse = useAppStore((s) => s.reviewExcuseRequest);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'declined'>('pending');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const [filter, setFilter] = useState<ExcuseStatus | 'all'>('pending');
+  const filtered = useMemo(() => {
+    return filter === 'all' ? excuses : excuses.filter((e) => e.status === filter);
+  }, [excuses, filter]);
 
-  const sorted = useMemo(() => [...excuseRequests].sort((a, b) =>
-    b.created_at.localeCompare(a.created_at)
-  ), [excuseRequests]);
+  const selected = excuses.find((e) => e.id === selectedId);
+  const stats = { total: excuses.length, pending: excuses.filter((e) => e.status === 'pending').length, approved: excuses.filter((e) => e.status === 'approved').length };
 
-  const visible = filter === 'all' ? sorted : sorted.filter((r) => r.status === filter);
-
-  const counts = useMemo(() => ({
-    pending: excuseRequests.filter((r) => r.status === 'pending').length,
-    approved: excuseRequests.filter((r) => r.status === 'approved').length,
-    declined: excuseRequests.filter((r) => r.status === 'declined').length,
-  }), [excuseRequests]);
-
-  const decide = (id: string, kind: 'approved' | 'declined') => {
-    const notes = kind === 'declined'
-      ? (window.prompt("Reason for decline (shown to parent):", "") ?? "")
-      : undefined;
-    if (kind === 'declined' && notes === "") {
-      // user cancelled prompt
-      return;
-    }
-    reviewExcuseRequest(id, kind, user?.full_name, notes);
-    toast.success(kind === 'approved' ? "✅ Excuse approved, attendance updated" : "❌ Excuse declined");
+  const handleReview = (decision: 'approved' | 'declined') => {
+    if (!selectedId) return;
+    reviewExcuse(selectedId, decision, 'Admin', '');
+    toast.success(`Excuse ${decision}`);
+    setSelectedId(null);
   };
 
   return (
     <DashboardShell role="admin" navItems={NAV}>
-      <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-black text-white">📋 Excuse Requests</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Parent-submitted notes for absences. Approving an excuse retro-marks the matching attendance as &ldquo;excused&rdquo;.
-          </p>
-        </div>
-        <div className="flex gap-1.5 flex-wrap">
-          {(['pending', 'approved', 'declined', 'all'] as const).map((f) => (
-            <button key={f} type="button" onClick={() => setFilter(f)}
-              className="text-xs font-bold px-3 py-1.5 rounded-full"
-              style={{
-                background: filter === f ? "#1A0E4D" : "rgba(255,255,255,0.06)",
-                color: filter === f ? "white" : "rgba(196,181,253,0.85)",
-                border: `1px solid ${filter === f ? "#1A0E4D" : "rgba(255,255,255,0.12)"}`,
-              }}>
-              {f === 'all' ? 'All' : f === 'pending' ? `Pending (${counts.pending})` : f === 'approved' ? `Approved (${counts.approved})` : `Declined (${counts.declined})`}
+      <h2 className="text-xl font-black text-white mb-4">🚫 Absence Excuses</h2>
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="glass rounded-2xl p-3"><div className="text-xl font-black">{stats.total}</div><div className="text-[10px] text-gray-400">Total</div></div>
+        <div className="glass rounded-2xl p-3"><div className="text-xl font-black text-amber-300">{stats.pending}</div><div className="text-[10px] text-gray-400">Pending</div></div>
+        <div className="glass rounded-2xl p-3"><div className="text-xl font-black text-emerald-300">{stats.approved}</div><div className="text-[10px] text-gray-400">Approved</div></div>
+      </div>
+      <div className="grid lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-2">
+          <div className="flex gap-2 mb-3">{(['all', 'pending', 'approved', 'declined'] as const).map((s) => <button key={s} onClick={() => setFilter(s)} className={`px-3 py-1 text-xs font-bold rounded-full ${filter === s ? 'bg-purple-600' : 'bg-gray-700'}`}>{s.charAt(0).toUpperCase() + s.slice(1)}</button>)}</div>
+          {filtered.map((e) => (
+            <button key={e.id} onClick={() => setSelectedId(e.id)} className={`w-full text-left p-3 rounded-xl ${selectedId === e.id ? 'ring-2 ring-purple-500 bg-gray-700' : 'bg-gray-800 hover:bg-gray-700'}`}>
+              <p className="font-bold">{e.student_name} • {e.class_name}</p>
+              <p className="text-xs text-gray-400">{e.reason.substring(0, 50)}...</p>
             </button>
           ))}
         </div>
-      </div>
-
-      {visible.length === 0 ? (
-        <div className="glass rounded-2xl p-12 text-center text-sm text-gray-500">
-          {filter === 'pending' ? "No pending excuses 🎉" : `No ${filter} excuses.`}
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {visible.map((r) => {
-            const days = Math.max(1, Math.round((new Date(r.end_date).getTime() - new Date(r.start_date).getTime()) / 86400000) + 1);
-            return (
-              <div key={r.id} className="glass rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-300">
-                      {KIND_LABEL[r.kind] ?? "📄 Other"}
-                    </p>
-                    <h3 className="font-black text-white text-base mt-0.5">{r.student_name ?? r.student_id}</h3>
-                    <p className="text-xs text-gray-400">{r.class_name ?? "—"} · submitted {new Date(r.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}{r.submitted_by_email ? ` · ${r.submitted_by_email}` : ""}</p>
-                  </div>
-                  <span className="text-[11px] font-bold px-2 py-1 rounded-full"
-                    style={{
-                      background: r.status === 'pending' ? "rgba(245,158,11,0.18)" : r.status === 'approved' ? "rgba(16,185,129,0.18)" : "rgba(239,68,68,0.18)",
-                      color: r.status === 'pending' ? "#fcd34d" : r.status === 'approved' ? "#34d399" : "#fca5a5",
-                    }}>
-                    {r.status}
-                  </span>
-                </div>
-
-                <div className="rounded-lg p-3 text-xs mb-2"
-                  style={{ background: "rgba(26,14,77,0.18)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <p className="text-white font-bold">
-                    {r.start_date}{r.end_date !== r.start_date ? ` → ${r.end_date}` : ""} · {days} day{days === 1 ? "" : "s"}
-                  </p>
-                  <p className="text-gray-300 mt-1 whitespace-pre-wrap">{r.reason}</p>
-                </div>
-
-                {r.document_data_url && (
-                  <a href={r.document_data_url} download={r.document_name ?? "excuse-document"}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-300 underline mb-2">
-                    📎 Download supporting document{r.document_name ? ` — ${r.document_name}` : ""}
-                  </a>
-                )}
-
-                {r.review_notes && (
-                  <p className="text-[11px] text-gray-400 italic mb-2">Reviewer note: {r.review_notes}</p>
-                )}
-
-                {r.status === 'pending' && (
-                  <div className="flex gap-2 flex-wrap">
-                    <button type="button" onClick={() => decide(r.id, 'approved')}
-                      className="text-xs font-bold px-3 py-2 rounded-lg"
-                      style={{ background: "#10b981", color: "white" }}>
-                      ✅ Approve + mark excused
-                    </button>
-                    <button type="button" onClick={() => decide(r.id, 'declined')}
-                      className="text-xs font-bold px-3 py-2 rounded-lg"
-                      style={{ background: "rgba(239,68,68,0.15)", color: "#fca5a5", border: "1px solid rgba(239,68,68,0.4)" }}>
-                      ❌ Decline
-                    </button>
-                  </div>
-                )}
+        {selected ? (
+          <div className="glass rounded-2xl p-4">
+            <h3 className="font-bold mb-3">📋 Details</h3>
+            <p className="text-sm"><span className="text-gray-500">Student:</span> <span className="font-bold">{selected.student_name}</span></p>
+            <p className="text-sm"><span className="text-gray-500">Reason:</span> <span className="font-bold">{selected.reason}</span></p>
+            {selected.status === 'pending' && (
+              <div className="mt-4 space-y-2">
+                <button onClick={() => handleReview('approved')} className="w-full bg-emerald-600 hover:bg-emerald-700 px-3 py-2 rounded-lg font-bold text-sm">✅ Approve</button>
+                <button onClick={() => handleReview('declined')} className="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg font-bold text-sm">✖ Decline</button>
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+          </div>
+        ) : <div className="glass rounded-2xl p-4 flex items-center justify-center text-gray-500">Select an excuse</div>}
+      </div>
     </DashboardShell>
   );
 }
