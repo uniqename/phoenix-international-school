@@ -214,6 +214,12 @@ export default function ParentPortal() {
     toast("📨 Sent to school admin for approval — you'll see it on the feed once they tap Approve.", { duration: 6000 });
   };
 
+  // Feed filter state
+  const [feedFilter, setFeedFilter] = useState<'all' | 'announcements' | string>('all');
+
+  // Chat search state
+  const [chatSearch, setChatSearch] = useState("");
+
   // Excuse-from-school form state
   const submitExcuseRequest = useAppStore((s) => s.submitExcuseRequest);
   const excuseRequests      = useAppStore((s) => s.excuseRequests);
@@ -222,7 +228,16 @@ export default function ParentPortal() {
   const [excuseEnd, setExcuseEnd]     = useState(todayISO());
   const [excuseReason, setExcuseReason] = useState("");
   const [excuseFile, setExcuseFile] = useState<{ name: string; dataUrl: string } | null>(null);
+  const [applyToSiblings, setApplyToSiblings] = useState(false);
   const myExcuses = excuseRequests.filter((r) => r.student_id === child?.id).slice(0, 5);
+
+  const reasonTemplates = [
+    { emoji: "😷", label: "Sick", reason: "Student was unwell and unable to attend school." },
+    { emoji: "🏥", label: "Doctor", reason: "Doctor's appointment on this date." },
+    { emoji: "👨‍👩‍👧", label: "Family", reason: "Family matter requiring student's presence." },
+    { emoji: "✈️", label: "Travel", reason: "Family travel on this date." },
+    { emoji: "⛪", label: "Funeral", reason: "Attending funeral service." },
+  ];
 
   const handleExcuseFile = (f: File) => {
     if (f.size > 10 * 1024 * 1024) { toast.error("File too big — max 10 MB. Use a smaller PDF or photo."); return; }
@@ -238,22 +253,28 @@ export default function ParentPortal() {
     if (!child) return;
     if (!excuseReason.trim()) { toast.error("Add a short reason"); return; }
     if (new Date(excuseEnd) < new Date(excuseStart)) { toast.error("End date can't be before start date"); return; }
-    submitExcuseRequest({
-      student_id: child.id,
-      student_name: child.full_name,
-      class_name: child.class_name,
-      family_id: parentFamily?.id,
-      submitted_by_email: user?.email,
-      kind: excuseKind,
-      start_date: excuseStart,
-      end_date: excuseEnd,
-      reason: excuseReason.trim(),
-      document_name: excuseFile?.name,
-      document_data_url: excuseFile?.dataUrl,
+    const targetChildren = applyToSiblings ? children : [child];
+    let count = 0;
+    targetChildren.forEach((c) => {
+      submitExcuseRequest({
+        student_id: c.id,
+        student_name: c.full_name,
+        class_name: c.class_name,
+        family_id: parentFamily?.id,
+        submitted_by_email: user?.email,
+        kind: excuseKind,
+        start_date: excuseStart,
+        end_date: excuseEnd,
+        reason: excuseReason.trim(),
+        document_name: excuseFile?.name,
+        document_data_url: excuseFile?.dataUrl,
+      });
+      count++;
     });
-    toast.success("✅ Excuse sent — the school will review it shortly.");
+    toast.success(`✅ Excuse sent for ${count} student${count > 1 ? "s" : ""} — the school will review it shortly.`);
     setExcuseReason("");
     setExcuseFile(null);
+    setApplyToSiblings(false);
   };
   const [payForm, setPayForm] = useState<{
     amount: string; method: Payment["method"]; reference: string;
@@ -933,8 +954,34 @@ export default function ParentPortal() {
             </button>
           </div>
         )}
+
+        {/* Feed filters */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {["all", "announcements", child.class_name].map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setFeedFilter(filter)}
+              className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+              style={{
+                background: feedFilter === filter ? "#003087" : "rgba(0,48,135,0.07)",
+                color: feedFilter === filter ? "white" : "#003087",
+              }}>
+              {filter === 'all' ? 'All' : filter === 'announcements' ? 'Announcements' : child.class_name}
+            </button>
+          ))}
+        </div>
+
         <div className="space-y-3">
-          {feedPosts.filter((p) => (p.status ?? "approved") === "approved").slice(0, 4).map((p) => {
+          {feedPosts
+            .filter((p) => (p.status ?? "approved") === "approved")
+            .filter((p) => {
+              if (feedFilter === 'all') return true;
+              if (feedFilter === 'announcements') return p.author_role === 'admin';
+              return true;
+            })
+            .slice(0, 4)
+            .map((p) => {
             const firstImage = p.image_url || p.image_urls?.[0];
             const imageCount = [p.image_url, ...(p.image_urls ?? [])].filter(Boolean).length;
             const isExpanded = expandedPostId === p.id;
@@ -1093,6 +1140,26 @@ export default function ParentPortal() {
             </label>
           </div>
         </div>
+        <label className="block mb-2">
+          <span className="text-xs font-bold text-gray-600">Quick select reason</span>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {reasonTemplates.map((t) => (
+              <button
+                key={t.label}
+                type="button"
+                onClick={() => setExcuseReason(t.reason)}
+                className="text-xs font-bold px-3 py-1.5 rounded-full transition-all border"
+                style={{
+                  background: excuseReason === t.reason ? "#003087" : "rgba(0,48,135,0.07)",
+                  color: excuseReason === t.reason ? "white" : "#003087",
+                  borderColor: excuseReason === t.reason ? "#003087" : "rgba(0,48,135,0.2)"
+                }}>
+                {t.emoji} {t.label}
+              </button>
+            ))}
+          </div>
+        </label>
+
         <label className="block mb-3">
           <span className="text-xs font-bold text-gray-600">Reason *</span>
           <textarea aria-label="Reason" rows={3}
@@ -1114,6 +1181,15 @@ export default function ParentPortal() {
             </span>
           )}
         </div>
+
+        {children.length > 1 && (
+          <label className="flex items-center gap-2 mb-3 p-2 rounded-lg" style={{ background: "rgba(168,85,247,0.05)" }}>
+            <input type="checkbox" checked={applyToSiblings} onChange={(e) => setApplyToSiblings(e.target.checked)}
+              className="rounded w-4 h-4" />
+            <span className="text-xs font-bold text-gray-700">Apply to all {children.length} siblings</span>
+          </label>
+        )}
+
         <button type="button" onClick={submitExcuse} className="btn-gold text-sm py-2.5 px-6">
           Submit excuse for review
         </button>
@@ -1175,12 +1251,21 @@ export default function ParentPortal() {
           <p className="text-xs text-gray-500">No class teacher assigned for {child.class_name} yet — switch to <span className="font-bold">Principal</span> to send a message instead.</p>
         ) : (
           <>
+            <input
+              type="text"
+              placeholder="🔍 Search messages…"
+              value={chatSearch}
+              onChange={(e) => setChatSearch(e.target.value)}
+              className="w-full mb-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none"
+            />
             <div ref={chatScrollRef}
               className="max-h-72 overflow-y-auto rounded-xl p-3 mb-3 space-y-2"
               style={{ background: "rgba(26,14,77,0.03)", border: "1px solid rgba(26,14,77,0.08)" }}>
               {conversation.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-4">Start the conversation — {recipientName ?? "they"} will see this on their portal.</p>
-              ) : conversation.map((m) => {
+              ) : conversation
+                .filter((m) => chatSearch === "" || m.body.toLowerCase().includes(chatSearch.toLowerCase()))
+                .map((m) => {
                 const mine = m.sender_role === 'parent';
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
