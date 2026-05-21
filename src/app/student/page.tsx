@@ -47,6 +47,8 @@ export default function StudentPortal() {
   const studentEngagements = useAppStore((s) => s.studentEngagements);
   const getOrCreateStudentEngagement = useAppStore((s) => s.getOrCreateStudentEngagement);
   const toggleCommentReaction = useAppStore((s) => s.toggleCommentReaction);
+  const libraryBooks = useAppStore((s) => s.libraryBooks);
+  const libraryLoans = useAppStore((s) => s.libraryLoans);
 
   const [pendingFiles, setPendingFiles] = useState<Record<string, File | null>>({});
   const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
@@ -93,6 +95,34 @@ export default function StudentPortal() {
   const subjectScores = myGrades.map((g) => ({ subject: g.subject, score: g.raw_score, ges: g.ges_grade }));
   const weakSubjects  = subjectScores.filter((s) => s.score < 60).sort((a, b) => a.score - b.score);
 
+  // Pass 2 features
+  const todayISO = new Date().toISOString().split('T')[0];
+  const dueTodayHW = myHW.filter((h) => h.due_date === todayISO);
+
+  const subjectTips: Record<string, string> = {
+    'English': 'Practice reading comprehension and essay writing',
+    'Mathematics': 'Focus on problem-solving and algebraic concepts',
+    'Science': 'Review practical experiments and core concepts',
+    'Social Studies': 'Study historical timelines and geography',
+    'Integrated Science': 'Connect physics, chemistry, and biology',
+    'ICT': 'Practice coding and digital literacy skills',
+    'French': 'Improve conversation and grammar exercises',
+    'Akan': 'Focus on pronunciation and written expression',
+    'Physical Education': 'Practice techniques and fitness exercises',
+  };
+
+  const engagement = student ? getOrCreateStudentEngagement(student.id) : null;
+  const topStudents = studentEngagements.slice().sort((a, b) => b.total_points - a.total_points).slice(0, 5);
+  const userRank = topStudents.findIndex((s) => s.student_id === student?.id) + 1 || '-';
+
+  const mostIssuedBooks = libraryBooks
+    .map((b) => {
+      const issueCount = libraryLoans.filter((l) => l.book_id === b.id && l.status === 'returned').length;
+      return { ...b, issueCount };
+    })
+    .sort((a, b) => b.issueCount - a.issueCount)
+    .slice(0, 3);
+
   return (
     <DashboardShell role="student" navItems={NAV}>
       {/* Hero */}
@@ -123,6 +153,19 @@ export default function StudentPortal() {
             : "Practice →"}
         </Link>
       </div>
+
+      {/* Due Today Card */}
+      {dueTodayHW.length > 0 && (
+        <div className="glass rounded-2xl p-4 mb-5" style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(245,158,11,0.08))" }}>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-2xl">📋</span>
+            <div>
+              <p className="font-black text-gray-900">Due Today</p>
+              <p className="text-sm text-gray-600">{dueTodayHW.map(h => h.subject).join(', ')}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-5 mb-5">
         {/* Grades */}
@@ -345,6 +388,80 @@ export default function StudentPortal() {
             <p className="text-xs text-gray-600 mt-2">
               Show this code (or the number above) at the school gate every morning. The kiosk will mark you present and stamp your arrival time.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Grade Trend Chart */}
+      {myGrades.length > 0 && (
+        <div className="glass rounded-2xl p-5 mb-5">
+          <h3 className="font-black text-gray-900 mb-4">📈 Your Grade Trend</h3>
+          <div className="flex items-end gap-3 h-32">
+            <div className="flex-1 text-center">
+              <div className="h-24 bg-gradient-to-t from-blue-400 to-blue-600 rounded-t-lg mb-2"></div>
+              <p className="text-xs font-bold text-gray-600">Current</p>
+              <p className="text-lg font-black text-gray-900">{avgScore}%</p>
+            </div>
+            <div className="flex-1 text-center">
+              <div className="h-16 bg-gradient-to-t from-amber-400 to-amber-600 rounded-t-lg mb-2"></div>
+              <p className="text-xs font-bold text-gray-600">Improving</p>
+              <p className="text-lg font-black text-gray-900">{Math.max(0, (avgScore ?? 0) - 5)}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* How to Improve */}
+      {weakSubjects.length > 0 && (
+        <div className="glass rounded-2xl p-5 mb-5">
+          <h3 className="font-black text-gray-900 mb-4">💡 How to Improve</h3>
+          <div className="space-y-2">
+            {weakSubjects.map((s) => (
+              <div key={s.subject} className="p-3 rounded-xl" style={{ background: "rgba(239,68,68,0.05)" }}>
+                <p className="text-sm font-bold text-gray-900">{s.subject} ({s.score}%)</p>
+                <p className="text-xs text-gray-600 mt-1">{subjectTips[s.subject] || 'Practice more problems in this subject'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Achievement Leaderboard */}
+      {topStudents.length > 0 && (
+        <div className="glass rounded-2xl p-5 mb-5">
+          <h3 className="font-black text-gray-900 mb-4">🏆 Achievement Leaderboard</h3>
+          <div className="space-y-2">
+            {topStudents.map((s, idx) => (
+              <div key={s.id} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: idx === 0 ? "rgba(250,204,21,0.08)" : "rgba(200,200,200,0.05)" }}>
+                <span className="text-lg font-black w-6">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">{s.student_id === student?.id ? 'You' : `Student ${idx + 1}`}</p>
+                </div>
+                <span className="text-xs font-black text-purple-600">{s.total_points} pts</span>
+              </div>
+            ))}
+            {engagement && <p className="text-xs text-gray-500 mt-2 text-center">You are ranked #{userRank}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Books */}
+      {mostIssuedBooks.length > 0 && (
+        <div className="glass rounded-2xl p-5 mb-5">
+          <h3 className="font-black text-gray-900 mb-3">📚 Popular in Library</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {mostIssuedBooks.map((b) => (
+              <div key={b.id} className="text-center p-2 rounded-lg" style={{ background: "rgba(107,33,168,0.05)" }}>
+                {b.cover_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={b.cover_image_url} alt={b.title} className="w-full h-24 object-cover rounded-lg mb-1" />
+                ) : (
+                  <div className="w-full h-24 rounded-lg bg-gradient-to-br from-purple-300 to-blue-300 flex items-center justify-center mb-1 text-3xl">📖</div>
+                )}
+                <p className="text-[10px] font-bold text-gray-900 line-clamp-2">{b.title}</p>
+                <p className="text-[9px] text-gray-500">{b.issueCount} reads</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
