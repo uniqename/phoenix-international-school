@@ -5,7 +5,7 @@ import type {
   Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
   CanteenWallet, CanteenTransaction, FeedPost, FeedComment, Payroll, BECEAttempt, PickupCode,
-  StudentEngagement, StudentAchievement,
+  StudentEngagement, StudentAchievement, CalendarEvent, LibraryReview, UserActivityLog, PaymentPlan, PaymentPlanInstallment,
   ChatThread, ChatMessage,
   BusRoute, BusStop, BusRun, BusEvent, BusRunDirection,
   StaffCheckIn, ExcuseRequest,
@@ -82,6 +82,10 @@ interface AppState {
   payroll: Payroll[]
   beceAttempts: BECEAttempt[]
   studentEngagements: StudentEngagement[]
+  calendarEvents: CalendarEvent[]
+  libraryReviews: LibraryReview[]
+  userActivityLogs: UserActivityLog[]
+  paymentPlans: PaymentPlan[]
   pickupCodes: PickupCode[]
   homeworkSubmissions: HomeworkSubmission[]
   accounts: UserAccount[]
@@ -426,6 +430,29 @@ interface AppState {
   deleteLibraryBook: (id: string) => void
   issueLibraryBook: (input: Omit<LibraryLoan, 'id' | 'issued_at' | 'status' | 'returned_at'>) => void
   returnLibraryBook: (loanId: string) => void
+  renewLibraryLoan: (loanId: string, newDueDate: string) => void
+  updateLibraryLoan: (loanId: string, data: Partial<LibraryLoan>) => void
+  addLibraryReview: (review: Omit<LibraryReview, 'id' | 'created_at'>) => void
+  deleteLibraryReview: (reviewId: string) => void
+
+  // Calendar events
+  addCalendarEvent: (event: Omit<CalendarEvent, 'id' | 'created_at'>) => CalendarEvent
+  updateCalendarEvent: (id: string, data: Partial<CalendarEvent>) => void
+  deleteCalendarEvent: (id: string) => void
+
+  // Payment plans
+  createPaymentPlan: (input: Omit<PaymentPlan, 'id' | 'created_at'>) => PaymentPlan
+  payInstallment: (planId: string, installmentId: string, paymentId: string) => void
+
+  // Bulk operations
+  bulkGradeHomework: (hwId: string, submissions: Array<{ id: string; score: number; comment?: string }>) => void
+  bulkApproveExcuses: (ids: string[], reviewer: string) => void
+
+  // Bus operations
+  pingDriver: (routeId: string, parentName: string, message: string) => void
+
+  // Activity logging
+  logUserActivity: (userId: string, userName: string, role: UserRole, action: string, target?: string) => void
 
   // Phase 15c: parent-teacher chat
   getOrCreateChatThread: (input: {
@@ -437,7 +464,7 @@ interface AppState {
     student_name?: string
     class_name?: string
   }) => ChatThread
-  sendChatMessage: (threadId: string, sender_role: 'parent' | 'teacher', sender_id: string | undefined, sender_name: string | undefined, body: string, priority?: 'normal' | 'urgent') => ChatMessage | null
+  sendChatMessage: (threadId: string, sender_role: 'parent' | 'teacher', sender_id: string | undefined, sender_name: string | undefined, body: string, priority?: 'normal' | 'urgent', file_url?: string, file_name?: string) => ChatMessage | null
   markChatThreadRead: (threadId: string, role: 'parent' | 'teacher') => void
   acknowledgeUrgentMessage: (messageId: string) => void
   deleteChatMessage: (messageId: string) => void
@@ -525,6 +552,10 @@ export const useAppStore = create<AppState>()(
       payroll: MOCK_PAYROLL,
       beceAttempts: [],
       studentEngagements: [],
+      calendarEvents: [],
+      libraryReviews: [],
+      userActivityLogs: [],
+      paymentPlans: [],
       pickupCodes: [],
       homeworkSubmissions: [],
       accounts: [
@@ -609,6 +640,10 @@ export const useAppStore = create<AppState>()(
         feePaymentRequests: [],
         beceAttempts: [],
         studentEngagements: [],
+        calendarEvents: [],
+        libraryReviews: [],
+        userActivityLogs: [],
+        paymentPlans: [],
         pickupCodes: [],
         payroll: [],
         lessonPlans: [],
@@ -702,6 +737,105 @@ export const useAppStore = create<AppState>()(
             : l),
         }
       }),
+
+      renewLibraryLoan: (loanId, newDueDate) => set((st) => ({
+        libraryLoans: st.libraryLoans.map((l) => l.id === loanId ? { ...l, due_at: newDueDate } : l),
+      })),
+
+      updateLibraryLoan: (loanId, data) => set((st) => ({
+        libraryLoans: st.libraryLoans.map((l) => l.id === loanId ? { ...l, ...data } : l),
+      })),
+
+      addLibraryReview: (review) => set((st) => ({
+        libraryReviews: [...st.libraryReviews, { ...review, id: `lr-${Date.now()}`, created_at: new Date().toISOString() }],
+      })),
+
+      deleteLibraryReview: (reviewId) => set((st) => ({
+        libraryReviews: st.libraryReviews.filter((r) => r.id !== reviewId),
+      })),
+
+      addCalendarEvent: (event) => {
+        const ce: CalendarEvent = { ...event, id: `ce-${Date.now()}`, created_at: new Date().toISOString() }
+        set((st) => ({ calendarEvents: [...st.calendarEvents, ce] }))
+        return ce
+      },
+
+      updateCalendarEvent: (id, data) => set((st) => ({
+        calendarEvents: st.calendarEvents.map((e) => e.id === id ? { ...e, ...data } : e),
+      })),
+
+      deleteCalendarEvent: (id) => set((st) => ({
+        calendarEvents: st.calendarEvents.filter((e) => e.id !== id),
+      })),
+
+      createPaymentPlan: (input) => {
+        const plan: PaymentPlan = {
+          ...input,
+          id: `pp-${Date.now()}`,
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ paymentPlans: [...st.paymentPlans, plan] }))
+        return plan
+      },
+
+      payInstallment: (planId, installmentId, paymentId) => set((st) => ({
+        paymentPlans: st.paymentPlans.map((p) => p.id === planId
+          ? {
+              ...p,
+              installments: p.installments.map((i) => i.id === installmentId
+                ? { ...i, paid_at: new Date().toISOString(), payment_id: paymentId }
+                : i),
+            }
+          : p),
+      })),
+
+      bulkGradeHomework: (hwId, submissions) => set((st) => ({
+        homeworkSubmissions: st.homeworkSubmissions.map((sub) => {
+          const bulk = submissions.find((b) => b.id === sub.id)
+          return bulk ? { ...sub, score: bulk.score, teacher_comment: bulk.comment, graded_at: new Date().toISOString() } : sub
+        }),
+      })),
+
+      bulkApproveExcuses: (ids, reviewer) => set((st) => ({
+        excuseRequests: st.excuseRequests.map((e) => ids.includes(e.id)
+          ? { ...e, status: 'approved' as const, reviewed_by: reviewer, reviewed_at: new Date().toISOString() }
+          : e),
+        attendance: st.attendance.flatMap((a) => {
+          const excuseForThisAbsence = st.excuseRequests.find((e) => ids.includes(e.id) && e.student_id === a.student_id)
+          if (!excuseForThisAbsence) return [a]
+          const excuseStart = new Date(excuseForThisAbsence.start_date)
+          const excuseEnd = new Date(excuseForThisAbsence.end_date)
+          const absenceDate = new Date(a.date)
+          if (absenceDate >= excuseStart && absenceDate <= excuseEnd) {
+            return [{ ...a, status: 'excused' as const }]
+          }
+          return [a]
+        }),
+      })),
+
+      pingDriver: (routeId, parentName, message) => set((st) => ({
+        userActivityLogs: [...st.userActivityLogs, {
+          id: `ual-${Date.now()}`,
+          user_id: routeId,
+          user_name: parentName,
+          role: 'parent',
+          action: 'ping_driver',
+          target: message,
+          timestamp: new Date().toISOString(),
+        }],
+      })),
+
+      logUserActivity: (userId, userName, role, action, target) => set((st) => ({
+        userActivityLogs: [...st.userActivityLogs, {
+          id: `ual-${Date.now()}`,
+          user_id: userId,
+          user_name: userName,
+          role,
+          action,
+          target,
+          timestamp: new Date().toISOString(),
+        }],
+      })),
 
       addClass: (c) => set((st) => ({
         classes: [...st.classes, { ...c, id: `cls-${Date.now()}` }],
@@ -2237,9 +2371,9 @@ export const useAppStore = create<AppState>()(
         return thread
       },
 
-      sendChatMessage: (threadId, sender_role, sender_id, sender_name, body, priority) => {
+      sendChatMessage: (threadId, sender_role, sender_id, sender_name, body, priority, file_url, file_name) => {
         const trimmed = body.trim()
-        if (!trimmed) return null
+        if (!trimmed && !file_url) return null
         const msg: ChatMessage = {
           id: `cm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           thread_id: threadId,
@@ -2248,6 +2382,8 @@ export const useAppStore = create<AppState>()(
           sender_name,
           body: trimmed,
           priority,
+          file_url,
+          file_name,
           created_at: new Date().toISOString(),
         }
         const preview = (priority === 'urgent' ? '🚨 ' : '') + trimmed.slice(0, 80)

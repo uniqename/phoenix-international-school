@@ -934,6 +934,7 @@ export interface HomeworkAssignment {
   teacher_id?: string
   teacher_name?: string
   video_url?: string
+  max_score?: number                     // default 100 if not set
   submission_count?: number
   total_students?: number
   created_at: string
@@ -956,6 +957,7 @@ export interface LessonPlan {
   strand: string
   sub_strand: string
   week_number?: number
+  term?: number                           // 1, 2, or 3
   content?: string
   // Rich lesson media (Phase 16 — teacher e-learning)
   objectives?: string                     // What students should know by the end
@@ -1109,6 +1111,8 @@ export interface ChatMessage {
   // Urgent messages keep nagging the parent until they tap "I've read it".
   priority?: 'normal' | 'urgent'
   acknowledged_at?: string
+  file_url?: string                      // base64 or data URL for file attachment
+  file_name?: string
 }
 
 // ── Phase 15f: bus tracking ──
@@ -1119,6 +1123,7 @@ export interface BusRoute {
   bus_label?: string                    // "Bus #1", number plate, vehicle nickname
   driver_name?: string
   driver_phone?: string
+  driver_photo_url?: string             // Driver's avatar for parent visibility
   conductor_name?: string
   created_at: string
 }
@@ -1207,6 +1212,7 @@ export interface LibraryBook {
   category?: string                      // Fiction, Science, Reference, etc.
   copies_total: number
   cover_image_url?: string
+  condition?: 'new' | 'good' | 'worn' | 'damaged'
   created_at: string
 }
 
@@ -1226,6 +1232,8 @@ export interface LibraryLoan {
   status: LibraryLoanStatus
   issued_by?: string
   fine_amount?: number                   // Calculated on return if overdue (GHS per day)
+  fine_paid?: boolean
+  condition_on_return?: 'new' | 'good' | 'worn' | 'damaged'
   notes?: string
 }
 
@@ -1271,6 +1279,56 @@ export interface StudentEngagement {
   achievements: StudentAchievement[]
   total_points: number
   last_activity: string
+}
+
+export interface CalendarEvent {
+  id: string
+  title: string
+  date: string                           // YYYY-MM-DD
+  end_date?: string
+  description?: string
+  audience: 'all' | 'parents' | 'staff'
+  class_name?: string                    // if specific to a class
+  created_by?: string
+  created_at: string
+}
+
+export interface LibraryReview {
+  id: string
+  book_id: string
+  student_id: string
+  student_name: string
+  rating: 1 | 2 | 3 | 4 | 5
+  review: string
+  created_at: string
+}
+
+export interface UserActivityLog {
+  id: string
+  user_id: string
+  user_name: string
+  role: UserRole
+  action: string                         // 'login', 'create_post', 'grade_assignment', etc.
+  target?: string                        // ID or name of affected resource
+  timestamp: string
+}
+
+export interface PaymentPlanInstallment {
+  id: string
+  plan_id: string
+  amount: number
+  due_date: string
+  paid_at?: string
+  payment_id?: string
+}
+
+export interface PaymentPlan {
+  id: string
+  student_id: string
+  fee_id?: string
+  total_amount: number
+  installments: PaymentPlanInstallment[]
+  created_at: string
 }
 
 export interface HomeworkSubmission {
