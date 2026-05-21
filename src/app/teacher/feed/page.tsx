@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
+import CommentSection from "@/components/CommentSection";
 import { TEACHER_NAV as NAV } from "@/lib/teacherNav";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
@@ -11,9 +12,13 @@ export default function TeacherFeedPage() {
   const allFeedPosts = useAppStore((s) => s.feedPosts);
   const addFeedPost  = useAppStore((s) => s.addFeedPost);
   const toggleLikePost = useAppStore((s) => s.toggleLikePost);
+  const feedComments = useAppStore((s) => s.feedComments);
+  const addComment = useAppStore((s) => s.addComment);
+  const deleteComment = useAppStore((s) => s.deleteComment);
   const { user }     = useAuth();
 
   const [showModal, setShowModal] = useState(false);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", content: "", image_url: "" });
 
   // Teacher sees approved posts publicly, plus their own pending/rejected items.
@@ -59,8 +64,10 @@ export default function TeacherFeedPage() {
           const status = p.status ?? "approved";
           const isOwnPending = status === "pending" && p.author_name === user?.full_name;
           const isOwnRejected = status === "rejected" && p.author_name === user?.full_name;
+          const isExpanded = expandedPostId === p.id;
+          const postCommentCount = feedComments.filter((c) => c.post_id === p.id).length;
           return (
-          <div key={p.id} className="glass rounded-2xl overflow-hidden card-hover">
+          <div key={p.id} className={`glass rounded-2xl overflow-hidden card-hover transition ${isExpanded ? 'col-span-2' : ''}`}>
             {p.image_url && (
               <div className="h-40 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-4xl">
                 📸
@@ -74,21 +81,49 @@ export default function TeacherFeedPage() {
                 <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 mb-1.5">✖ Not approved{p.rejection_reason ? ` — ${p.rejection_reason}` : ""}</span>
               )}
               <h3 className="font-black text-gray-900 mb-1.5">{p.title}</h3>
-              {p.content && <p className="text-sm text-gray-600 mb-3 line-clamp-3">{p.content}</p>}
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-gray-400">
-                  {p.author_name && <span className="font-medium">{p.author_name} · </span>}
+              {p.content && <p className={`text-sm text-gray-600 mb-3 ${isExpanded ? '' : 'line-clamp-3'}`}>{p.content}</p>}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  {p.author_name && <span className="font-medium">{p.author_name}</span>}
                   {new Date(p.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                 </div>
-                <button type="button" onClick={() => user && toggleLikePost(p.id, user.id)}
-                  className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full transition-all ${
-                    p.liked_by?.includes(user?.id || '')
-                      ? 'bg-red-50 text-red-600'
-                      : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
-                  }`}>
-                  {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => user && toggleLikePost(p.id, user.id)}
+                    className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full transition-all ${
+                      p.liked_by?.includes(user?.id || '')
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
+                    }`}>
+                    {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPostId(isExpanded ? null : p.id)}
+                    className="text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                  >
+                    💬 {postCommentCount}
+                  </button>
+                </div>
               </div>
+              {isExpanded && (
+                <CommentSection
+                  postId={p.id}
+                  comments={feedComments}
+                  onAddComment={(body) => {
+                    if (user) {
+                      addComment(p.id, {
+                        author_name: user.full_name,
+                        author_role: user.role,
+                        body,
+                      });
+                    }
+                  }}
+                  onDeleteComment={deleteComment}
+                  currentUserId={user?.id}
+                  currentUserRole={user?.role}
+                  currentUserName={user?.full_name}
+                />
+              )}
             </div>
           </div>
           );

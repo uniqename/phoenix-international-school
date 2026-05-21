@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useRef } from "react";
 import DashboardShell from "@/components/DashboardShell";
+import CommentSection from "@/components/CommentSection";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, formatGHS, todayISO } from "@/lib/utils";
@@ -42,6 +43,9 @@ export default function ParentPortal() {
   const crecheLogs            = useAppStore((s) => s.crecheLogs);
   const feedPosts             = useAppStore((s) => s.feedPosts);
   const toggleLikePost        = useAppStore((s) => s.toggleLikePost);
+  const feedComments          = useAppStore((s) => s.feedComments);
+  const addComment            = useAppStore((s) => s.addComment);
+  const deleteComment         = useAppStore((s) => s.deleteComment);
   const announcements         = useAppStore((s) => s.announcements);
   const getOrCreatePickupCode = useAppStore((s) => s.getOrCreatePickupCode);
   const teachers              = useAppStore((s) => s.teachers);
@@ -180,6 +184,7 @@ export default function ParentPortal() {
   const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
   const [feedDetail, setFeedDetail] = useState<FeedPost | null>(null);
   const [lessonDetail, setLessonDetail] = useState<LessonPlan | null>(null);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const lessonPlans = useAppStore((s) => s.lessonPlans);
   const addFeedPost = useAppStore((s) => s.addFeedPost);
   const [feedSubmit, setFeedSubmit] = useState({ open: false, title: "", content: "", image: "" });
@@ -879,38 +884,72 @@ export default function ParentPortal() {
           {feedPosts.filter((p) => (p.status ?? "approved") === "approved").slice(0, 4).map((p) => {
             const firstImage = p.image_url || p.image_urls?.[0];
             const imageCount = [p.image_url, ...(p.image_urls ?? [])].filter(Boolean).length;
+            const isExpanded = expandedPostId === p.id;
+            const postCommentCount = feedComments.filter((c) => c.post_id === p.id).length;
             return (
-            <button type="button" key={p.id}
-              onClick={() => setFeedDetail(p)}
-              className="w-full text-left flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all">
-              {firstImage ? (
-                <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={firstImage} alt={p.title} className="w-full h-full object-cover" />
-                  {imageCount > 1 && (
-                    <span className="absolute bottom-0 right-0 text-[9px] font-bold px-1 rounded-tl"
-                      style={{ background: "rgba(0,0,0,0.65)", color: "white" }}>+{imageCount - 1}</span>
-                  )}
+            <div key={p.id} className={`rounded-xl overflow-hidden transition ${isExpanded ? 'ring-2 ring-purple-500 bg-white' : 'bg-gray-50 hover:bg-gray-100'}`}>
+              <button type="button"
+                onClick={() => setFeedDetail(p)}
+                className="w-full text-left flex items-start gap-3 p-3 transition-all">
+                {firstImage ? (
+                  <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={firstImage} alt={p.title} className="w-full h-full object-cover" />
+                    {imageCount > 1 && (
+                      <span className="absolute bottom-0 right-0 text-[9px] font-bold px-1 rounded-tl"
+                        style={{ background: "rgba(0,0,0,0.65)", color: "white" }}>+{imageCount - 1}</span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-2xl w-14 h-14 flex items-center justify-center bg-purple-50 rounded-lg flex-shrink-0">📸</div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-gray-900 text-sm">{p.title}</div>
+                  {p.content && <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">{p.content}</div>}
+                  <div className="text-[10px] text-gray-400 mt-1">{p.author_name} · Tap to read →</div>
                 </div>
-              ) : (
-                <div className="text-2xl w-14 h-14 flex items-center justify-center bg-purple-50 rounded-lg flex-shrink-0">📸</div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-gray-900 text-sm">{p.title}</div>
-                {p.content && <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">{p.content}</div>}
-                <div className="text-[10px] text-gray-400 mt-1">{p.author_name} · Tap to read →</div>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); user && toggleLikePost(p.id, user.id); }}
-                className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full transition ${
-                  p.liked_by?.includes(user?.id || '')
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
-                }`}>
-                {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); user && toggleLikePost(p.id, user.id); }}
+                    className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full transition ${
+                      p.liked_by?.includes(user?.id || '')
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
+                    }`}>
+                    {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setExpandedPostId(isExpanded ? null : p.id); }}
+                    className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                  >
+                    💬 {postCommentCount}
+                  </button>
+                </div>
               </button>
-            </button>
+              {isExpanded && (
+                <div className="px-3 pb-3 pt-2 border-t border-gray-200">
+                  <CommentSection
+                    postId={p.id}
+                    comments={feedComments}
+                    onAddComment={(body) => {
+                      if (user) {
+                        addComment(p.id, {
+                          author_name: user.full_name,
+                          author_role: user.role,
+                          body,
+                        });
+                      }
+                    }}
+                    onDeleteComment={deleteComment}
+                    currentUserId={user?.id}
+                    currentUserRole={user?.role}
+                    currentUserName={user?.full_name}
+                  />
+                </div>
+              )}
+            </div>
             );
           })}
         </div>

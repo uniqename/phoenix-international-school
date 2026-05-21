@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
+import CommentSection from "@/components/CommentSection";
 import Link from "next/link";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
@@ -38,6 +39,9 @@ export default function StudentPortal() {
   const beceAttempts = useAppStore((s) => s.beceAttempts);
   const feedPosts  = useAppStore((s) => s.feedPosts);
   const toggleLikePost = useAppStore((s) => s.toggleLikePost);
+  const feedComments = useAppStore((s) => s.feedComments);
+  const addComment = useAppStore((s) => s.addComment);
+  const deleteComment = useAppStore((s) => s.deleteComment);
   const homeworkSubmissions = useAppStore((s) => s.homeworkSubmissions);
   const submitHomeworkFn    = useAppStore((s) => s.submitHomework);
 
@@ -45,6 +49,7 @@ export default function StudentPortal() {
   const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
   const [feedDetail, setFeedDetail] = useState<FeedPost | null>(null);
   const [lessonDetail, setLessonDetail] = useState<LessonPlan | null>(null);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const lessons = useAppStore((s) => s.lessonPlans);
 
   const student    = students.find((s) => s.full_name === user?.full_name) ?? students[0];
@@ -342,27 +347,61 @@ export default function StudentPortal() {
       <div id="feed" className="glass rounded-2xl p-5">
         <h3 className="font-black text-gray-900 mb-3">📸 School Feed</h3>
         <div className="space-y-2">
-          {feedPosts.filter((p) => (p.status ?? "approved") === "approved").slice(0, 5).map((p) => (
-            <button type="button" key={p.id}
-              onClick={() => setFeedDetail(p)}
-              className="w-full text-left flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all">
-              <div className="min-w-0 flex-1">
-                <div className="font-bold text-gray-900 text-sm truncate">{p.title}</div>
-                {p.content && <div className="text-[11px] text-gray-600 line-clamp-1">{p.content}</div>}
-                <div className="text-[10px] text-gray-400 mt-0.5">{p.author_name} · Tap to read →</div>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); user && toggleLikePost(p.id, user.id); }}
-                className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full ml-2 flex-shrink-0 transition ${
-                  p.liked_by?.includes(user?.id || '')
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
-                }`}>
-                {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
+          {feedPosts.filter((p) => (p.status ?? "approved") === "approved").slice(0, 5).map((p) => {
+            const isExpanded = expandedPostId === p.id;
+            const postCommentCount = feedComments.filter((c) => c.post_id === p.id).length;
+            return (
+            <div key={p.id} className={`rounded-xl bg-gray-50 overflow-hidden transition ${isExpanded ? 'ring-2 ring-purple-500' : ''}`}>
+              <button type="button"
+                onClick={() => setFeedDetail(p)}
+                className="w-full text-left flex items-center justify-between p-3 hover:bg-gray-100 transition-all">
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-gray-900 text-sm truncate">{p.title}</div>
+                  {p.content && <div className="text-[11px] text-gray-600 line-clamp-1">{p.content}</div>}
+                  <div className="text-[10px] text-gray-400 mt-0.5">{p.author_name} · Tap to read →</div>
+                </div>
+                <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); user && toggleLikePost(p.id, user.id); }}
+                    className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full transition ${
+                      p.liked_by?.includes(user?.id || '')
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
+                    }`}>
+                    {p.liked_by?.includes(user?.id || '') ? '❤️' : '🤍'} {p.likes}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setExpandedPostId(isExpanded ? null : p.id); }}
+                    className="text-xs font-bold flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                  >
+                    💬 {postCommentCount}
+                  </button>
+                </div>
               </button>
-            </button>
-          ))}
+              {isExpanded && (
+                <CommentSection
+                  postId={p.id}
+                  comments={feedComments}
+                  onAddComment={(body) => {
+                    if (user) {
+                      addComment(p.id, {
+                        author_name: user.full_name,
+                        author_role: user.role,
+                        body,
+                      });
+                    }
+                  }}
+                  onDeleteComment={deleteComment}
+                  currentUserId={user?.id}
+                  currentUserRole={user?.role}
+                  currentUserName={user?.full_name}
+                />
+              )}
+            </div>
+            );
+          })}
         </div>
       </div>
 
