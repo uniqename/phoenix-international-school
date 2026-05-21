@@ -22,6 +22,7 @@ export default function GradebookPage() {
   const grades     = useAppStore((s) => s.grades);
   const saveGrades = useAppStore((s) => s.saveGrades);
   const teachers   = useAppStore((s) => s.teachers);
+  const assessmentResults = useAppStore((s) => s.assessmentResults);
 
   const teacher = teachers.find((t) => t.full_name === user?.full_name) ?? teachers[0];
   const [activeClass, setActiveClass] = useState(teacher?.class_name ?? "JHS 3A");
@@ -35,6 +36,7 @@ export default function GradebookPage() {
   const [year]                = useState("2025/2026");
   const [scores, setScores]   = useState<Record<string, string>>({});
   const [saved, setSaved]     = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const existingGrades = grades.filter(
     (g) => g.class_name === activeClass && g.subject === subject && g.term === term && g.academic_year === year
@@ -72,6 +74,40 @@ export default function GradebookPage() {
     const newLevel = levelFromClass(c);
     const newSubjects = SUBJECTS_BY_LEVEL[newLevel] ?? SUBJECTS_BY_LEVEL.jhs;
     setSubject(newSubjects[0]);
+  };
+
+  const getSuggestionForStudent = (studentId: string): number | null => {
+    const results = assessmentResults.filter((r) => r.student_id === studentId);
+    if (results.length === 0) return null;
+    let totalScore = 0;
+    let count = 0;
+    results.forEach((r) => {
+      r.entries.forEach((entry) => {
+        if (entry.raw_score) {
+          totalScore += entry.raw_score;
+          count++;
+        }
+      });
+    });
+    if (count === 0) return null;
+    return Math.round(totalScore / count);
+  };
+
+  const autoFillFromAssessments = () => {
+    const newScores: Record<string, string> = {};
+    myStudents.forEach((s) => {
+      const suggestion = getSuggestionForStudent(s.id);
+      if (suggestion !== null && !scores[s.id]) {
+        newScores[s.id] = String(suggestion);
+      }
+    });
+    if (Object.keys(newScores).length === 0) {
+      toast.error("No assessment data available for this subject");
+      return;
+    }
+    setScores((prev) => ({ ...prev, ...newScores }));
+    toast.success(`Pre-filled scores for ${Object.keys(newScores).length} students from assessments`);
+    setShowSuggestions(false);
   };
 
   return (
@@ -125,6 +161,34 @@ export default function GradebookPage() {
         </div>
       ) : (
         <>
+          <div className="mb-4 flex gap-2 flex-wrap">
+            <button type="button" onClick={() => setShowSuggestions(!showSuggestions)}
+              className="text-xs font-bold px-3 py-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50">
+              💡 Auto-fill from assessments
+            </button>
+          </div>
+
+          {showSuggestions && (
+            <div className="glass rounded-2xl p-4 mb-4">
+              <p className="text-xs font-bold text-gray-900 mb-3">Assessment-based suggestions for {subject}:</p>
+              <div className="space-y-1 max-h-40 overflow-y-auto mb-3">
+                {myStudents.map((s) => {
+                  const suggestion = getSuggestionForStudent(s.id);
+                  return suggestion !== null ? (
+                    <div key={s.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-gray-50">
+                      <span className="font-semibold text-gray-800">{s.full_name}</span>
+                      <span className="font-bold text-blue-600">{suggestion}%</span>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+              <button type="button" onClick={autoFillFromAssessments}
+                className="w-full text-xs font-bold px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                Apply suggestions
+              </button>
+            </div>
+          )}
+
           <div className="glass rounded-2xl overflow-hidden mb-5">
             <table className="w-full text-sm">
               <thead style={{ background: "#0A1628" }}>

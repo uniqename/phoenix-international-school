@@ -10,10 +10,11 @@ import type { HomeworkAssignment, HomeworkSubmission } from "@/lib/types";
 import toast from "react-hot-toast";
 
 // Inline grade-a-submission row. Tap "Grade" → reveal score + comment fields.
-function SubmissionRow({ sub, fmtSize, onGrade }: {
+function SubmissionRow({ sub, fmtSize, onGrade, dueDate }: {
   sub: HomeworkSubmission;
   fmtSize: (n: number) => string;
   onGrade: (score: number, comment?: string) => void;
+  dueDate: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [score, setScore]       = useState<string>(sub.score != null ? String(sub.score) : "");
@@ -27,12 +28,14 @@ function SubmissionRow({ sub, fmtSize, onGrade }: {
   };
 
   const isGraded = sub.score != null;
+  const isLate = sub.submitted_at && dueDate && sub.submitted_at > dueDate;
 
   return (
     <div className="p-2 rounded-lg bg-gray-50">
       <div className="flex items-center gap-2 text-xs">
         <span className={`font-bold ${isGraded ? "text-blue-500" : "text-green-500"}`}>{isGraded ? "📝" : "✅"}</span>
         <span className="font-semibold text-gray-800 flex-1 truncate">{sub.student_name}</span>
+        {isLate && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-red-100 text-red-700">⏰ Late</span>}
         {sub.file_data_url ? (
           <a href={sub.file_data_url} download={sub.file_name}
             className="text-blue-700 font-bold truncate max-w-[120px] underline">{sub.file_name}</a>
@@ -111,6 +114,8 @@ export default function HomeworkPage() {
   const [hwDetail, setHwDetail] = useState<HomeworkAssignment | null>(null);
   const [editingHw, setEditingHw] = useState<HomeworkAssignment | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "", due_date: "", video_url: "" });
+  const [bulkScore, setBulkScore] = useState<string>("");
+  const [bulkComment, setBulkComment] = useState<string>("");
 
   const openEdit = (hw: HomeworkAssignment) => {
     setEditingHw(hw);
@@ -318,8 +323,37 @@ export default function HomeworkPage() {
               {/* Submission list */}
               {isExpanded && hwSubs.length > 0 && (
                 <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-3">
+                  {/* Bulk grade panel */}
+                  {hwSubs.some((s) => s.score == null) && (
+                    <div className="p-3 rounded-lg" style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)" }}>
+                      <p className="text-xs font-bold text-gray-900 mb-2">Apply to all ungraded:</p>
+                      <div className="grid grid-cols-[80px_1fr_auto] gap-2 items-start">
+                        <input type="number" min={0} max={100} value={bulkScore}
+                          placeholder="Score"
+                          onChange={(e) => setBulkScore(e.target.value)}
+                          className="px-2 py-1.5 rounded-md border border-gray-200 text-sm text-gray-900" />
+                        <input value={bulkComment}
+                          placeholder="Comment (optional)"
+                          onChange={(e) => setBulkComment(e.target.value)}
+                          className="px-2 py-1.5 rounded-md border border-gray-200 text-sm text-gray-900" />
+                        <button type="button" onClick={() => {
+                          if (!bulkScore.trim()) { toast.error("Enter score"); return; }
+                          const n = parseInt(bulkScore, 10);
+                          if (isNaN(n) || n < 0 || n > 100) { toast.error("Score must be 0–100"); return; }
+                          hwSubs.filter((s) => s.score == null).forEach((sub) => {
+                            gradeHomeworkSubmission(sub.id, n, bulkComment.trim() || undefined, user?.full_name);
+                          });
+                          toast.success(`Graded ${hwSubs.filter((s) => s.score == null).length} submissions`);
+                          setBulkScore(""); setBulkComment("");
+                        }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-md bg-purple-600 text-white">
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {hwSubs.map((sub) => (
-                    <SubmissionRow key={sub.id} sub={sub} fmtSize={fmtSize}
+                    <SubmissionRow key={sub.id} sub={sub} fmtSize={fmtSize} dueDate={hw.due_date}
                       onGrade={(score, comment) => {
                         gradeHomeworkSubmission(sub.id, score, comment, user?.full_name);
                         toast.success(`Graded ${sub.student_name?.split(" ")[0]} · ${score}/100`);

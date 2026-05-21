@@ -6,6 +6,12 @@ import React from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { getGESColor, getGESLabel, todayISO, CLASSES } from "@/lib/utils";
+import type { WeekDay } from "@/lib/types";
+
+const dayOfWeekToWeekDay = (date: Date): WeekDay => {
+  const days: WeekDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  return days[date.getDay()];
+};
 
 
 export default function TeacherOverview() {
@@ -15,6 +21,8 @@ export default function TeacherOverview() {
   const grades     = useAppStore((s) => s.grades);
   const homework   = useAppStore((s) => s.homework);
   const teachers   = useAppStore((s) => s.teachers);
+  const lessonPlans = useAppStore((s) => s.lessonPlans);
+  const classTimetables = useAppStore((s) => s.classTimetables);
 
   const teacher    = teachers.find((t) => t.full_name === user?.full_name) ?? teachers[0];
   const [activeClass, setActiveClass] = React.useState(teacher?.class_name ?? "JHS 3A");
@@ -22,11 +30,23 @@ export default function TeacherOverview() {
   const myStudents = students.filter((s) => s.class_name === myClass);
 
   const today      = todayISO();
+  const todayDate  = new Date();
+  const todayWeekDay = dayOfWeekToWeekDay(todayDate);
   const todayAtt   = attendance.filter((a) => a.date === today && a.class_name === myClass);
   const present    = todayAtt.filter((a) => a.status === "present" || a.status === "late").length;
   const myGrades   = grades.filter((g) => g.class_name === myClass);
   const avgScore   = myGrades.length ? Math.round(myGrades.reduce((s, g) => s + g.raw_score, 0) / myGrades.length) : 0;
   const myHW       = homework.filter((h) => h.class_name === myClass);
+
+  const todayLessons = React.useMemo(() => {
+    const tt = classTimetables.find((t) => t.class_id === myClass);
+    if (!tt) return [];
+    const dayTT = tt.days.find((d) => d.day === todayWeekDay);
+    if (!dayTT) return [];
+    return dayTT.periods
+      .map((p) => lessonPlans.find((lp) => lp.subject === (p.notes || '')))
+      .filter((lp) => lp !== undefined) as typeof lessonPlans;
+  }, [myClass, todayWeekDay, classTimetables, lessonPlans]);
 
   return (
     <DashboardShell role="teacher" navItems={NAV}>
@@ -65,6 +85,27 @@ export default function TeacherOverview() {
           </div>
         ))}
       </div>
+
+      {/* Today's lessons */}
+      {todayLessons.length > 0 && (
+        <div className="glass rounded-2xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-black text-gray-900">📚 Today&apos;s Lessons</h3>
+            <Link href="/teacher/lessons" className="text-xs text-blue-600 font-bold hover:underline">Manage →</Link>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {todayLessons.slice(0, 3).map((lp) => (
+              <div key={lp.id} className="rounded-xl p-3" style={{ background: "rgba(147,51,234,0.08)", borderLeft: "3px solid #9333EA" }}>
+                <div className="text-xs font-black text-gray-900">{lp.subject}</div>
+                <div className="text-[11px] text-gray-600 mt-1 line-clamp-1">{lp.strand}</div>
+                {lp.primary_video_url && <div className="text-[10px] text-purple-600 mt-1">🎥 Video included</div>}
+                {lp.attachments?.length ? <div className="text-[10px] text-purple-600">📎 {lp.attachments.length} attachment(s)</div> : null}
+              </div>
+            ))}
+            {todayLessons.length > 3 && <p className="text-xs text-gray-400 sm:col-span-2 lg:col-span-3">+{todayLessons.length - 3} more lessons</p>}
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         {/* Today's class */}

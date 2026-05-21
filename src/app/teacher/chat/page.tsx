@@ -9,6 +9,15 @@ import { useAuth } from "@/context/AuthContext";
 // left, conversation on the right. Threads filter to those involving this
 // teacher (matched on teacher_id when present, else on teacher_name).
 
+const MESSAGE_TEMPLATES = [
+  "Thank you for reaching out. I will respond soon.",
+  "Your child is doing great in class. Keep encouraging them at home.",
+  "I noticed [child] needs extra support in [subject]. Please help them practice.",
+  "Please ensure homework is submitted on time.",
+  "We have an upcoming test. Please encourage your child to study.",
+  "Your child showed great improvement. Well done!",
+];
+
 export default function TeacherChatPage() {
   const { user } = useAuth();
   const threads = useAppStore((s) => s.chatThreads);
@@ -44,6 +53,9 @@ export default function TeacherChatPage() {
   }, [activeId, activeThread, markChatThreadRead]);
 
   const [draft, setDraft] = useState("");
+  const [sendLater, setSendLater] = useState(false);
+  const [sendTime, setSendTime] = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -51,8 +63,20 @@ export default function TeacherChatPage() {
 
   const send = () => {
     if (!activeId || !draft.trim()) return;
-    sendChatMessage(activeId, 'teacher', user?.id, user?.full_name, draft);
+    if (sendLater && sendTime) {
+      const delayMs = new Date(sendTime).getTime() - Date.now();
+      if (delayMs > 0) {
+        setTimeout(() => {
+          sendChatMessage(activeId, 'teacher', user?.id, user?.full_name, draft);
+        }, delayMs);
+      }
+    } else {
+      sendChatMessage(activeId, 'teacher', user?.id, user?.full_name, draft);
+    }
     setDraft("");
+    setSendLater(false);
+    setSendTime("");
+    setShowTemplates(false);
   };
 
   return (
@@ -116,13 +140,44 @@ export default function TeacherChatPage() {
                   );
                 })}
               </div>
-              <footer className="p-3 border-t border-white/10 flex gap-2">
-                <input value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                  placeholder="Type a message…"
-                  className="flex-1 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none" />
-                <button type="button" onClick={send} className="btn-gold text-xs px-4">Send</button>
+              <footer className="p-3 border-t border-white/10 space-y-2">
+                {showTemplates && (
+                  <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
+                    {MESSAGE_TEMPLATES.map((t, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          setDraft(t);
+                          setShowTemplates(false);
+                        }}
+                        className="w-full text-left text-xs p-2 rounded-lg hover:bg-white/10 text-gray-300">
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+                    placeholder="Type a message…"
+                    className="flex-1 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none" />
+                  <button type="button" onClick={() => setShowTemplates(!showTemplates)}
+                    className="text-xs font-bold px-3 py-2 rounded-xl border border-white/10 text-gray-400 hover:text-white">
+                    📋
+                  </button>
+                  <button type="button" onClick={send} className="btn-gold text-xs px-4">Send</button>
+                </div>
+                <button type="button" onClick={() => setSendLater(!sendLater)}
+                  className="text-xs font-bold px-3 py-1 rounded-lg transition-all"
+                  style={{ background: sendLater ? "rgba(168,85,247,0.2)" : "transparent", color: sendLater ? "#d8b4fe" : "#9ca3af" }}>
+                  {sendLater ? "✓ Send later" : "⏰ Send later"}
+                </button>
+                {sendLater && (
+                  <input type="datetime-local" aria-label="Send at" value={sendTime} onChange={(e) => setSendTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-sm text-white focus:outline-none" />
+                )}
               </footer>
             </>
           ) : (

@@ -41,10 +41,18 @@ function ManualTab({
   const attendance     = useAppStore((s) => s.attendance);
   const saveAttendance = useAppStore((s) => s.saveAttendance);
   const submitExcuseRequest = useAppStore((s) => s.submitExcuseRequest);
+  const excuseRequests = useAppStore((s) => s.excuseRequests);
+  const reviewExcuseRequest = useAppStore((s) => s.reviewExcuseRequest);
 
   const myStudents = students.filter((s) => s.class_name === activeClass);
   const today      = todayISO();
   const existing   = attendance.filter((a) => a.date === today && a.class_name === activeClass);
+
+  const absencesThisTerm = (studentId: string) => {
+    return attendance.filter((a) => a.student_id === studentId && a.status === "absent").length;
+  };
+  const highAbsenceStudents = myStudents.filter((s) => absencesThisTerm(s.id) > 3);
+  const pendingExcusesThisClass = excuseRequests.filter((e) => e.class_name === activeClass && e.status === "pending");
 
   const [statuses, setStatuses] = useState<Record<string, AttendanceStatus>>(() =>
     buildStatuses(myStudents, existing)
@@ -78,6 +86,33 @@ function ManualTab({
 
   return (
     <>
+      {highAbsenceStudents.length > 0 && (
+        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200">
+          <p className="text-xs font-bold text-red-900">⚠️ High Absence Alert</p>
+          <p className="text-xs text-red-700 mt-1">
+            {highAbsenceStudents.length} student(s) in {activeClass} have more than 3 absences this term.
+            {highAbsenceStudents.length <= 3 && ` ${highAbsenceStudents.map((s) => s.full_name).join(", ")}.`}
+          </p>
+        </div>
+      )}
+
+      {pendingExcusesThisClass.length > 0 && (
+        <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+          <p className="text-xs font-bold text-amber-900">📋 Pending Excuses ({pendingExcusesThisClass.length})</p>
+          <div className="mt-2 space-y-1">
+            {pendingExcusesThisClass.map((e) => (
+              <div key={e.id} className="flex items-center justify-between text-xs">
+                <span className="text-amber-800">{e.student_name} — {e.start_date}</span>
+                <button type="button" onClick={() => { reviewExcuseRequest(e.id, "approved", user?.full_name ?? "Teacher"); toast.success(`✓ Excuse approved for ${e.student_name}`); }}
+                  className="font-bold px-2 py-1 rounded-md text-white" style={{ background: "#22c55e" }}>
+                  Approve
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <span className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e" }}>
           ✅ {presentCount} Present

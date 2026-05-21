@@ -57,12 +57,18 @@ export default function LessonsPage() {
   const [showForm, setShowForm]     = useState(false);
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [detail, setDetail]         = useState<LessonPlan | null>(null);
+  const [search, setSearch]         = useState("");
+  const [filterSubject, setFilterSubject] = useState<string | null>(null);
+  const [filterPublished, setFilterPublished] = useState<'all' | 'published' | 'draft'>("all");
 
   const strands   = NACCA_STRANDS[subject] ?? [];
   const strandObj = strands.find((s) => s.strand === strand);
 
   const myPlans = lessonPlans.filter(
-    (lp) => lp.class_name === activeClass || lp.teacher_name === user?.full_name
+    (lp) => (lp.class_name === activeClass || lp.teacher_name === user?.full_name) &&
+            (search === "" || lp.strand.toLowerCase().includes(search.toLowerCase()) || lp.objectives?.toLowerCase().includes(search.toLowerCase())) &&
+            (filterSubject === null || lp.subject === filterSubject) &&
+            (filterPublished === 'all' || (filterPublished === 'published' && lp.is_published) || (filterPublished === 'draft' && !lp.is_published))
   );
 
   const resetForm = () => {
@@ -314,6 +320,50 @@ export default function LessonsPage() {
           </div>
         </div>
       )}
+
+      {/* Search and filters */}
+      <div className="glass rounded-2xl p-4 mb-4">
+        <div className="flex flex-col gap-3">
+          <input
+            type="text"
+            placeholder="🔍 Search by strand or objectives…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900"
+          />
+          <div className="flex flex-wrap gap-2">
+            <div className="flex gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-gray-600 self-center">Filter:</span>
+              {subjects.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setFilterSubject(filterSubject === s ? null : s)}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+                  style={filterSubject === s
+                    ? { background: "#003087", color: "white" }
+                    : { background: "rgba(0,48,135,0.07)", color: "#003087" }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5 ml-auto">
+              {(['all', 'published', 'draft'] as const).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setFilterPublished(status)}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+                  style={filterPublished === status
+                    ? { background: "#003087", color: "white" }
+                    : { background: "rgba(0,48,135,0.07)", color: "#003087" }}>
+                  {status === 'all' ? 'All' : status === 'published' ? '📤 Published' : '📝 Draft'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
         {myPlans.length === 0 ? (
