@@ -437,6 +437,8 @@ interface AppState {
   sendChatMessage: (threadId: string, sender_role: 'parent' | 'teacher', sender_id: string | undefined, sender_name: string | undefined, body: string, priority?: 'normal' | 'urgent') => ChatMessage | null
   markChatThreadRead: (threadId: string, role: 'parent' | 'teacher') => void
   acknowledgeUrgentMessage: (messageId: string) => void
+  deleteChatMessage: (messageId: string) => void
+  archiveChatThread: (threadId: string) => void
 
   // Homework submissions
   submitHomework: (homeworkId: string, studentId: string, studentName: string, fileName: string, fileType: string, fileSize: number, fileDataUrl?: string) => void
@@ -673,11 +675,22 @@ export const useAppStore = create<AppState>()(
         }
         return { libraryLoans: [loan, ...st.libraryLoans] }
       }),
-      returnLibraryBook: (loanId) => set((st) => ({
-        libraryLoans: st.libraryLoans.map((l) => l.id === loanId
-          ? { ...l, status: 'returned' as const, returned_at: new Date().toISOString() }
-          : l),
-      })),
+      returnLibraryBook: (loanId) => set((st) => {
+        const loan = st.libraryLoans.find((l) => l.id === loanId)
+        if (!loan) return {}
+        const now = new Date()
+        const due = new Date(loan.due_at)
+        let fineAmount = 0
+        if (now > due) {
+          const daysOverdue = Math.floor((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24))
+          fineAmount = daysOverdue * 1 // GHS 1 per day overdue
+        }
+        return {
+          libraryLoans: st.libraryLoans.map((l) => l.id === loanId
+            ? { ...l, status: 'returned' as const, returned_at: new Date().toISOString(), fine_amount: fineAmount }
+            : l),
+        }
+      }),
 
       addClass: (c) => set((st) => ({
         classes: [...st.classes, { ...c, id: `cls-${Date.now()}` }],
@@ -2223,6 +2236,15 @@ export const useAppStore = create<AppState>()(
           unread_for_parent: role === 'parent' ? 0 : t.unread_for_parent,
           unread_for_teacher: role === 'teacher' ? 0 : t.unread_for_teacher,
         } : t),
+      })),
+
+      deleteChatMessage: (messageId) => set((st) => ({
+        chatMessages: st.chatMessages.filter((m) => m.id !== messageId),
+      })),
+
+      archiveChatThread: (threadId) => set((st) => ({
+        chatThreads: st.chatThreads.filter((t) => t.id !== threadId),
+        chatMessages: st.chatMessages.filter((m) => m.thread_id !== threadId),
       })),
 
       // ── Phase 15f: bus tracking ──

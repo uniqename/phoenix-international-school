@@ -1219,6 +1219,7 @@ export interface LibraryLoan {
   returned_at?: string
   status: LibraryLoanStatus
   issued_by?: string
+  fine_amount?: number                   // Calculated on return if overdue (GHS per day)
   notes?: string
 }
 

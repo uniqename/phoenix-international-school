@@ -132,3 +132,20 @@ export const NACCA_STRANDS: Record<string, { strand: string; subs: string[] }[]>
     { strand: 'Economic Life', subs: ['Production & Consumption', 'Trade & Commerce', 'Banking & Finance'] },
   ],
 }
+
+// Transcript generation helper
+export function generateTranscriptPDF(studentName: string, studentId: string, grades: { subject: string; grade: string; percentage: number }[], term: string, year: string): string {
+  // Simple text-based transcript (can be enhanced with jsPDF later)
+  const lines = [
+    `TRANSCRIPT OF RECORDS`,
+    `=====================================`,
+    `Student: ${studentName} (${studentId})`,
+    `Term: ${term} | Academic Year: ${year}`,
+    ``,
+    `SUBJECTS`,
+    ...grades.map((g) => `${g.subject.padEnd(30)} ${g.grade.padEnd(5)} ${g.percentage}%`),
+    ``,
+    `Generated: ${new Date().toLocaleDateString()}`,
+  ]
+  return lines.join('\n')
+}
