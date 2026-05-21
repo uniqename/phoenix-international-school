@@ -64,6 +64,7 @@ export default function ParentPortal() {
   const settings              = useAppStore((s) => s.schoolSettings);
   const createPaymentRequest  = useAppStore((s) => s.createPaymentRequest);
   const markPaymentRequestStatus = useAppStore((s) => s.markPaymentRequestStatus);
+  const calendarEvents        = useAppStore((s) => s.calendarEvents);
 
   // Find the parent's family by email or phone (either primary or secondary parent)
   const parentFamily = families.find((f) =>
@@ -93,6 +94,17 @@ export default function ParentPortal() {
     if (child) setTodayCode(getOrCreatePickupCode(child.id));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [child?.id]);
+
+  // Calendar events for parent (audience: 'all' or 'parents')
+  const upcomingEvents = useMemo(() => {
+    const today = new Date();
+    return calendarEvents
+      .filter((e) => (e.audience === 'all' || e.audience === 'parents') && new Date(e.date) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 5);
+  }, [calendarEvents]);
+
+  const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
 
   // Phase 15c — parent can chat with the child's class teacher AND with the
   // principal. We keep two separate threads so messages don't bleed across.
@@ -511,6 +523,41 @@ export default function ParentPortal() {
         </button>
       </div>
 
+      {/* ── Next Event Card ── */}
+      {nextEvent && (
+        <div className="rounded-2xl p-4 mb-5 border-l-4" style={{ background: "rgba(168,85,247,0.08)", borderColor: "#9333EA" }}>
+          <p className="text-xs font-bold text-gray-600 mb-2">📅 Upcoming Event</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900">{nextEvent.title}</p>
+              <p className="text-xs text-gray-600 mt-1">{new Date(nextEvent.date).toLocaleDateString("en-GB", { weekday: "long", month: "short", day: "numeric" })}</p>
+              {nextEvent.description && <p className="text-xs text-gray-600 mt-1 line-clamp-2">{nextEvent.description}</p>}
+            </div>
+            <a href="#events" className="text-xs font-bold px-3 py-1.5 rounded-lg text-white flex-shrink-0" style={{ background: "#9333EA" }}>
+              View all →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* ── Upcoming Events Sidebar ── */}
+      {upcomingEvents.length > 0 && (
+        <div id="events" className="glass rounded-2xl p-5 mb-5">
+          <p className="font-bold text-gray-900 mb-3">📅 School Calendar — Next 5 Events</p>
+          <div className="space-y-2">
+            {upcomingEvents.map((e, idx) => (
+              <div key={e.id} className="p-3 rounded-lg" style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.15)" }}>
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="text-xs font-bold text-purple-700">{idx + 1}. {e.title}</div>
+                  <span className="text-[10px] text-gray-500 flex-shrink-0">{new Date(e.date).toLocaleDateString("en-GB", { month: "short", day: "numeric" })}</span>
+                </div>
+                {e.description && <p className="text-[11px] text-gray-600 line-clamp-2">{e.description}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Announcement ── */}
       {announcements.length > 0 && (
         <div className="rounded-2xl p-4 mb-5 flex gap-3 items-start"
@@ -556,6 +603,9 @@ export default function ParentPortal() {
           <div className="space-y-2 mb-4">
             {childFees.map((f) => {
               const bal = f.amount - f.paid_amount;
+              const daysUntilDue = f.due_date ? Math.ceil((new Date(f.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
+              const isDueSoon = daysUntilDue !== null && daysUntilDue > 0 && daysUntilDue <= 7;
+              const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
               return (
                 <div key={f.id} className="flex items-center gap-3 p-3 rounded-xl"
                   style={{ background: f.status === "cleared" ? "rgba(34,197,94,0.05)" : "rgba(239,68,68,0.04)", border: `1px solid ${f.status === "cleared" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)"}` }}>
@@ -565,6 +615,8 @@ export default function ParentPortal() {
                       Term {f.term} · {f.academic_year}
                       {f.due_date && ` · Due ${f.due_date}`}
                     </div>
+                    {isDueSoon && <div className="text-xs font-bold text-orange-600 mt-1">⏰ Due in {daysUntilDue} day{daysUntilDue === 1 ? "" : "s"}</div>}
+                    {isOverdue && <div className="text-xs font-bold text-red-600 mt-1">🔴 Overdue by {Math.abs(daysUntilDue)} day{Math.abs(daysUntilDue) === 1 ? "" : "s"}</div>}
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-xs text-gray-500">{formatGHS(f.paid_amount)} / {formatGHS(f.amount)}</div>
