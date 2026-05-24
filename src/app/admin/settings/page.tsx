@@ -65,7 +65,7 @@ export default function SettingsPage() {
       <div className="max-w-3xl mx-auto space-y-6 p-6">
         <header>
           <h1 className="text-2xl font-black text-white">⚙️ School Settings</h1>
-          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
+          <p className="text-sm mt-1" style={{ color: "rgba(147,51,234,0.95)" }}>
             Update the school&apos;s public info. These details appear on reports, parent invites, SMS, and the parent app header.
           </p>
         </header>

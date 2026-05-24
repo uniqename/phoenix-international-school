@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import type { UserRole } from "@/lib/types";
 import NotificationBell from "@/components/NotificationBell";
+import UniversalNav from "@/components/UniversalNav";
 import toast from "react-hot-toast";
 
 interface NavItem { icon: string; label: string; href: string }
@@ -241,22 +242,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
             style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}>
             ☰
           </button>
-          <NotificationBell role={role} />
-          <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: meta.color + "30", color: "#fff", border: `1px solid ${meta.color}` }}>
-            {meta.icon} {role}
-          </span>
-          {isLibraryMode && (
-            <button type="button" onClick={handleEndLibrarySession} aria-label="End library session"
-              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold"
-              style={{ background: "rgba(255,215,0,0.18)", color: "#FFD700", border: "1px solid rgba(255,215,0,0.5)" }}>
-              End
-            </button>
-          )}
-          <button type="button" onClick={handleLogout} aria-label="Sign out"
-            className="px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
-            style={{ background: "rgba(239,68,68,0.18)", color: "#fff", border: "1px solid rgba(239,68,68,0.6)" }}>
-            🚪 Sign Out
-          </button>
+          <UniversalNav />
         </div>
       </div>
 

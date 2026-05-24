@@ -75,7 +75,7 @@ export default function CalendarPage() {
       <div className="max-w-5xl mx-auto space-y-6 p-6">
         <header>
           <h1 className="text-2xl font-black text-white">📅 Academic Calendar</h1>
-          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
+          <p className="text-sm mt-1" style={{ color: "rgba(147,51,234,0.95)" }}>
             Set term dates and holidays. Reports auto-stamp with the current term and year. Parents see this calendar in the parent app.
           </p>
         </header>

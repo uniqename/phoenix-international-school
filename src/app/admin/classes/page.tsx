@@ -76,7 +76,7 @@ export default function ClassesPage() {
       <div className="max-w-5xl mx-auto space-y-6 p-6">
         <header>
           <h1 className="text-2xl font-black text-white">🏫 Classes & Subjects</h1>
-          <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
+          <p className="text-sm mt-1" style={{ color: "rgba(147,51,234,0.95)" }}>
             Manage the school&apos;s class structure and what subjects each section teaches.
             Reports, gradebooks, and assessments all pull from this list — keep it current.
           </p>

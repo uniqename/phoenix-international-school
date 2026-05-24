@@ -18,6 +18,22 @@
 
   --gold:        #FFD700;      /* logo sun accent */
   --gold-dark:   #E5B800;
+
+  /* ── Light Mode Colors ── */
+  --light-bg-primary: #FFFFFF;
+  --light-bg-secondary: #F9FAFB;
+  --light-text-primary: #000000;
+  --light-text-secondary: #666666;
+  --light-border: #E5E7EB;
+}
+
+/* Dark mode overrides */
+:root[data-theme="dark"] {
+  --light-bg-primary: #0F0F1E;
+  --light-bg-secondary: #1A1A2E;
+  --light-text-primary: #FFFFFF;
+  --light-text-secondary: #AAAAAA;
+  --light-border: rgba(255, 255, 255, 0.12);
 }
 
 @theme inline {

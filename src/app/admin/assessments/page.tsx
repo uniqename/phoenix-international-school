@@ -101,7 +101,7 @@ export default function AssessmentsPage() {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-black text-white">📋 Assessments</h1>
-            <p className="text-sm mt-1" style={{ color: "rgba(196,181,253,0.8)" }}>
+            <p className="text-sm mt-1" style={{ color: "rgba(147,51,234,0.95)" }}>
               Each class has its own assessment template. Add markers, scored A–D (or your chosen scale). Teachers fill these in for each student per term; reports auto-generate.
             </p>
           </div>

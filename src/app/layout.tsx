@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from "react-hot-toast";
 import PWAInit from "@/components/PWAInit";
 import OfflineIndicator from "@/components/OfflineIndicator";
@@ -39,17 +40,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen">
         <RootErrorBoundary>
-          <AuthProvider>
-            {children}
-            <Toaster
-              position="top-center"
-              containerStyle={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)" }}
-              toastOptions={{ style: { borderRadius: "12px", fontWeight: 600, fontSize: "13px", maxWidth: "90vw" } }} />
-            <OfflineIndicator />
-            <PWAInit />
-            <WhatsNewModal />
-            <UrgentNotificationBridge />
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+              <Toaster
+                position="top-center"
+                containerStyle={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)" }}
+                toastOptions={{ style: { borderRadius: "12px", fontWeight: 600, fontSize: "13px", maxWidth: "90vw" } }} />
+              <OfflineIndicator />
+              <PWAInit />
+              <WhatsNewModal />
+              <UrgentNotificationBridge />
+            </AuthProvider>
+          </ThemeProvider>
         </RootErrorBoundary>
       </body>
     </html>
