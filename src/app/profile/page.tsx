@@ -34,16 +34,12 @@ export default function ProfilePage() {
             <div className="mt-2 text-lg font-semibold text-gray-900 capitalize">{user.role}</div>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-gray-600 uppercase tracking-wide">Account Status</label>
-            <div className="mt-2 text-lg font-semibold">
-              {user.is_active ? (
-                <span className="text-green-600">✓ Active</span>
-              ) : (
-                <span className="text-red-600">✗ Inactive</span>
-              )}
+          {user.phone && (
+            <div>
+              <label className="text-xs font-bold text-gray-600 uppercase tracking-wide">Phone</label>
+              <div className="mt-2 text-lg font-semibold text-gray-900">{user.phone}</div>
             </div>
-          </div>
+          )}
 
           <div className="pt-4 border-t">
             <p className="text-sm text-gray-500 mb-4">

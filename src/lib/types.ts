@@ -1029,6 +1029,28 @@ export interface CanteenTransaction {
   created_at: string
 }
 
+export interface CanteenCollection {
+  id: string
+  date: string
+  teacher_id: string
+  teacher_name: string
+  student_id: string
+  student_name: string
+  amount: number
+  recorded_at: string
+}
+
+export interface DailyCollectionHub {
+  id: string
+  date: string
+  status: 'active' | 'closed'
+  assigned_teachers: { teacher_id: string; teacher_name: string }[]
+  collections: CanteenCollection[]
+  daily_total: number
+  created_at: string
+  closed_at?: string
+}
+
 export interface Payroll {
   id: string
   teacher_id: string

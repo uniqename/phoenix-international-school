@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware'
 import type {
   Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
-  CanteenWallet, CanteenTransaction, FeedPost, FeedComment, Payroll, BECEAttempt, PickupCode,
+  CanteenWallet, CanteenTransaction, CanteenCollection, DailyCollectionHub, FeedPost, FeedComment, Payroll, BECEAttempt, PickupCode,
   StudentEngagement, StudentAchievement, CalendarEvent, LibraryReview, UserActivityLog, PaymentPlan, PaymentPlanInstallment,
   ChatThread, ChatMessage,
   BusRoute, BusStop, BusRun, BusEvent, BusRunDirection,
@@ -67,6 +67,8 @@ interface AppState {
   crecheLogs: CrecheLog[]
   canteenWallets: CanteenWallet[]
   canteenTransactions: CanteenTransaction[]
+  dailyCollectionHubs: DailyCollectionHub[]
+  currentActiveHub: DailyCollectionHub | null
   feedPosts: FeedPost[]
   feedComments: FeedComment[]
   chatThreads: ChatThread[]
@@ -359,6 +361,10 @@ interface AppState {
   addFee: (fee: Omit<Fee, 'id' | 'created_at' | 'paid_amount' | 'status'>) => void
   topupCanteen: (studentId: string, amount: number) => void
   debitCanteen: (studentId: string, amount: number, desc: string) => void
+  createDailyHub: (date: string, assignedTeachers: { teacher_id: string; teacher_name: string }[]) => DailyCollectionHub | null
+  recordCanteenCollection: (hubId: string, teacherId: string, teacherName: string, studentId: string, studentName: string, amount: number) => void
+  closeDailyHub: (hubId: string) => void
+  getTodayHub: () => DailyCollectionHub | null
 
   // Attendance
   saveAttendance: (records: AttendanceRecord[]) => void
@@ -532,6 +538,8 @@ export const useAppStore = create<AppState>()(
       crecheLogs: MOCK_CRECHE_LOG,
       canteenWallets: MOCK_CANTEEN_WALLETS,
       canteenTransactions: [],
+      dailyCollectionHubs: [],
+      currentActiveHub: null,
       feedPosts: MOCK_FEED_POSTS,
       feedComments: [],
       chatThreads: [],
@@ -2097,6 +2105,72 @@ export const useAppStore = create<AppState>()(
           ),
           canteenTransactions: [...st.canteenTransactions, { id: `ct${Date.now()}`, student_id: studentId, student_name: student?.full_name, amount, type: 'debit' as const, description: desc, created_at: new Date().toISOString() }],
         }))
+      },
+
+      createDailyHub: (date, assignedTeachers) => {
+        const existing = get().dailyCollectionHubs.find((h) => h.date === date && h.status === 'active')
+        if (existing) return existing
+
+        const newHub: DailyCollectionHub = {
+          id: `hub-${Date.now()}`,
+          date,
+          status: 'active',
+          assigned_teachers: assignedTeachers,
+          collections: [],
+          daily_total: 0,
+          created_at: new Date().toISOString(),
+        }
+
+        set((st) => ({
+          dailyCollectionHubs: [...st.dailyCollectionHubs, newHub],
+          currentActiveHub: newHub,
+        }))
+
+        return newHub
+      },
+
+      recordCanteenCollection: (hubId, teacherId, teacherName, studentId, studentName, amount) => {
+        set((st) => {
+          const hub = st.dailyCollectionHubs.find((h) => h.id === hubId)
+          if (!hub) return st
+
+          const collection: CanteenCollection = {
+            id: `col-${Date.now()}`,
+            date: hub.date,
+            teacher_id: teacherId,
+            teacher_name: teacherName,
+            student_id: studentId,
+            student_name: studentName,
+            amount,
+            recorded_at: new Date().toISOString(),
+          }
+
+          return {
+            dailyCollectionHubs: st.dailyCollectionHubs.map((h) =>
+              h.id === hubId
+                ? {
+                    ...h,
+                    collections: [...h.collections, collection],
+                    daily_total: h.daily_total + amount,
+                  }
+                : h
+            ),
+          }
+        })
+      },
+
+      closeDailyHub: (hubId) => {
+        set((st) => ({
+          dailyCollectionHubs: st.dailyCollectionHubs.map((h) =>
+            h.id === hubId ? { ...h, status: 'closed' as const, closed_at: new Date().toISOString() } : h
+          ),
+          currentActiveHub: st.currentActiveHub?.id === hubId ? null : st.currentActiveHub,
+        }))
+      },
+
+      getTodayHub: () => {
+        const today = todayISO()
+        return get().dailyCollectionHubs.find((h) => h.date === today && h.status === 'active') || null
       },
 
       saveAttendance: (records) => {
