@@ -328,7 +328,8 @@ export default function StudentPortal() {
         const engagement = getOrCreateStudentEngagement(student.id);
         return (
           <div className="glass rounded-2xl p-5 mb-5">
-            <h3 className="font-black text-gray-900 mb-4">🎮 Your Learning Streak</h3>
+            <h3 className="font-black text-gray-900 mb-2">🎮 Your Learning Streak</h3>
+            <p className="text-[11px] text-gray-600 mb-4">Streak grows each day you complete a BECE practice session.</p>
             <div className="grid sm:grid-cols-3 gap-4 mb-4">
               {/* Streak Counter */}
               <div className="p-4 rounded-xl text-center" style={{ background: "rgba(234,179,8,0.08)" }}>
@@ -370,6 +371,29 @@ export default function StudentPortal() {
           </div>
         );
       })()}
+
+      {/* What I Can Do — quick access to main student features */}
+      <div className="mb-6">
+        <h3 className="font-black text-white text-lg mb-4">What I Can Do</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { icon: "📝", title: "BECE Practice", desc: "Prepare for exams", href: "/bece" },
+            { icon: "📚", title: "My Lessons", desc: "View lesson plans", href: "/student#lessons" },
+            { icon: "📄", title: "Homework", desc: "Submit assignments", href: "/student/assignments" },
+            { icon: "💬", title: "Chat Teacher", desc: "Message teachers", href: "/student/chat" },
+            { icon: "📸", title: "School Feed", desc: "See updates", href: "/student#feed" },
+            { icon: "📊", title: "My Grades", desc: "View report card", href: "/student#grades" },
+          ].map((item) => (
+            <Link key={item.href} href={item.href}
+              className="glass rounded-2xl p-4 flex flex-col items-start card-hover hover:scale-[1.02] transition-transform group">
+              <div className="text-2xl mb-2">{item.icon}</div>
+              <div className="text-xs font-black text-gray-900">{item.title}</div>
+              <div className="text-[10px] text-gray-600 mt-1">{item.desc}</div>
+              <div className="mt-3 text-lg opacity-0 group-hover:opacity-100 transition-opacity">→</div>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* My gate check-in code — show this at the school gate every morning */}
       {student && (

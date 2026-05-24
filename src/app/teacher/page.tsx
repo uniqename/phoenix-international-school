@@ -163,7 +163,7 @@ export default function TeacherOverview() {
       </div>
 
       {/* Homework summary */}
-      <div className="glass rounded-2xl p-5">
+      <div className="glass rounded-2xl p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-black text-gray-900">Homework Assigned</h3>
           <Link href="/teacher/homework" className="text-xs text-blue-600 font-bold hover:underline">Manage →</Link>
@@ -191,6 +191,32 @@ export default function TeacherOverview() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Your Teaching Tools — quick access grid */}
+      <div>
+        <h2 className="text-lg font-black text-white mb-4">Your Teaching Tools</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { icon: "📝", title: "Lesson Planner", desc: "Create & publish lessons", href: "/teacher/lessons" },
+            { icon: "📚", title: "Homework", desc: "Assign & grade work", href: "/teacher/homework" },
+            { icon: "📋", title: "Gradebook", desc: "Record student scores", href: "/teacher/gradebook" },
+            { icon: "📡", title: "Attendance", desc: "Mark roll & track", href: "/teacher/attendance" },
+            { icon: "📊", title: "Assessments", desc: "Rubrics & rubrics", href: "/teacher/assessments" },
+            { icon: "💬", title: "Parent Chat", desc: "Message families", href: "/teacher/chat" },
+            { icon: "📸", title: "School Feed", desc: "Share updates", href: "/teacher/feed" },
+            { icon: "❓", title: "Question Bank", desc: "BECE practice prep", href: "/teacher/questions" },
+            { icon: "🔐", title: "Pickup Verify", desc: "Authorize pickups", href: "/teacher/pickup" },
+          ].map((tool) => (
+            <Link key={tool.href} href={tool.href}
+              className="glass rounded-2xl p-4 flex flex-col items-start card-hover hover:scale-[1.02] transition-transform group">
+              <div className="text-2xl mb-2">{tool.icon}</div>
+              <div className="text-xs font-black text-gray-900">{tool.title}</div>
+              <div className="text-[10px] text-gray-600 mt-1">{tool.desc}</div>
+              <div className="mt-3 text-lg opacity-0 group-hover:opacity-100 transition-opacity">→</div>
+            </Link>
+          ))}
+        </div>
       </div>
     </DashboardShell>
   );

@@ -35,6 +35,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
   const [isLibraryMode, setIsLibraryMode] = useState(false);
   const [showPwChange, setShowPwChange] = useState(false);
   const [pwForm, setPwForm] = useState({ password: "", confirm: "" });
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) { router.replace("/login"); return }
@@ -235,6 +236,11 @@ export default function DashboardShell({ role, navItems, children }: Props) {
           </Link>
         </div>
         <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation menu"
+            className="px-2.5 py-1.5 rounded-lg text-lg font-bold"
+            style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}>
+            ☰
+          </button>
           <NotificationBell role={role} />
           <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: meta.color + "30", color: "#fff", border: `1px solid ${meta.color}` }}>
             {meta.icon} {role}
@@ -253,6 +259,60 @@ export default function DashboardShell({ role, navItems, children }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Mobile navigation drawer */}
+      {drawerOpen && (
+        <>
+          <div className="md:hidden fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.5)" }}
+            onClick={() => setDrawerOpen(false)} />
+          <div className="md:hidden fixed top-0 right-0 bottom-0 z-50 w-64 overflow-y-auto"
+            style={{ background: "#0C0A1E", borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="p-4 flex items-center justify-between border-b border-white/10">
+              <span className="text-white font-black text-sm">Menu</span>
+              <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close menu"
+                className="px-2 py-1 rounded-lg text-lg font-bold"
+                style={{ background: "rgba(255,255,255,0.08)", color: "white" }}>
+                ✕
+              </button>
+            </div>
+            <nav className="p-3 space-y-0.5">
+              {navItems.map((item) => {
+                const active = path === item.href || (item.href !== `/${role}` && path.startsWith(item.href));
+                return (
+                  <Link key={item.href} href={item.href}
+                    onClick={() => setDrawerOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all"
+                    style={{
+                      background: active ? meta.color + "18" : "transparent",
+                      color: active ? meta.color : "rgba(255,255,255,0.6)",
+                      borderLeft: active ? `3px solid ${meta.color}` : "3px solid transparent",
+                      fontWeight: active ? 700 : 500,
+                    }}>
+                    <span className="text-base">{item.icon}</span>
+                    <span className="text-xs">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="p-3 border-t border-white/10 space-y-1">
+              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2 px-3 py-2 text-xs text-blue-400 hover:text-white rounded-xl transition-colors">
+                🏠 School Home
+              </Link>
+              {isLibraryMode && (
+                <button type="button" onClick={() => { handleEndLibrarySession(); setDrawerOpen(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl transition-colors text-left"
+                  style={{ color: "#FFD700", background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.2)" }}>
+                  🖥️ End Library Session
+                </button>
+              )}
+              <button type="button" onClick={() => { handleLogout(); setDrawerOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 rounded-xl transition-colors text-left">
+                🚪 Sign Out
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Main — mobile clears notch + mobile top bar; desktop uses normal padding */}
       <div className="flex-1 min-w-0 min-h-screen">

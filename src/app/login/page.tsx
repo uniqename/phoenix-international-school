@@ -126,18 +126,14 @@ function LoginForm() {
           </p>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => {
-              const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
-              const redirectUri = `${window.location.origin}/auth/callback`;
-              window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20profile%20email`;
+              toast.info("Google sign-in is being set up — use email/password for now", { icon: "🔵" });
             }}
               className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
               style={{ background: "rgba(66,133,244,0.15)", color: "#4285F4", border: "1px solid rgba(66,133,244,0.3)" }}>
               🔵 Google
             </button>
             <button type="button" onClick={() => {
-              const clientId = process.env.NEXT_PUBLIC_WHATSAPP_CLIENT_ID || "YOUR_WHATSAPP_CLIENT_ID";
-              const redirectUri = `${window.location.origin}/auth/callback`;
-              window.location.href = `https://api.whatsapp.com/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid%20profile`;
+              toast.info("WhatsApp sign-in is being set up — use email/password for now", { icon: "💚" });
             }}
               className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
               style={{ background: "rgba(37,211,102,0.15)", color: "#25D366", border: "1px solid rgba(37,211,102,0.3)" }}>

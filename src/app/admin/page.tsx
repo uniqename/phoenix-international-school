@@ -42,9 +42,9 @@ export default function AdminOverview() {
   const liveBuses = busRuns.filter((r) => r.status === "in_progress" && r.date === today).length;
   const staffOnSite = staffCheckIns.filter((c) => c.date === today && !c.out_at).length;
   const activityItems = [
-    { emoji: "✅", label: "Students present today", value: presentToday, hint: "out of " + students.length },
-    { emoji: "❌", label: "Absent today",             value: todayAbsent, hint: todayLate > 0 ? `${todayLate} late` : "—" },
-    { emoji: "💰", label: "Today's payments",         value: `GH₵ ${todayPaymentsTotal.toFixed(0)}`, hint: `${todayPayments.length} transaction${todayPayments.length === 1 ? "" : "s"}` },
+    { emoji: "✅", label: "Students present today", value: presentToday, hint: "out of " + students.length, href: "/admin/attendance" },
+    { emoji: "❌", label: "Absent today",             value: todayAbsent, hint: todayLate > 0 ? `${todayLate} late` : "—", href: "/admin/attendance" },
+    { emoji: "💰", label: "Today's payments",         value: `GH₵ ${todayPaymentsTotal.toFixed(0)}`, hint: `${todayPayments.length} transaction${todayPayments.length === 1 ? "" : "s"}`, href: "/admin/finance-payments" },
     { emoji: "📋", label: "Excuse requests",          value: pendingExcuses, hint: "awaiting your review", href: "/admin/excuses", warn: pendingExcuses > 0 },
     { emoji: "💬", label: "Unread parent messages",   value: unreadChats, hint: "tap to open inbox", href: "/admin/chats", warn: unreadChats > 0 },
     { emoji: "📸", label: "Feed posts pending",       value: pendingFeed, hint: "moderation queue", href: "/admin/feed", warn: pendingFeed > 0 },
@@ -120,19 +120,20 @@ export default function AdminOverview() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {[
-          { label: "Total Students",    value: students.length,              icon: "🎒", color: "#003087", sub: "Crèche → JHS 3" },
-          { label: "Fees Collected",    value: `GH₵${feesCollected.toLocaleString()}`, icon: "💳", color: "#22c55e", sub: "This term" },
-          { label: "Outstanding Fees",  value: `GH₵${feesOutstanding.toLocaleString()}`, icon: "⚠️", color: "#ef4444", sub: `${outstanding.length} students` },
-          { label: "Today's Attendance",value: todayAtt.length ? `${Math.round((presentToday / todayAtt.length) * 100)}%` : "—", icon: "✅", color: "#00D4FF", sub: `${presentToday}/${todayAtt.length} present` },
-          { label: "Teaching Staff",    value: teachers.length,              icon: "👩‍🏫", color: "#8b5cf6", sub: "Active teachers" },
-          { label: "Fee Defaulters",    value: outstanding.length,           icon: "🔒", color: "#f59e0b", sub: "Results hard-locked" },
+          { label: "Total Students",    value: students.length,              icon: "🎒", color: "#003087", sub: "Crèche → JHS 3", href: "/admin/students" },
+          { label: "Fees Collected",    value: `GH₵${feesCollected.toLocaleString()}`, icon: "💳", color: "#22c55e", sub: "This term", href: "/admin/finance-payments" },
+          { label: "Outstanding Fees",  value: `GH₵${feesOutstanding.toLocaleString()}`, icon: "⚠️", color: "#ef4444", sub: `${outstanding.length} students`, href: "/admin/fees" },
+          { label: "Today's Attendance",value: todayAtt.length ? `${Math.round((presentToday / todayAtt.length) * 100)}%` : "—", icon: "✅", color: "#00D4FF", sub: `${presentToday}/${todayAtt.length} present`, href: "/admin/attendance" },
+          { label: "Teaching Staff",    value: teachers.length,              icon: "👩‍🏫", color: "#8b5cf6", sub: "Active teachers", href: "/admin/staff" },
+          { label: "Fee Defaulters",    value: outstanding.length,           icon: "🔒", color: "#f59e0b", sub: "Results hard-locked", href: "/admin/fees" },
         ].map((s) => (
-          <div key={s.label} className="glass rounded-2xl p-4 card-hover">
+          <Link key={s.label} href={s.href} className="glass rounded-2xl p-4 card-hover cursor-pointer hover:scale-[1.02] transition-transform relative group">
             <div className="text-2xl mb-2">{s.icon}</div>
             <div className="text-2xl font-black mb-0.5" style={{ color: s.color }}>{s.value}</div>
             <div className="text-xs font-bold text-gray-600">{s.label}</div>
             <div className="text-[11px] text-gray-400 mt-0.5">{s.sub}</div>
-          </div>
+            <span className="absolute top-3 right-3 text-lg opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+          </Link>
         ))}
       </div>
 

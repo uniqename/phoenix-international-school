@@ -539,13 +539,13 @@ export const useAppStore = create<AppState>()(
       busRoutes: [
         // Demo route so a fresh install / driver demo has something to test.
         // Admin can edit or delete it from /admin/transport.
-        { id: 'br-demo-a', name: 'Route A — Tema → School', bus_label: 'Bus #1 · GR 1234-22', driver_name: 'Mr. Kwesi', driver_phone: '0244987654', created_at: '2026-01-01T00:00:00Z' },
+        { id: 'br-demo-a', name: 'Route A — Madina Zongo to Abokobi Rd', bus_label: 'Bus #1 · GR 2468-19', driver_name: 'Mr. Kwesi', driver_phone: '0244987654', created_at: '2026-01-01T00:00:00Z' },
       ],
       busStops: [
-        { id: 'bs-demo-a-1', route_id: 'br-demo-a', name: 'Tema Community 1',  scheduled_pickup: '06:45', scheduled_dropoff: '15:30', order: 0 },
-        { id: 'bs-demo-a-2', route_id: 'br-demo-a', name: 'Spintex Junction',  scheduled_pickup: '07:05', scheduled_dropoff: '15:50', order: 1 },
-        { id: 'bs-demo-a-3', route_id: 'br-demo-a', name: 'East Legon Roundabout', scheduled_pickup: '07:20', scheduled_dropoff: '16:05', order: 2 },
-        { id: 'bs-demo-a-4', route_id: 'br-demo-a', name: 'School Gate',       scheduled_pickup: '07:45', scheduled_dropoff: '16:25', order: 3 },
+        { id: 'bs-demo-a-1', route_id: 'br-demo-a', name: 'Madina Zongo Junction',  scheduled_pickup: '06:45', scheduled_dropoff: '15:30', order: 0 },
+        { id: 'bs-demo-a-2', route_id: 'br-demo-a', name: 'Legon Boundary',  scheduled_pickup: '07:00', scheduled_dropoff: '15:50', order: 1 },
+        { id: 'bs-demo-a-3', route_id: 'br-demo-a', name: 'Atomic Junction', scheduled_pickup: '07:15', scheduled_dropoff: '16:05', order: 2 },
+        { id: 'bs-demo-a-4', route_id: 'br-demo-a', name: 'Abokobi Road / School Gate',       scheduled_pickup: '07:40', scheduled_dropoff: '16:25', order: 3 },
       ],
       busRuns: [],
       busEvents: [],
@@ -570,6 +570,7 @@ export const useAppStore = create<AppState>()(
         // force_password_change flag prompts them on first sign-in.
         { id: 'acct-admin-1',     full_name: 'School Administrator', email: 'admin@phoenixintl.school',     role: 'admin',     password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
         { id: 'acct-principal-1', full_name: 'Principal',            email: 'principal@phoenixintl.school', role: 'principal', password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
+        { id: 'acct-enam-1',      full_name: 'Enam Egyir',            email: 'enam.egyir@gmail.com',         role: 'admin',     password: 'phoenix2026!', is_active: true, force_password_change: false, created_at: new Date().toISOString() },
       ],
       quizQuestions: MOCK_QUIZ_QUESTIONS,
       schoolSettings: PHOENIX_SCHOOL_SETTINGS,
