@@ -1,4 +1,4 @@
-import type { Grade } from './types'
+import type { Grade, UserRole } from './types'
 
 export function getGESGrade(score: number): number {
   if (score >= 80) return 1
@@ -148,4 +148,19 @@ export function generateTranscriptPDF(studentName: string, studentId: string, gr
     `Generated: ${new Date().toLocaleDateString()}`,
   ]
   return lines.join('\n')
+}
+
+// Email naming convention: role_firstname.lastname@phoenixgh.edu
+// Prefixes: a=admin, pr=principal, t=teacher, p=parent, s=student, d=driver
+export function parseRoleFromEmail(email: string): UserRole | null {
+  const prefix = email.split('_')[0].toLowerCase()
+  const roleMap: Record<string, UserRole> = {
+    a: 'admin',
+    pr: 'principal',
+    t: 'teacher',
+    p: 'parent',
+    s: 'student',
+    d: 'driver',
+  }
+  return roleMap[prefix] || null
 }

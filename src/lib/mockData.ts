@@ -15,12 +15,12 @@ import type {
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
 export const MOCK_USERS: UserProfile[] = [
-  { id: 'admin-1', email: 'admin@phoenixgh.edu', full_name: 'Mr. Emmanuel Adjei', role: 'admin', phone: '0244123456' },
-  { id: 'principal-1', email: 'principal@phoenixgh.edu', full_name: 'Mrs. Akua Boateng', role: 'principal', phone: '0508923445' },
-  { id: 'teacher-1', email: 'teacher@phoenixgh.edu', full_name: 'Mrs. Adjoa Koomson', role: 'teacher', phone: '0244234567' },
-  { id: 'parent-1', email: 'parent@phoenixgh.edu', full_name: 'Mr. Kwame Asante', role: 'parent', phone: '0244345678' },
-  { id: 'student-1', email: 'student@phoenixgh.edu', full_name: 'Kwame Asante Jr.', role: 'student', phone: '' },
-  { id: 'driver-1', email: 'driver@phoenixgh.edu', full_name: 'Mr. Kwesi (Bus Driver)', role: 'driver', phone: '0244987654' },
+  { id: 'admin-1', email: 'a_emmanuel.adjei@phoenixgh.edu', full_name: 'Mr. Emmanuel Adjei', role: 'admin', phone: '0244123456' },
+  { id: 'principal-1', email: 'pr_akua.boateng@phoenixgh.edu', full_name: 'Mrs. Akua Boateng', role: 'principal', phone: '0508923445' },
+  { id: 'teacher-1', email: 't_adjoa.koomson@phoenixgh.edu', full_name: 'Mrs. Adjoa Koomson', role: 'teacher', phone: '0244234567' },
+  { id: 'parent-1', email: 'p_kwame.asante@phoenixgh.edu', full_name: 'Mr. Kwame Asante', role: 'parent', phone: '0244345678' },
+  { id: 'student-1', email: 's_kwame.asante.jr@phoenixgh.edu', full_name: 'Kwame Asante Jr.', role: 'student', phone: '' },
+  { id: 'driver-1', email: 'd_kwesi@phoenixgh.edu', full_name: 'Mr. Kwesi (Bus Driver)', role: 'driver', phone: '0244987654' },
 ]
 
 export const MOCK_STUDENTS: Student[] = [
@@ -38,11 +38,11 @@ export const MOCK_STUDENTS: Student[] = [
 ]
 
 export const MOCK_TEACHERS: Teacher[] = [
-  { id: 't1', employee_id: 'EMP-001', full_name: 'Mrs. Adjoa Koomson', phone: '0244234567', email: 'akoomson@phoenixgh.edu', class_name: 'JHS 3A', subjects: ['Mathematics', 'Integrated Science'], basic_salary: 3200, hire_date: '2018-09-01', ssnit_number: 'G0001234567' },
-  { id: 't2', employee_id: 'EMP-002', full_name: 'Mr. Kofi Amponsah', phone: '0201345678', email: 'kamponsah@phoenixgh.edu', class_name: 'JHS 2A', subjects: ['English Language', 'Social Studies'], basic_salary: 2800, hire_date: '2019-01-15' },
-  { id: 't3', employee_id: 'EMP-003', full_name: 'Miss Yaa Owusu', phone: '0246456789', email: 'yowusu@phoenixgh.edu', class_name: 'Primary 5B', subjects: ['Mathematics', 'Science', 'Social Studies'], basic_salary: 2500, hire_date: '2020-09-01' },
-  { id: 't4', employee_id: 'EMP-004', full_name: 'Mr. Ebo Asante', phone: '0277567890', email: 'easante@phoenixgh.edu', class_name: 'KG 2', subjects: ['All KG Subjects'], basic_salary: 2200, hire_date: '2021-01-05' },
-  { id: 't5', employee_id: 'EMP-005', full_name: 'Mrs. Ama Boateng-Addae', phone: '0200678901', email: 'aboateng@phoenixgh.edu', class_name: 'Crèche', subjects: ['All Crèche Activities'], basic_salary: 2000, hire_date: '2022-09-01' },
+  { id: 't1', employee_id: 'EMP-001', full_name: 'Mrs. Adjoa Koomson', phone: '0244234567', email: 't_adjoa.koomson@phoenixgh.edu', class_name: 'JHS 3A', subjects: ['Mathematics', 'Integrated Science'], basic_salary: 3200, hire_date: '2018-09-01', ssnit_number: 'G0001234567' },
+  { id: 't2', employee_id: 'EMP-002', full_name: 'Mr. Kofi Amponsah', phone: '0201345678', email: 't_kofi.amponsah@phoenixgh.edu', class_name: 'JHS 2A', subjects: ['English Language', 'Social Studies'], basic_salary: 2800, hire_date: '2019-01-15' },
+  { id: 't3', employee_id: 'EMP-003', full_name: 'Miss Yaa Owusu', phone: '0246456789', email: 't_yaa.owusu@phoenixgh.edu', class_name: 'Primary 5B', subjects: ['Mathematics', 'Science', 'Social Studies'], basic_salary: 2500, hire_date: '2020-09-01' },
+  { id: 't4', employee_id: 'EMP-004', full_name: 'Mr. Ebo Asante', phone: '0277567890', email: 't_ebo.asante@phoenixgh.edu', class_name: 'KG 2', subjects: ['All KG Subjects'], basic_salary: 2200, hire_date: '2021-01-05' },
+  { id: 't5', employee_id: 'EMP-005', full_name: 'Mrs. Ama Boateng-Addae', phone: '0200678901', email: 't_ama.boateng@phoenixgh.edu', class_name: 'Crèche', subjects: ['All Crèche Activities'], basic_salary: 2000, hire_date: '2022-09-01' },
 ]
 
 export const MOCK_FEES: Fee[] = [
