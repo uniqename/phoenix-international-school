@@ -15,7 +15,6 @@ import type {
 import { getGESGrade, calculatePAYE, calculateSSNIT } from './utils'
 
 export const MOCK_USERS: UserProfile[] = [
-  { id: 'admin-owner', email: 'enam.egyir@gmail.com', full_name: 'Enam Egyir', role: 'admin', phone: '0244000000' },
   { id: 'admin-1', email: 'a_emmanuel.adjei@phoenixgh.edu', full_name: 'Mr. Emmanuel Adjei', role: 'admin', phone: '0244123456' },
   { id: 'principal-1', email: 'pr_akua.boateng@phoenixgh.edu', full_name: 'Mrs. Akua Boateng', role: 'principal', phone: '0508923445' },
   { id: 'teacher-1', email: 't_adjoa.koomson@phoenixgh.edu', full_name: 'Mrs. Adjoa Koomson', role: 'teacher', phone: '0244234567' },
