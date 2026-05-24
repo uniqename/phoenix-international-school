@@ -2160,12 +2160,40 @@ export const useAppStore = create<AppState>()(
       },
 
       closeDailyHub: (hubId) => {
-        set((st) => ({
-          dailyCollectionHubs: st.dailyCollectionHubs.map((h) =>
-            h.id === hubId ? { ...h, status: 'closed' as const, closed_at: new Date().toISOString() } : h
-          ),
-          currentActiveHub: st.currentActiveHub?.id === hubId ? null : st.currentActiveHub,
-        }))
+        set((st) => {
+          const hub = st.dailyCollectionHubs.find((h) => h.id === hubId)
+          if (!hub || hub.daily_total === 0) {
+            return {
+              dailyCollectionHubs: st.dailyCollectionHubs.map((h) =>
+                h.id === hubId ? { ...h, status: 'closed' as const, closed_at: new Date().toISOString() } : h
+              ),
+              currentActiveHub: st.currentActiveHub?.id === hubId ? null : st.currentActiveHub,
+            }
+          }
+
+          const transaction: FinanceTransaction = {
+            id: `txn-canteen-${Date.now()}`,
+            kind: 'receipt',
+            description: `Canteen Collections ${hub.date}: GH₵ ${hub.daily_total.toFixed(2)}`,
+            spending_from_id: 'ca-canteen-sale',
+            spending_to_id: 'ca-cash',
+            amount: hub.daily_total,
+            payment_mode: 'cash',
+            status: 'approved',
+            date: hub.date,
+            pre_approved: true,
+            notes: `Collected by ${hub.assigned_teachers.map((t) => t.teacher_name).join(", ")}`,
+            created_at: new Date().toISOString(),
+          }
+
+          return {
+            dailyCollectionHubs: st.dailyCollectionHubs.map((h) =>
+              h.id === hubId ? { ...h, status: 'closed' as const, closed_at: new Date().toISOString() } : h
+            ),
+            currentActiveHub: st.currentActiveHub?.id === hubId ? null : st.currentActiveHub,
+            financeTransactions: [...st.financeTransactions, transaction],
+          }
+        })
       },
 
       getTodayHub: () => {

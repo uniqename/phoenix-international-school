@@ -18,6 +18,7 @@ export default function AdminOverview() {
   const busRuns = useAppStore((s) => s.busRuns);
   const staffCheckIns = useAppStore((s) => s.staffCheckIns);
   const feedPosts = useAppStore((s) => s.feedPosts);
+  const dailyCollectionHubs = useAppStore((s) => s.dailyCollectionHubs);
 
   // SMS banners temporarily suppressed; only the Paystack-key banner remains.
   const noPaystackKey = settings.payment_provider === "paystack" && !settings.paystack_public_key;
@@ -41,10 +42,13 @@ export default function AdminOverview() {
   const unreadChats = chatThreads.reduce((s, t) => s + (t.unread_for_teacher ?? 0), 0);
   const liveBuses = busRuns.filter((r) => r.status === "in_progress" && r.date === today).length;
   const staffOnSite = staffCheckIns.filter((c) => c.date === today && !c.out_at).length;
+  const todayHub = dailyCollectionHubs.find((h) => h.date === today && h.status === "active");
+  const todayCanteenTotal = todayHub?.daily_total || 0;
   const activityItems = [
     { emoji: "✅", label: "Students present today", value: presentToday, hint: "out of " + students.length, href: "/admin/attendance" },
     { emoji: "❌", label: "Absent today",             value: todayAbsent, hint: todayLate > 0 ? `${todayLate} late` : "—", href: "/admin/attendance" },
     { emoji: "💰", label: "Today's payments",         value: `GH₵ ${todayPaymentsTotal.toFixed(0)}`, hint: `${todayPayments.length} transaction${todayPayments.length === 1 ? "" : "s"}`, href: "/admin/finance-payments" },
+    { emoji: "🍽️", label: "Canteen collections",      value: `GH₵ ${todayCanteenTotal.toFixed(0)}`, hint: todayHub ? `${todayHub.collections.length} record${todayHub.collections.length === 1 ? "" : "s"}` : "no active hub", href: "/admin/collections" },
     { emoji: "📋", label: "Excuse requests",          value: pendingExcuses, hint: "awaiting your review", href: "/admin/excuses", warn: pendingExcuses > 0 },
     { emoji: "💬", label: "Unread parent messages",   value: unreadChats, hint: "tap to open inbox", href: "/admin/chats", warn: unreadChats > 0 },
     { emoji: "📸", label: "Feed posts pending",       value: pendingFeed, hint: "moderation queue", href: "/admin/feed", warn: pendingFeed > 0 },
