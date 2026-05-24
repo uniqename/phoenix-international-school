@@ -162,10 +162,10 @@ function LoginForm() {
               On day one only, the Admin and Principal sign in with the temporary credentials provided to your school in your handover document. The app will force a password change on first login.
             </p>
             <button type="button"
-              onClick={() => { setEmail("admin@phoenixintl.school"); setPassword("Phoenix2026!"); setShowSetup(false); }}
+              onClick={() => { setEmail("a_admin@phoenixintl.school"); setShowSetup(false); toast("Enter the temporary admin password from your handover document"); }}
               className="w-full py-2 text-[11px] font-bold rounded-lg"
               style={{ background: "rgba(255,215,0,0.18)", color: "#FFD700", border: "1px solid rgba(255,215,0,0.35)" }}>
-              Auto-fill Admin starter login
+              Auto-fill Admin Email
             </button>
             <p className="text-[10px] mt-2 italic" style={{ color: "rgba(196,181,253,0.55)" }}>
               Hide this card after your first sign-in — staff and parents shouldn&apos;t see it.

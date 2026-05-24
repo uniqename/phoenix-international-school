@@ -568,9 +568,11 @@ export const useAppStore = create<AppState>()(
         // day one without relying on the "Demo" buttons. The admin should
         // change these passwords immediately from /admin/accounts. The
         // force_password_change flag prompts them on first sign-in.
-        { id: 'acct-admin-1',     full_name: 'School Administrator', email: 'a_admin@phoenixintl.school',     role: 'admin',     password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
-        { id: 'acct-principal-1', full_name: 'Principal',            email: 'pr_principal@phoenixintl.school', role: 'principal', password: 'Phoenix2026!', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
-        { id: 'acct-enam-1',      full_name: 'Enam Egyir',            email: 'a_enam.egyir@phoenixgh.edu',     role: 'admin',     password: 'phoenix2026!', is_active: true, force_password_change: false, created_at: new Date().toISOString() },
+        // NOTE: Passwords must be provided separately in handover documentation.
+        // DO NOT hardcode passwords in source code.
+        { id: 'acct-admin-1',     full_name: 'School Administrator', email: 'a_admin@phoenixintl.school',     role: 'admin',     password: 'REPLACE_WITH_ADMIN_PASSWORD', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
+        { id: 'acct-principal-1', full_name: 'Principal',            email: 'pr_principal@phoenixintl.school', role: 'principal', password: 'REPLACE_WITH_PRINCIPAL_PASSWORD', is_active: true, force_password_change: true, created_at: new Date().toISOString() },
+        { id: 'acct-enam-1',      full_name: 'Enam Egyir',            email: 'a_enam.egyir@phoenixgh.edu',     role: 'admin',     password: process.env.NEXT_PUBLIC_DEMO_ADMIN_PW || 'REPLACE_WITH_PASSWORD', is_active: true, force_password_change: false, created_at: new Date().toISOString() },
       ],
       quizQuestions: MOCK_QUIZ_QUESTIONS,
       schoolSettings: PHOENIX_SCHOOL_SETTINGS,
