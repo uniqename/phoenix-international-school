@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware'
 import type {
   Student, Teacher, Fee, Payment, AttendanceRecord, Grade,
   HomeworkAssignment, LessonPlan, Announcement, CrecheLog,
-  CanteenWallet, CanteenTransaction, CanteenCollection, DailyCollectionHub, FeedPost, FeedComment, Payroll, BECEAttempt, PickupCode,
+  CanteenWallet, CanteenTransaction, CanteenCollection, DailyCollectionHub, DailyBusRunHub, FeedPost, FeedComment, Payroll, BECEAttempt, PickupCode,
   StudentEngagement, StudentAchievement, CalendarEvent, LibraryReview, UserActivityLog, PaymentPlan, PaymentPlanInstallment,
   ChatThread, ChatMessage,
   BusRoute, BusStop, BusRun, BusEvent, BusRunDirection,
@@ -69,6 +69,7 @@ interface AppState {
   canteenTransactions: CanteenTransaction[]
   dailyCollectionHubs: DailyCollectionHub[]
   currentActiveHub: DailyCollectionHub | null
+  dailyBusRunHubs: DailyBusRunHub[]
   feedPosts: FeedPost[]
   feedComments: FeedComment[]
   chatThreads: ChatThread[]
@@ -366,6 +367,12 @@ interface AppState {
   closeDailyHub: (hubId: string) => void
   getTodayHub: () => DailyCollectionHub | null
 
+  // Bus Run Hubs
+  createDailyBusRunHub: (date: string, routeId: string, direction: 'pickup' | 'dropoff', assignedUsers: { user_id: string; user_name: string; role: string }[]) => DailyBusRunHub | null
+  closeDailyBusRunHub: (hubId: string) => void
+  getTodayBusRunHubs: () => DailyBusRunHub[]
+  getBusRunHubForUser: (userId: string) => DailyBusRunHub | null
+
   // Attendance
   saveAttendance: (records: AttendanceRecord[]) => void
   markParentNotified: (id: string) => void
@@ -540,6 +547,7 @@ export const useAppStore = create<AppState>()(
       canteenTransactions: [],
       dailyCollectionHubs: [],
       currentActiveHub: null,
+      dailyBusRunHubs: [],
       feedPosts: MOCK_FEED_POSTS,
       feedComments: [],
       chatThreads: [],
@@ -2199,6 +2207,50 @@ export const useAppStore = create<AppState>()(
       getTodayHub: () => {
         const today = todayISO()
         return get().dailyCollectionHubs.find((h) => h.date === today && h.status === 'active') || null
+      },
+
+      createDailyBusRunHub: (date, routeId, direction, assignedUsers) => {
+        const existing = get().dailyBusRunHubs.find(
+          (h) => h.date === date && h.route_id === routeId && h.direction === direction && h.status === 'active'
+        )
+        if (existing) return existing
+
+        const newHub: DailyBusRunHub = {
+          id: `bus-hub-${Date.now()}`,
+          date,
+          route_id: routeId,
+          direction,
+          status: 'active',
+          assigned_users: assignedUsers,
+          created_at: new Date().toISOString(),
+        }
+
+        set((st) => ({
+          dailyBusRunHubs: [...st.dailyBusRunHubs, newHub],
+        }))
+        return newHub
+      },
+
+      closeDailyBusRunHub: (hubId) => {
+        set((st) => ({
+          dailyBusRunHubs: st.dailyBusRunHubs.map((h) =>
+            h.id === hubId ? { ...h, status: 'closed' as const, closed_at: new Date().toISOString() } : h
+          ),
+        }))
+      },
+
+      getTodayBusRunHubs: () => {
+        const today = todayISO()
+        return get().dailyBusRunHubs.filter((h) => h.date === today && h.status === 'active')
+      },
+
+      getBusRunHubForUser: (userId) => {
+        const today = todayISO()
+        return (
+          get().dailyBusRunHubs.find(
+            (h) => h.date === today && h.status === 'active' && h.assigned_users.some((u) => u.user_id === userId)
+          ) || null
+        )
       },
 
       saveAttendance: (records) => {

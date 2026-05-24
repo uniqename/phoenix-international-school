@@ -1051,6 +1051,17 @@ export interface DailyCollectionHub {
   closed_at?: string
 }
 
+export interface DailyBusRunHub {
+  id: string
+  date: string
+  route_id: string
+  direction: 'pickup' | 'dropoff'
+  status: 'active' | 'closed'
+  assigned_users: { user_id: string; user_name: string; role: string }[]
+  created_at: string
+  closed_at?: string
+}
+
 export interface Payroll {
   id: string
   teacher_id: string
