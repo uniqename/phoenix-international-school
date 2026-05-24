@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useAppStore } from "@/store/useAppStore";
 import type { UserRole } from "@/lib/types";
 import NotificationBell from "@/components/NotificationBell";
@@ -30,8 +31,27 @@ export default function DashboardShell({ role, navItems, children }: Props) {
   const path = usePathname();
   const router = useRouter();
   const { user, loading, logout } = useAuth();
+  const { theme } = useTheme();
   const changeAccountPassword = useAppStore((s) => s.changeAccountPassword);
   const meta = ROLE_META[role];
+
+  const isDark = theme === "dark";
+  const colors = {
+    bg: isDark ? "linear-gradient(160deg, #0f0c28 0%, #0a1640 100%)" : "linear-gradient(160deg, #F9FAFB 0%, #FFFFFF 100%)",
+    sidebar: isDark ? "#0C0A1E" : "#FFFFFF",
+    sidebarBorder: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)",
+    sidebarText: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)",
+    sidebarTextActive: isDark ? meta.color : meta.color,
+    topBar: isDark ? "#0C0A1E" : "#FFFFFF",
+    modal: isDark ? "#0C0A1E" : "#FFFFFF",
+    modalBorder: isDark ? "rgba(168,85,247,0.35)" : "rgba(107,33,168,0.25)",
+    button: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+    buttonBorder: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)",
+    buttonText: isDark ? "white" : "#111827",
+    text: isDark ? "white" : "#111827",
+    inputBg: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+    inputBorder: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)",
+  };
 
   const [isLibraryMode, setIsLibraryMode] = useState(false);
   const [showPwChange, setShowPwChange] = useState(false);
@@ -114,12 +134,12 @@ export default function DashboardShell({ role, navItems, children }: Props) {
   };
 
   return (
-    <div className="flex" style={{ background: "linear-gradient(160deg, #0f0c28 0%, #0a1640 100%)", minHeight: "100vh" }}>
+    <div className="flex" style={{ background: colors.bg, minHeight: "100vh" }}>
       {/* Force-password-change modal — blocks entire UI until done */}
       {showPwChange && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ background: "rgba(10,22,40,0.92)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-8" style={{ background: "#0C0A1E", border: "1px solid rgba(168,85,247,0.35)" }}>
+          style={{ background: isDark ? "rgba(10,22,40,0.92)" : "rgba(0,0,0,0.5)" }}>
+          <div className="w-full max-w-sm rounded-2xl p-8" style={{ background: colors.modal, border: `1px solid ${colors.modalBorder}` }}>
             <div className="text-4xl text-center mb-5">🔐</div>
             <h2 className="font-black text-white text-xl text-center mb-1">Set Your Password</h2>
             <p className="text-blue-300 text-xs text-center mb-6">
@@ -151,7 +171,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
 
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-60 flex-shrink-0 sticky top-0 h-screen overflow-y-auto"
-        style={{ background: "#0C0A1E", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
+        style={{ background: colors.sidebar, borderRight: `1px solid ${colors.sidebarBorder}` }}>
         <div className="p-4 border-b border-white/10">
           <div className="flex items-center justify-between mb-4">
             <Link href="/" className="flex items-center gap-2.5">
@@ -218,8 +238,8 @@ export default function DashboardShell({ role, navItems, children }: Props) {
       {/* Mobile top bar — clears iPhone notch / Dynamic Island via safe-area inset */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3"
         style={{
-          background: "#0C0A1E",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: colors.topBar,
+          borderBottom: `1px solid ${colors.sidebarBorder}`,
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)",
           paddingBottom: "0.5rem",
         }}>
@@ -239,7 +259,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => setDrawerOpen(true)} aria-label="Open navigation menu"
             className="px-2.5 py-1.5 rounded-lg text-lg font-bold"
-            style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}>
+            style={{ background: colors.button, color: colors.buttonText, border: `1px solid ${colors.buttonBorder}` }}>
             ☰
           </button>
           <UniversalNav />
@@ -252,7 +272,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
           <div className="md:hidden fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.5)" }}
             onClick={() => setDrawerOpen(false)} />
           <div className="md:hidden fixed top-0 right-0 bottom-0 z-50 w-64 overflow-y-auto"
-            style={{ background: "#0C0A1E", borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ background: colors.sidebar, borderLeft: `1px solid ${colors.sidebarBorder}` }}>
             <div className="p-4 flex items-center justify-between border-b border-white/10">
               <span className="text-white font-black text-sm">Menu</span>
               <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close menu"

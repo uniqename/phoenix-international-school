@@ -119,28 +119,6 @@ function LoginForm() {
           </form>
         </div>
 
-        {/* Social login options */}
-        <div className="mb-4">
-          <p className="text-center text-xs font-bold mb-2" style={{ color: "rgba(196,181,253,0.6)" }}>
-            Or sign in with
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => {
-              toast("🔵 Google sign-in is being set up — use email/password for now");
-            }}
-              className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
-              style={{ background: "rgba(66,133,244,0.15)", color: "#4285F4", border: "1px solid rgba(66,133,244,0.3)" }}>
-              🔵 Google
-            </button>
-            <button type="button" onClick={() => {
-              toast("💚 WhatsApp sign-in is being set up — use email/password for now");
-            }}
-              className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
-              style={{ background: "rgba(37,211,102,0.15)", color: "#25D366", border: "1px solid rgba(37,211,102,0.3)" }}>
-              💚 WhatsApp
-            </button>
-          </div>
-        </div>
 
         {/* First-time setup helper — collapsed by default so the credentials
             aren't visible to anyone glancing at the screen. Tap once to expand. */}

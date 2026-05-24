@@ -50,6 +50,17 @@ body {
   color: var(--foreground);
   font-family: 'Inter', system-ui, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+:root[data-theme="light"] {
+  --background: #FFFFFF;
+  --foreground: #000000;
+}
+
+:root[data-theme="light"] body {
+  background: #F9FAFB;
+  color: #111827;
 }
 
 /* Form controls must always be legible regardless of the surrounding surface
@@ -76,6 +87,12 @@ input::placeholder, textarea::placeholder {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(107, 33, 168, 0.18);
   box-shadow: 0 4px 28px rgba(26, 63, 160, 0.13), 0 1px 4px rgba(107, 33, 168, 0.08);
+}
+
+:root[data-theme="dark"] .glass {
+  background: rgba(22, 13, 48, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 28px rgba(107, 33, 168, 0.08), 0 1px 4px rgba(255, 255, 255, 0.05);
 }
 
 .glass-dark {

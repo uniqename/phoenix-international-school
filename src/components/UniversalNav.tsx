@@ -10,7 +10,17 @@ export default function UniversalNav() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
+      {/* Theme toggle */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+      >
+        {theme === "light" ? "🌙" : "☀️"}
+      </button>
+
       {/* User menu dropdown */}
       <div className="relative">
         <button
