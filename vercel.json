@@ -1,0 +1,8 @@
+{
+  "projectSettings": {
+    "buildCommand": "npm run build"
+  },
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "https://phoenix-international-school.vercel.app"
+  }
+}
