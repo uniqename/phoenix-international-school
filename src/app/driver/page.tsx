@@ -74,6 +74,16 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
   const [routeId, setRouteId] = useState<string>(routes[0]?.id ?? "");
   const route = routes.find((r) => r.id === routeId);
 
+  // Auto-create bus run for today if one doesn't exist
+  useEffect(() => {
+    if (!route) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const existingRun = runs.find((r) => r.route_id === route.id && r.date === today);
+    if (!existingRun) {
+      startBusRun(route.id, "pickup");
+    }
+  }, [route, runs, startBusRun]);
+
   const today = new Date().toISOString().slice(0, 10);
   const activeRun = useMemo(
     () => runs.find((r) => r.route_id === routeId && r.date === today && r.status === "in_progress"),

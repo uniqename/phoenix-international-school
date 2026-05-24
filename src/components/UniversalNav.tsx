@@ -11,16 +11,6 @@ export default function UniversalNav() {
 
   return (
     <div className="flex items-center gap-3">
-      {/* Theme toggle */}
-      <button
-        onClick={toggleTheme}
-        className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        aria-label="Toggle theme"
-        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-      >
-        {theme === "light" ? "🌙" : "☀️"}
-      </button>
-
       {/* User menu dropdown */}
       <div className="relative">
         <button
