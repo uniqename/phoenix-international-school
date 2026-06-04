@@ -4,11 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next export -o out || next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:web": "next build",
+    "sync:capacitor": "npx cap sync",
+    "build:android": "cd android && ./gradlew bundleRelease",
+    "build:ios": "cd ios && xcodebuild -workspace Phoenix\\ Intl\\ School.xcworkspace -scheme Phoenix\\ Intl\\ School -configuration Release -derivedDataPath build",
+    "build:all": "npm run build:web && npm run sync:capacitor && npm run build:android && npm run build:ios"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "@capacitor/android": "^8.3.1",
     "@capacitor/cli": "^8.3.1",
     "@capacitor/core": "^8.3.1",

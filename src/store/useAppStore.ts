@@ -27,7 +27,9 @@ import type {
   CanteenMeal, CanteenFeeParticular, CanteenMenuDay, MenuItem,
   MessageTemplate, MessageLog, MessageChannel,
   Enquiry, EnquiryStatus, DataUpload, SmartReport,
+  InterventionPlan, InterventionStep, VideoProgress,
 } from '@/lib/types'
+import type { Notification } from '@/lib/notifications'
 import {
   MOCK_STUDENTS, MOCK_TEACHERS, MOCK_FEES, MOCK_PAYMENTS,
   MOCK_ATTENDANCE, MOCK_GRADES, MOCK_HOMEWORK, MOCK_LESSON_PLANS,
@@ -136,6 +138,9 @@ interface AppState {
   enquiries: Enquiry[]
   dataUploads: DataUpload[]
   smartReports: SmartReport[]
+  interventionPlans: InterventionPlan[]
+  videoProgress: VideoProgress[]
+  notifications: Notification[]
   typingUsers: Record<string, { threadId: string; userId: string; userName: string; typingSince: number }>
 
   // School configuration
@@ -434,6 +439,29 @@ interface AppState {
   submitExcuseRequest: (req: Omit<ExcuseRequest, 'id' | 'status' | 'created_at'>) => ExcuseRequest
   reviewExcuseRequest: (id: string, decision: 'approved' | 'declined', reviewer?: string, notes?: string) => void
 
+  // AI-Powered Intervention System
+  createInterventionPlan: (input: Omit<InterventionPlan, 'id' | 'status' | 'created_at'>) => InterventionPlan
+  assignInterventionPlan: (planId: string, studentId: string, teacherId: string, teacherName: string) => void
+  completeInterventionStep: (planId: string, stepIndex: number) => void
+  completeInterventionPlan: (planId: string) => void
+  getStudentsNeedingIntervention: () => Array<{ student: Student; reason: string; score?: number }>
+  getStudentInterventionPlans: (studentId: string) => InterventionPlan[]
+  getInterventionProgress: (planId: string) => number
+  getTeacherInterventionStats: (teacherId: string) => { active: number; completed: number; successRate: number; bySubject: Record<string, number> }
+  getStudentGradeImprovement: (studentId: string, subject: string, beforeDate: string) => number
+
+  // Notifications
+  addNotification: (notification: Notification) => void
+  markNotificationAsRead: (notificationId: string) => void
+  deleteNotification: (notificationId: string) => void
+  getUnreadNotifications: () => Notification[]
+  trackVideoProgress: (stepId: string, planId: string, watchedPercent: number, watchDurationSeconds: number) => void
+
+  // Adaptive Learning
+  assessStudentPerformance: (planId: string, stepIndex: number, quizScore: number) => void
+  getAdaptiveRecommendations: (planId: string) => string[]
+  adjustPlanDifficulty: (planId: string, newDifficulty: 'beginner' | 'intermediate' | 'advanced') => void
+
   // Lifecycle helpers — switch between demo data and a clean school setup.
   wipeDemoData: () => void
   restoreDemoData: () => void
@@ -634,6 +662,9 @@ export const useAppStore = create<AppState>()(
       enquiries: MOCK_ENQUIRIES,
       dataUploads: MOCK_DATA_UPLOADS,
       smartReports: MOCK_SMART_REPORTS,
+      interventionPlans: [],
+      videoProgress: [],
+      notifications: [],
       typingUsers: {},
 
       updateSchoolSettings: (data) => set((st) => ({
@@ -692,6 +723,7 @@ export const useAppStore = create<AppState>()(
         busStops: [],
         busRuns: [],
         busEvents: [],
+        interventionPlans: [],
         // Keep the seeded admin + principal accounts so the school doesn't
         // lock themselves out — but drop any demo / extra accounts.
         accounts: st.accounts.filter((a) => a.id === 'acct-admin-1' || a.id === 'acct-principal-1'),
@@ -3180,6 +3212,272 @@ export const useAppStore = create<AppState>()(
           pc.id === id ? { ...pc, used: true, used_at: new Date().toISOString() } : pc
         ),
       })),
+
+      createInterventionPlan: (input) => {
+        const id = `ip-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const steps: InterventionStep[] = input.steps.map((step, idx) => ({
+          ...step,
+          id: `step-${id}-${idx}`,
+          completed: false,
+        }))
+        const plan: InterventionPlan = {
+          ...input,
+          id,
+          steps,
+          status: 'assigned',
+          created_at: new Date().toISOString(),
+        }
+        set((st) => ({ interventionPlans: [...st.interventionPlans, plan] }))
+        return plan
+      },
+
+      assignInterventionPlan: (planId, studentId, teacherId, teacherName) =>
+        set((st) => ({
+          interventionPlans: st.interventionPlans.map((p) =>
+            p.id === planId
+              ? {
+                  ...p,
+                  student_id: studentId,
+                  assigned_by_teacher_id: teacherId,
+                  assigned_by_teacher_name: teacherName,
+                  status: 'assigned' as const,
+                }
+              : p
+          ),
+        })),
+
+      completeInterventionStep: (planId, stepIndex) =>
+        set((st) => ({
+          interventionPlans: st.interventionPlans.map((p) =>
+            p.id === planId
+              ? {
+                  ...p,
+                  steps: p.steps.map((step, idx) =>
+                    idx === stepIndex
+                      ? { ...step, completed: true, completed_at: new Date().toISOString() }
+                      : step
+                  ),
+                }
+              : p
+          ),
+        })),
+
+      completeInterventionPlan: (planId) =>
+        set((st) => ({
+          interventionPlans: st.interventionPlans.map((p) =>
+            p.id === planId
+              ? { ...p, status: 'completed' as const, completed_at: new Date().toISOString() }
+              : p
+          ),
+        })),
+
+      getStudentsNeedingIntervention: () => {
+        const st = get()
+        const needingHelp: Array<{ student: Student; reason: string; score?: number }> = []
+        for (const student of st.students) {
+          const studentGrades = st.grades.filter((g) => g.student_id === student.id)
+          const lastAssessmentResults = st.assessmentResults.filter((r) => r.student_id === student.id)
+          for (const grade of studentGrades) {
+            if (grade.raw_score < 60) {
+              needingHelp.push({
+                student,
+                reason: `Low grade in ${grade.subject}: ${grade.raw_score}%`,
+                score: grade.raw_score,
+              })
+            }
+          }
+          const homeworkSubmissions = st.homeworkSubmissions.filter((s) => s.student_id === student.id)
+          const missedCount = st.homework.filter((hw) => {
+            const submitted = homeworkSubmissions.some((s) => s.homework_id === hw.id)
+            return !submitted && hw.due_date < new Date().toISOString()
+          }).length
+          if (missedCount > 2) {
+            needingHelp.push({
+              student,
+              reason: `Missed ${missedCount} homework assignments`,
+            })
+          }
+        }
+        return needingHelp
+      },
+
+      getStudentInterventionPlans: (studentId) => {
+        const st = get()
+        return st.interventionPlans.filter((p) => p.student_id === studentId)
+      },
+
+      getInterventionProgress: (planId) => {
+        const st = get()
+        const plan = st.interventionPlans.find((p) => p.id === planId)
+        if (!plan || plan.steps.length === 0) return 0
+        const completed = plan.steps.filter((s) => s.completed).length
+        return Math.round((completed / plan.steps.length) * 100)
+      },
+
+      getTeacherInterventionStats: (teacherId) => {
+        const st = get()
+        const teacherPlans = st.interventionPlans.filter(
+          (p) => p.assigned_by_teacher_id === teacherId
+        )
+        const active = teacherPlans.filter((p) => p.status === 'assigned').length
+        const completed = teacherPlans.filter((p) => p.status === 'completed').length
+        const successCount = teacherPlans.filter((p) => {
+          if (p.status !== 'completed') return false
+          const improvedGrades = st.grades.filter(
+            (g) => g.student_id === p.student_id && g.subject === p.subject && g.raw_score >= 60
+          )
+          return improvedGrades.length > 0
+        }).length
+        const successRate = teacherPlans.length > 0
+          ? Math.round((successCount / completed || 0) * 100)
+          : 0
+        const bySubject: Record<string, number> = {}
+        for (const plan of teacherPlans) {
+          bySubject[plan.subject] = (bySubject[plan.subject] || 0) + 1
+        }
+        return { active, completed, successRate, bySubject }
+      },
+
+      getStudentGradeImprovement: (studentId, subject, beforeDate) => {
+        const st = get()
+        const beforeGrades = st.grades.filter(
+          (g) =>
+            g.student_id === studentId &&
+            g.subject === subject &&
+            g.created_at &&
+            g.created_at < beforeDate
+        )
+        const afterGrades = st.grades.filter(
+          (g) =>
+            g.student_id === studentId &&
+            g.subject === subject &&
+            g.created_at &&
+            g.created_at >= beforeDate
+        )
+        if (beforeGrades.length === 0 || afterGrades.length === 0) return 0
+        const beforeAvg =
+          beforeGrades.reduce((sum, g) => sum + g.raw_score, 0) / beforeGrades.length
+        const afterAvg =
+          afterGrades.reduce((sum, g) => sum + g.raw_score, 0) / afterGrades.length
+        return Math.round(afterAvg - beforeAvg)
+      },
+
+      addNotification: (notification) =>
+        set((st) => ({
+          notifications: [notification, ...st.notifications],
+        })),
+
+      markNotificationAsRead: (notificationId) =>
+        set((st) => ({
+          notifications: st.notifications.map((n) =>
+            n.id === notificationId
+              ? { ...n, read: true, read_at: new Date().toISOString() }
+              : n
+          ),
+        })),
+
+      deleteNotification: (notificationId) =>
+        set((st) => ({
+          notifications: st.notifications.filter((n) => n.id !== notificationId),
+        })),
+
+      getUnreadNotifications: () => {
+        const st = get()
+        return st.notifications.filter((n) => !n.read)
+      },
+
+      trackVideoProgress: (stepId, planId, watchedPercent, watchDurationSeconds) => {
+        const st = get()
+        const existing = st.videoProgress.find((v) => v.step_id === stepId)
+        if (existing) {
+          set((s) => ({
+            videoProgress: s.videoProgress.map((v) =>
+              v.step_id === stepId
+                ? {
+                    ...v,
+                    watched_percent: watchedPercent,
+                    watch_duration_seconds: watchDurationSeconds,
+                  }
+                : v
+            ),
+          }))
+        } else {
+          set((s) => ({
+            videoProgress: [
+              ...s.videoProgress,
+              {
+                step_id: stepId,
+                plan_id: planId,
+                watched_percent: watchedPercent,
+                watch_duration_seconds: watchDurationSeconds,
+                completed: false,
+              },
+            ],
+          }))
+        }
+      },
+
+      assessStudentPerformance: (planId, stepIndex, quizScore) => {
+        const st = get()
+        const plan = st.interventionPlans.find((p) => p.id === planId)
+        if (!plan || !plan.steps[stepIndex]) return
+
+        // Store assessment score in step for reference
+        set((s) => ({
+          interventionPlans: s.interventionPlans.map((p) =>
+            p.id === planId
+              ? {
+                  ...p,
+                  steps: p.steps.map((step, idx) =>
+                    idx === stepIndex
+                      ? {
+                          ...step,
+                          completed: quizScore >= 60, // Auto-complete if passing
+                          completed_at: quizScore >= 60 ? new Date().toISOString() : undefined,
+                        }
+                      : step
+                  ),
+                }
+              : p
+          ),
+        }))
+      },
+
+      getAdaptiveRecommendations: (planId) => {
+        const st = get()
+        const plan = st.interventionPlans.find((p) => p.id === planId)
+        if (!plan) return []
+
+        // Simple recommendations based on completion rate
+        const completionRate = plan.steps.filter((s) => s.completed).length / plan.steps.length
+        const recommendations: string[] = []
+
+        if (completionRate >= 0.8) {
+          recommendations.push("🚀 You're doing great! Consider advancing to the next topic.")
+        } else if (completionRate >= 0.5) {
+          recommendations.push("📈 Keep going! You're making solid progress.")
+        } else {
+          recommendations.push("💪 Let's focus on completing the current steps first.")
+        }
+
+        return recommendations
+      },
+
+      adjustPlanDifficulty: (planId, newDifficulty) => {
+        set((st) => ({
+          interventionPlans: st.interventionPlans.map((p) =>
+            p.id === planId
+              ? {
+                  ...p,
+                  steps: p.steps.map((step) => ({
+                    ...step,
+                    difficulty: newDifficulty,
+                  })),
+                }
+              : p
+          ),
+        }))
+      },
     }),
     {
       name: 'phoenix-school-data',

@@ -1410,3 +1410,52 @@ export interface UserAccount {
   last_login?: string
   linked_id?: string
 }
+
+// ── AI-Powered Intervention System ──────────────────────────────
+export type InterventionStepType = 'video' | 'lesson' | 'practice' | 'quiz'
+export type InterventionUrgency = 'high' | 'medium' | 'low'
+export type InterventionStatus = 'assigned' | 'in_progress' | 'completed'
+
+export interface VideoProgress {
+  step_id: string
+  plan_id: string
+  watch_duration_seconds: number
+  watched_percent: number            // 0-100
+  completed: boolean
+  completed_at?: string
+}
+
+export interface InterventionStep {
+  id: string
+  order: number
+  type: InterventionStepType
+  title: string
+  description?: string
+  duration?: string                   // e.g. "15 min", "2 hours"
+  resource_url?: string
+  video_url?: string                  // YouTube, Vimeo, or direct MP4 URL
+  video_completion_policy?: 'manual' | 'auto_at_95'  // default: 'manual'
+  quiz_url?: string                   // external quiz or assessment link
+  completed: boolean
+  completed_at?: string
+  video_watched_percent?: number      // 0-100
+  video_completed_at?: string
+}
+
+export interface InterventionPlan {
+  id: string
+  student_id: string
+  student_name?: string
+  class_name?: string
+  subject: string
+  gap: string                         // the knowledge gap being addressed
+  urgency: InterventionUrgency
+  estimated_catchup?: string          // e.g. "2-3 weeks"
+  steps: InterventionStep[]
+  parent_note?: string                // guidance for parents
+  status: InterventionStatus
+  assigned_by_teacher_id?: string
+  assigned_by_teacher_name?: string
+  created_at: string
+  completed_at?: string
+}
