@@ -360,6 +360,7 @@ export interface Student {
   gender?: 'male' | 'female'
   level: StudentLevel
   class_name: string
+  student_house?: string
   category?: StudentCategory
   course_group_id?: string
   family_id?: string
@@ -372,14 +373,23 @@ export interface Student {
   nhis_no?: string
   gps_address?: string
   residential_city?: string
+  country?: string
+  state_province?: string
   nationality?: string
   address?: string
   mobile_no?: string
   email?: string
   can_receive_sms?: boolean
   can_receive_email?: boolean
+  allergies?: string
+  special_health_needs?: string
+  hometown?: string
+  religion?: string
+  language_spoken?: string
   previous_school?: string
   previous_class?: string
+  year_of_leaving_previous_school?: string
+  sibling_id?: string
   created_at: string
 }
 
@@ -406,6 +416,10 @@ export interface Guardian {
   occupation?: string
   workplace?: string
   address?: string
+  photo_url?: string
+  username?: string
+  can_receive_sms?: boolean
+  can_receive_email?: boolean
   is_emergency_contact: boolean
   can_pick_up_students: boolean
   notes?: string

@@ -73,23 +73,23 @@ export default function SettingsPage() {
         <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Identity</h2>
           <Field label="School name">
-            <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </Field>
-          <Field label="Motto (optional)">
-            <input className="input" value={form.motto} onChange={(e) => setForm({ ...form, motto: e.target.value })} />
+            <input className="input" defaultValue="Phoenix International School" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
           <Field label="Location">
-            <input className="input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. AGAPE" />
+            <input className="input" defaultValue="Ablekuma-Agape" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. AGAPE" />
+          </Field>
+          <Field label="Motto">
+            <input className="input" defaultValue="The Pace Setters" value={form.motto} onChange={(e) => setForm({ ...form, motto: e.target.value })} />
           </Field>
         </section>
 
         <section className="glass rounded-2xl p-5 space-y-4">
           <h2 className="font-semibold">Contact</h2>
           <Field label="Phone numbers (comma-separated)">
-            <input className="input" value={form.phones} onChange={(e) => setForm({ ...form, phones: e.target.value })} placeholder="0508923445, 0545307614" />
+            <input className="input" defaultValue="0545307614, 0508923445" value={form.phones} onChange={(e) => setForm({ ...form, phones: e.target.value })} placeholder="0508923445, 0545307614" />
           </Field>
           <Field label="Email">
-            <input className="input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <input className="input" type="email" defaultValue="myphoenixschool@gmail.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </Field>
           <Field label="Website (optional)">
             <input className="input" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://" />

@@ -15,11 +15,13 @@ const BLOOD_GROUPS: BloodGroup[] = ['unknown','A+','A-','B+','B-','AB+','AB-','O
 const blank = (): Omit<Student,"id"|"created_at"|"fee_status"> => ({
   student_id: "", full_name: "", other_names: "", gender: "male", level: "primary",
   class_name: "Primary 1", dob: "", parent_name: "", parent_phone: "",
-  category: "new", course_group_id: undefined,
+  category: "new", course_group_id: undefined, student_house: undefined,
   blood_group: 'unknown', nhis_no: "", gps_address: "", residential_city: "",
-  nationality: "Ghanaian", address: "", mobile_no: "", email: "",
+  country: undefined, state_province: undefined, nationality: "Ghanaian", address: "", mobile_no: "", email: "",
   can_receive_sms: true, can_receive_email: true,
-  previous_school: "", previous_class: "",
+  allergies: undefined, special_health_needs: undefined,
+  hometown: undefined, religion: undefined, language_spoken: undefined,
+  previous_school: "", previous_class: "", year_of_leaving_previous_school: undefined, sibling_id: undefined,
 });
 
 type AdmissionTab = "details" | "previous" | "general";
@@ -69,18 +71,28 @@ export default function StudentsPage() {
       category: s.category ?? "new",
       family_id: s.family_id,
       course_group_id: s.course_group_id,
+      student_house: s.student_house,
       blood_group: s.blood_group ?? "unknown",
       nhis_no: s.nhis_no ?? "",
       gps_address: s.gps_address ?? "",
       residential_city: s.residential_city ?? "",
+      country: s.country,
+      state_province: s.state_province,
       nationality: s.nationality ?? "Ghanaian",
       address: s.address ?? "",
       mobile_no: s.mobile_no ?? "",
       email: s.email ?? "",
       can_receive_sms: s.can_receive_sms ?? true,
       can_receive_email: s.can_receive_email ?? true,
+      allergies: s.allergies,
+      special_health_needs: s.special_health_needs,
+      hometown: s.hometown,
+      religion: s.religion,
+      language_spoken: s.language_spoken,
       previous_school: s.previous_school ?? "",
       previous_class: s.previous_class ?? "",
+      year_of_leaving_previous_school: s.year_of_leaving_previous_school,
+      sibling_id: s.sibling_id,
     });
     setTab("details");
     setShowModal(true);
@@ -300,21 +312,27 @@ export default function StudentsPage() {
                         <option value="continuing">Continuing Student</option>
                       </select>
                     </Field>
+                    <Field label="Student House (optional)">
+                      <input className="input" placeholder="e.g. Red House" value={form.student_house ?? ""} onChange={(e) => setForm({ ...form, student_house: e.target.value })} />
+                    </Field>
                   </section>
 
                   <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Contact</h4>
-                    <Field label="Nationality">
-                      <input className="input" value={form.nationality ?? ""} onChange={(e) => setForm({ ...form, nationality: e.target.value })} />
+                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Contact & Location</h4>
+                    <Field label="Country">
+                      <input className="input" placeholder="e.g. Ghana" value={form.country ?? ""} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+                    </Field>
+                    <Field label="State / Province / Region">
+                      <input className="input" placeholder="e.g. Greater Accra" value={form.state_province ?? ""} onChange={(e) => setForm({ ...form, state_province: e.target.value })} />
                     </Field>
                     <Field label="Residential City">
                       <input className="input" placeholder="e.g. Accra" value={form.residential_city ?? ""} onChange={(e) => setForm({ ...form, residential_city: e.target.value })} />
                     </Field>
+                    <Field label="Nationality">
+                      <input className="input" placeholder="e.g. Ghanaian" value={form.nationality ?? ""} onChange={(e) => setForm({ ...form, nationality: e.target.value })} />
+                    </Field>
                     <Field label="GPS Address">
                       <input className="input" placeholder="e.g. GA-123-4567" value={form.gps_address ?? ""} onChange={(e) => setForm({ ...form, gps_address: e.target.value })} />
-                    </Field>
-                    <Field label="NHIS No.">
-                      <input className="input" value={form.nhis_no ?? ""} onChange={(e) => setForm({ ...form, nhis_no: e.target.value })} />
                     </Field>
                     <Field label="Address">
                       <textarea className="input" rows={2} value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />
@@ -340,35 +358,95 @@ export default function StudentsPage() {
               )}
 
               {tab === "previous" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
-                  <Field label="Primary Guardian Name (quick-add)">
-                    <input className="input" placeholder="Mr. / Mrs. ..." value={form.parent_name ?? ""} onChange={(e) => setForm({ ...form, parent_name: e.target.value })} />
-                    <p className="text-xs text-gray-500 mt-1">
-                      For a full guardian record (relationship, occupation, emergency contact, multi-student links), use the <span className="font-medium">Guardians</span> page after admitting.
-                    </p>
-                  </Field>
-                  <Field label="Primary Guardian Phone">
-                    <input className="input" type="tel" placeholder="0244000000" value={form.parent_phone ?? ""} onChange={(e) => setForm({ ...form, parent_phone: e.target.value })} />
-                  </Field>
-                  <Field label="Previous School (for new admissions)">
-                    <input className="input" value={form.previous_school ?? ""} onChange={(e) => setForm({ ...form, previous_school: e.target.value })} />
-                  </Field>
-                  <Field label="Previous Class">
-                    <input className="input" placeholder="e.g. Class 4" value={form.previous_class ?? ""} onChange={(e) => setForm({ ...form, previous_class: e.target.value })} />
-                  </Field>
+                <div className="space-y-6">
+                  <section className="space-y-3">
+                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Guardian Information</h4>
+                    <Field label="Primary Guardian Name (quick-add)">
+                      <input className="input" placeholder="Mr. / Mrs. ..." value={form.parent_name ?? ""} onChange={(e) => setForm({ ...form, parent_name: e.target.value })} />
+                      <p className="text-xs text-gray-500 mt-1">
+                        For a full guardian record (relationship, occupation, emergency contact, multi-student links), use the <span className="font-medium">Guardians</span> page after admitting.
+                      </p>
+                    </Field>
+                    <Field label="Primary Guardian Phone">
+                      <input className="input" type="tel" placeholder="0244000000" value={form.parent_phone ?? ""} onChange={(e) => setForm({ ...form, parent_phone: e.target.value })} />
+                    </Field>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Previous Education</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field label="Previous School Name">
+                        <input className="input" placeholder="e.g. Primary School A" value={form.previous_school ?? ""} onChange={(e) => setForm({ ...form, previous_school: e.target.value })} />
+                      </Field>
+                      <Field label="Year of Leaving">
+                        <input className="input" type="number" placeholder="e.g. 2023" value={form.year_of_leaving_previous_school ?? ""} onChange={(e) => setForm({ ...form, year_of_leaving_previous_school: e.target.value })} />
+                      </Field>
+                      <Field label="Last Batch / Class">
+                        <input className="input" placeholder="e.g. Class 6" value={form.previous_class ?? ""} onChange={(e) => setForm({ ...form, previous_class: e.target.value })} />
+                      </Field>
+                    </div>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Health Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field label="NHIS No.">
+                        <input className="input" value={form.nhis_no ?? ""} onChange={(e) => setForm({ ...form, nhis_no: e.target.value })} />
+                      </Field>
+                      <Field label="Allergies">
+                        <input className="input" placeholder="e.g. Peanut allergy" value={form.allergies ?? ""} onChange={(e) => setForm({ ...form, allergies: e.target.value })} />
+                      </Field>
+                      <Field label="Special Health Needs">
+                        <input className="input" placeholder="e.g. Asthma, requires inhaler" value={form.special_health_needs ?? ""} onChange={(e) => setForm({ ...form, special_health_needs: e.target.value })} />
+                      </Field>
+                    </div>
+                  </section>
                 </div>
               )}
 
               {tab === "general" && (
-                <div className="space-y-3 max-w-xl">
-                  <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                    <p className="font-medium text-gray-700 mb-1">📸 Photo upload</p>
-                    <p className="text-xs">Photo upload requires a server-side storage bucket (Supabase Storage or Cloudflare R2). Will be wired in a future phase. For now, leave blank — student avatars fall back to initials.</p>
-                  </div>
-                  <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                    <p className="font-medium text-gray-700 mb-1">🆔 Birth certificate / supporting docs</p>
-                    <p className="text-xs">Document attachments queued for the same storage-bucket phase.</p>
-                  </div>
+                <div className="space-y-6 max-w-2xl">
+                  <section className="space-y-3">
+                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Social Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field label="Hometown">
+                        <input className="input" placeholder="e.g. Kumasi" value={form.hometown ?? ""} onChange={(e) => setForm({ ...form, hometown: e.target.value })} />
+                      </Field>
+                      <Field label="Religion">
+                        <input className="input" placeholder="e.g. Christian, Muslim" value={form.religion ?? ""} onChange={(e) => setForm({ ...form, religion: e.target.value })} />
+                      </Field>
+                      <Field label="Language Spoken">
+                        <input className="input" placeholder="e.g. English, Twi, Ga" value={form.language_spoken ?? ""} onChange={(e) => setForm({ ...form, language_spoken: e.target.value })} />
+                      </Field>
+                    </div>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Other Relations</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field label="Sibling ID (optional)">
+                        <select className="input" value={form.sibling_id ?? ""} onChange={(e) => setForm({ ...form, sibling_id: e.target.value || undefined })}>
+                          <option value="">— no sibling in system —</option>
+                          {students.filter((s) => s.id !== editing?.id).map((s) => (
+                            <option key={s.id} value={s.id}>{s.full_name} ({s.class_name})</option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Link to a sibling already enrolled in the school.</p>
+                      </Field>
+                    </div>
+                  </section>
+
+                  <section className="space-y-3">
+                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Media & Documents</h4>
+                    <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
+                      <p className="font-medium text-gray-700 mb-1">📸 Photo upload</p>
+                      <p className="text-xs">Photo upload requires a server-side storage bucket (Supabase Storage or Cloudflare R2). Will be wired in a future phase. For now, leave blank — student avatars fall back to initials.</p>
+                    </div>
+                    <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
+                      <p className="font-medium text-gray-700 mb-1">🆔 Birth certificate / supporting docs</p>
+                      <p className="text-xs">Document attachments queued for the same storage-bucket phase.</p>
+                    </div>
+                  </section>
                 </div>
               )}
             </div>
