@@ -193,6 +193,7 @@ export default function StudentsPage() {
 
   return (
     <DashboardShell role="admin" navItems={NAV}>
+      <div className="bg-green-500 text-white p-3 mb-4 rounded-lg font-bold">✅ 8-TAB FORM DEPLOYED - If you don't see 8 tabs below, refresh your browser cache</div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-black">Students ({students.length})</h2>
         <button onClick={openAdd} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">+ Admit Student</button>
