@@ -4,55 +4,98 @@ import DashboardShell from "@/components/DashboardShell";
 import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
 import { CLASSES, LEVEL_NAMES } from "@/lib/utils";
-import type { Student, StudentLevel, BloodGroup } from "@/lib/types";
-import ProfilePhotoUploader from "@/components/ProfilePhotoUploader";
+import type { Student, StudentLevel, GuardianRelationship } from "@/lib/types";
 import toast from "react-hot-toast";
 
-
 const LEVELS: StudentLevel[] = ["creche","nursery","kg","primary","jhs"];
-const BLOOD_GROUPS: BloodGroup[] = ['unknown','A+','A-','B+','B-','AB+','AB-','O+','O-'];
+const STUDENT_CATEGORIES = ['Day', 'Boarding'];
+const HOUSES = ['Red House', 'Blue House', 'Green House', 'Yellow House'];
+const GUARDIAN_RELATIONSHIPS: GuardianRelationship[] = ['father', 'mother', 'grandparent', 'aunt', 'uncle', 'sibling', 'other'];
+const COUNTRIES = ['Ghana', 'Nigeria', 'Côte d\'Ivoire', 'Kenya', 'South Africa', 'United States', 'United Kingdom', 'Canada', 'Other'];
+const RELIGIONS = ['Christianity', 'Islam', 'Judaism', 'Buddhism', 'Hinduism', 'Traditional', 'None', 'Other'];
 
-const blank = (): Omit<Student,"id"|"created_at"|"fee_status"> => ({
-  student_id: "", full_name: "", other_names: "", gender: "male", level: "primary",
-  class_name: "Primary 1", dob: "", parent_name: "", parent_phone: "",
-  category: "new", course_group_id: undefined, student_house: undefined,
-  blood_group: 'unknown', nhis_no: "", gps_address: "", residential_city: "",
-  country: undefined, state_province: undefined, nationality: "Ghanaian", address: "", mobile_no: "", email: "",
-  can_receive_sms: true, can_receive_email: true,
-  allergies: undefined, special_health_needs: undefined,
-  hometown: undefined, religion: undefined, language_spoken: undefined,
-  previous_school: "", previous_class: "", year_of_leaving_previous_school: undefined, sibling_id: undefined,
+const blankForm = (): Omit<Student,"id"|"created_at"|"fee_status"> => ({
+  student_id: "",
+  first_name: "",
+  last_name: "",
+  other_names: "",
+  dob: "",
+  gender: "male",
+  level: "primary",
+  class_name: "Primary 1",
+  admission_date: new Date().toISOString().split('T')[0],
+  course_group_id: undefined,
+  category: "Day",
+  student_house: undefined,
+  country: "Ghana",
+  nationality: "Ghanaian",
+  state_province: "",
+  residential_city: "",
+  address: "",
+  mobile_no: "",
+  email: "",
+  can_receive_sms: false,
+  can_receive_email: false,
+  allergies: "",
+  special_health_needs: "",
+  hometown: "",
+  religion: "",
+  language_spoken: "",
+  previous_school: "",
+  year_of_leaving_previous_school: undefined,
+  previous_class: "",
+  sibling_id: undefined,
+  guardian_id: undefined,
+  photo_url: undefined,
 });
 
-type AdmissionTab = "details" | "previous" | "general";
+const blankGuardian = () => ({
+  first_name: '',
+  last_name: '',
+  relationship: 'father' as GuardianRelationship,
+  username: '',
+  occupation: '',
+  phone: '',
+  alt_phone: '',
+  email: '',
+  address: '',
+  photo_url: undefined,
+  can_receive_sms: false,
+  can_receive_email: false,
+});
+
+type FormTab = "basic" | "admission" | "contact" | "health" | "social" | "previous" | "relations" | "guardian";
 
 export default function StudentsPage() {
-  const students       = useAppStore((s) => s.students);
-  const addStudent     = useAppStore((s) => s.addStudent);
-  const updateStudent  = useAppStore((s) => s.updateStudent);
-  const deleteStudent  = useAppStore((s) => s.deleteStudent);
-  const courseGroups   = useAppStore((s) => s.courseGroups);
+  const students = useAppStore((s) => s.students);
+  const addStudent = useAppStore((s) => s.addStudent);
+  const updateStudent = useAppStore((s) => s.updateStudent);
+  const deleteStudent = useAppStore((s) => s.deleteStudent);
+  const guardians = useAppStore((s) => s.guardians);
+  const addGuardian = useAppStore((s) => s.addGuardian);
+  const courseGroups = useAppStore((s) => s.courseGroups);
   const nextAdmissionNumber = useAppStore((s) => s.nextAdmissionNumber);
 
-  const [search, setSearch]         = useState("");
+  const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
-  const [showModal, setShowModal]   = useState(false);
-  const [editing, setEditing]       = useState<Student | null>(null);
-  const [form, setForm]             = useState(blank());
-  const [viewing, setViewing]       = useState<Student | null>(null);
-  const [tab, setTab]               = useState<AdmissionTab>("details");
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<Student | null>(null);
+  const [form, setForm] = useState(blankForm());
+  const [newGuardian, setNewGuardian] = useState(blankGuardian());
+  const [tab, setTab] = useState<FormTab>("basic");
+  const [addingNewGuardian, setAddingNewGuardian] = useState(false);
 
   const filtered = students.filter((s) => {
-    const matchSearch = s.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      s.student_id.toLowerCase().includes(search.toLowerCase());
-    const matchLevel = levelFilter === "all" || s.level === levelFilter;
-    return matchSearch && matchLevel;
+    const fullName = `${s.first_name} ${s.last_name}`.toLowerCase();
+    return (fullName.includes(search.toLowerCase()) || s.student_id.includes(search)) && (levelFilter === "all" || s.level === levelFilter);
   });
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ ...blank(), student_id: nextAdmissionNumber() });
-    setTab("details");
+    setForm({ ...blankForm(), student_id: nextAdmissionNumber() });
+    setNewGuardian(blankGuardian());
+    setAddingNewGuardian(false);
+    setTab("basic");
     setShowModal(true);
   };
 
@@ -60,457 +103,636 @@ export default function StudentsPage() {
     setEditing(s);
     setForm({
       student_id: s.student_id,
-      full_name: s.full_name,
+      first_name: s.first_name,
+      last_name: s.last_name,
       other_names: s.other_names ?? "",
+      dob: s.dob ?? "",
       gender: s.gender ?? "male",
       level: s.level,
       class_name: s.class_name,
-      dob: s.dob ?? "",
-      parent_name: s.parent_name ?? "",
-      parent_phone: s.parent_phone ?? "",
-      category: s.category ?? "new",
-      family_id: s.family_id,
+      admission_date: s.admission_date ?? new Date().toISOString().split('T')[0],
       course_group_id: s.course_group_id,
+      category: s.category ?? "Day",
       student_house: s.student_house,
-      blood_group: s.blood_group ?? "unknown",
-      nhis_no: s.nhis_no ?? "",
-      gps_address: s.gps_address ?? "",
-      residential_city: s.residential_city ?? "",
-      country: s.country,
-      state_province: s.state_province,
+      country: s.country ?? "Ghana",
       nationality: s.nationality ?? "Ghanaian",
+      state_province: s.state_province ?? "",
+      residential_city: s.residential_city ?? "",
       address: s.address ?? "",
       mobile_no: s.mobile_no ?? "",
       email: s.email ?? "",
-      can_receive_sms: s.can_receive_sms ?? true,
-      can_receive_email: s.can_receive_email ?? true,
-      allergies: s.allergies,
-      special_health_needs: s.special_health_needs,
-      hometown: s.hometown,
-      religion: s.religion,
-      language_spoken: s.language_spoken,
+      can_receive_sms: s.can_receive_sms ?? false,
+      can_receive_email: s.can_receive_email ?? false,
+      allergies: s.allergies ?? "",
+      special_health_needs: s.special_health_needs ?? "",
+      hometown: s.hometown ?? "",
+      religion: s.religion ?? "",
+      language_spoken: s.language_spoken ?? "",
       previous_school: s.previous_school ?? "",
-      previous_class: s.previous_class ?? "",
       year_of_leaving_previous_school: s.year_of_leaving_previous_school,
+      previous_class: s.previous_class ?? "",
       sibling_id: s.sibling_id,
+      guardian_id: s.guardian_id,
+      photo_url: s.photo_url,
     });
-    setTab("details");
+    setTab("basic");
     setShowModal(true);
   };
 
   const handleSave = () => {
-    if (!form.full_name.trim()) { toast.error("Full name is required"); return; }
-    if (!editing) {
-      // On a new admission, enforce admission # uniqueness in case admin edited it manually
-      const id = (form.student_id || nextAdmissionNumber()).trim();
-      const dupe = students.find((s) => s.student_id === id);
-      if (dupe) {
-        toast.error(`Admission number ${id} already in use by ${dupe.full_name}`);
+    if (!form.first_name.trim()) { toast.error("First Name is required"); return; }
+    if (!form.last_name.trim()) { toast.error("Last Name is required"); return; }
+    if (!form.dob) { toast.error("Date of Birth is required"); return; }
+    if (!form.guardian_id && !addingNewGuardian) { toast.error("Select or create a guardian"); return; }
+
+    let guardianId = form.guardian_id;
+    if (addingNewGuardian && !guardianId) {
+      if (!newGuardian.first_name.trim() || !newGuardian.last_name.trim()) {
+        toast.error("Guardian First Name and Last Name required");
         return;
       }
-      addStudent({ ...form, student_id: id, fee_status: "outstanding" });
-      toast.success(`Student admitted as ${id}`);
+      const g = addGuardian({
+        first_name: newGuardian.first_name,
+        last_name: newGuardian.last_name,
+        relationship: newGuardian.relationship,
+        username: newGuardian.username || undefined,
+        occupation: newGuardian.occupation || undefined,
+        phone: newGuardian.phone || undefined,
+        alt_phone: newGuardian.alt_phone || undefined,
+        email: newGuardian.email || undefined,
+        address: newGuardian.address || undefined,
+        can_receive_sms: newGuardian.can_receive_sms,
+        can_receive_email: newGuardian.can_receive_email,
+        is_emergency_contact: false,
+        can_pick_up_students: true,
+      });
+      guardianId = g.id;
+    }
+
+    if (!editing) {
+      const id = (form.student_id || nextAdmissionNumber()).trim();
+      if (students.find((s) => s.student_id === id)) {
+        toast.error(`Admission number ${id} already exists`);
+        return;
+      }
+      addStudent({ ...form, student_id: id, guardian_id: guardianId, fee_status: "outstanding" });
+      toast.success(`Student admitted: ${id}`);
     } else {
-      updateStudent(editing.id, form);
+      updateStudent(editing.id, { ...form, guardian_id: guardianId });
       toast.success("Student updated");
     }
     setShowModal(false);
   };
 
   const handleDelete = (s: Student) => {
-    if (!confirm(`Delete ${s.full_name}? This cannot be undone.`)) return;
-    deleteStudent(s.id);
-    toast.success("Student removed");
-  };
-
-  const statusStyle = (status: Student["fee_status"]) => {
-    if (status === "cleared")     return { bg: "rgba(34,197,94,0.1)",  color: "#22c55e" };
-    if (status === "partial")     return { bg: "rgba(245,158,11,0.1)", color: "#f59e0b" };
-    return                               { bg: "rgba(239,68,68,0.1)",  color: "#ef4444" };
+    if (confirm(`Delete ${s.first_name} ${s.last_name}?`)) {
+      deleteStudent(s.id);
+      toast.success("Student deleted");
+    }
   };
 
   return (
     <DashboardShell role="admin" navItems={NAV}>
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h2 className="text-xl font-black text-white">Students ({students.length})</h2>
-        <button type="button" onClick={openAdd} className="btn-gold text-xs py-2 px-5">+ Add Student</button>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-black">Students ({students.length})</h2>
+        <button onClick={openAdd} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">+ Admit Student</button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 mb-5 flex-wrap">
-        <input value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search name or ID…"
-          className="flex-1 min-w-48 px-4 py-2.5 rounded-xl border border-blue-100 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-200" />
+      <div className="flex gap-3 mb-5">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name or ID..."
+          className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-gray-900 focus:outline-none focus:border-indigo-500" />
         <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border border-blue-100 text-sm bg-white focus:outline-none">
+          className="px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-gray-900 focus:outline-none focus:border-indigo-500">
           <option value="all">All Levels</option>
-          {LEVELS.map((l) => <option key={l} value={l}>{LEVEL_NAMES[l]}</option>)}
+          {LEVELS.map(l => <option key={l} value={l}>{LEVEL_NAMES[l]}</option>)}
         </select>
       </div>
 
-      {/* Table */}
       <div className="glass rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead style={{ background: "#0A1628" }}>
-              <tr className="text-xs text-blue-300 uppercase tracking-wider">
-                <th className="text-left px-4 py-3 font-semibold">Student</th>
-                <th className="text-left px-4 py-3 font-semibold">ID</th>
-                <th className="text-left px-4 py-3 font-semibold">Class</th>
-                <th className="text-left px-4 py-3 font-semibold">Parent</th>
-                <th className="text-left px-4 py-3 font-semibold">Fees</th>
-                <th className="text-left px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((s) => {
-                const st = statusStyle(s.fee_status);
-                return (
-                  <tr key={s.id} className="table-row border-t border-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
-                          style={{ background: "rgba(0,48,135,0.08)" }}>
-                          {s.photo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={s.photo_url} alt={s.full_name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span>{s.gender === "female" ? "👧" : "👦"}</span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{s.full_name}</div>
-                          <div className="text-xs text-gray-400">{s.gender} · {s.dob ?? "—"}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.student_id}</td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-bold px-2 py-1 rounded-full"
-                        style={{ background: "rgba(0,48,135,0.08)", color: "#003087" }}>
-                        {s.class_name}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-xs text-gray-700 font-medium">{s.parent_name ?? "—"}</div>
-                      <div className="text-xs text-gray-400">{s.parent_phone ?? ""}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-bold px-2 py-1 rounded-full capitalize"
-                        style={{ background: st.bg, color: st.color }}>
-                        {s.fee_status === "cleared" ? "✅ Cleared" : s.fee_status === "partial" ? "⏳ Partial" : "🔒 Outstanding"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <button type="button" onClick={() => setViewing(s)}
-                          className="text-xs px-2 py-1 rounded-lg font-bold" style={{ background: "rgba(0,48,135,0.08)", color: "#003087" }}>
-                          View
-                        </button>
-                        <button type="button" onClick={() => openEdit(s)}
-                          className="text-xs px-2 py-1 rounded-lg font-bold" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>
-                          Edit
-                        </button>
-                        <button type="button" onClick={() => handleDelete(s)}
-                          className="text-xs px-2 py-1 rounded-lg font-bold" style={{ background: "rgba(239,68,68,0.08)", color: "#ef4444" }}>
-                          Del
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-400 text-sm">No students found.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <table className="w-full text-sm">
+          <thead style={{ background: "#0A1628" }}>
+            <tr className="text-xs text-blue-300 uppercase tracking-wider">
+              <th className="text-left px-4 py-3 font-semibold">Student</th>
+              <th className="text-left px-4 py-3 font-semibold">ID</th>
+              <th className="text-left px-4 py-3 font-semibold">Class</th>
+              <th className="text-left px-4 py-3 font-semibold">Guardian</th>
+              <th className="text-left px-4 py-3 font-semibold">Fees</th>
+              <th className="text-left px-4 py-3 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((s) => {
+              const g = guardians.find(x => x.id === s.guardian_id);
+              return (
+                <tr key={s.id} className="border-t border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-3"><strong className="text-gray-900">{s.first_name} {s.last_name}</strong><br/><span className="text-xs text-gray-500">{s.gender} · {s.dob}</span></td>
+                  <td className="px-4 py-3 font-mono text-gray-600">{s.student_id}</td>
+                  <td className="px-4 py-3"><span className="px-2 py-1 bg-indigo-100 text-indigo-900 rounded font-bold text-xs">{s.class_name}</span></td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{g ? `${g.first_name} ${g.last_name}` : "—"}</td>
+                  <td className="px-4 py-3"><span className={`text-xs font-bold px-2 py-1 rounded ${s.fee_status === 'cleared' ? 'bg-green-100 text-green-900' : s.fee_status === 'partial' ? 'bg-yellow-100 text-yellow-900' : 'bg-red-100 text-red-900'}`}>{s.fee_status}</span></td>
+                  <td className="px-4 py-3"><button onClick={() => openEdit(s)} className="px-2 py-1 text-indigo-600 font-bold text-xs hover:bg-indigo-50 rounded mr-2">Edit</button><button onClick={() => handleDelete(s)} className="px-2 py-1 text-red-600 font-bold text-xs hover:bg-red-50 rounded">Delete</button></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* Add / Edit Modal — 3-tab admission form mirroring doc */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-6 pt-5 pb-3 border-b">
-              <h3 className="font-black text-gray-900 text-lg">{editing ? "Edit Student" : "Student Admission"}</h3>
-              {!editing && (
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Last admission no: <span className="font-mono">{nextAdmissionNumber().replace(/(\d+)$/, (m) => String(parseInt(m, 10) - 1))}</span> · Next: <span className="font-mono font-semibold">{form.student_id}</span>
-                </p>
-              )}
-              <div className="flex gap-1 mt-3 border-b -mb-3">
-                {(["details","previous","general"] as AdmissionTab[]).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTab(t)}
-                    className={`text-sm px-4 py-2 font-medium border-b-2 -mb-px transition-colors ${tab === t ? "border-indigo-600 text-indigo-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-                  >
-                    {t === "details" ? "Student Details" : t === "previous" ? "Guardian & Previous Education" : "General Information"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+
+            {/* HEADER WITH TABS */}
+            <div className="px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-blue-50">
+              <h2 className="text-2xl font-black text-gray-900 mb-1">Student Admission</h2>
+              <p className="text-sm text-gray-700 mb-4">Fill in the form below. All starred (*) fields are required.</p>
+
+              <div className="flex gap-2 border-t pt-3">
+                {(['basic','admission','contact','health','social','previous','relations','guardian'] as FormTab[]).map(t => (
+                  <button key={t} onClick={() => setTab(t)}
+                    className={`px-4 py-2 text-sm font-bold rounded-t-lg border-b-2 transition-all ${
+                      tab === t
+                        ? 'bg-white border-indigo-600 text-indigo-700'
+                        : 'bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900'
+                    }`}>
+                    {t === 'basic' ? '1. Basic' : t === 'admission' ? '2. Admission' : t === 'contact' ? '3. Contact' : t === 'health' ? '4. Health' : t === 'social' ? '5. Social' : t === 'previous' ? '6. Previous' : t === 'relations' ? '7. Relations' : '8. Guardian'}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {tab === "details" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Basic Info</h4>
-                    <Field label="Full Name *">
-                      <input className="input" placeholder="e.g. Kwame Asante Jr." value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-                    </Field>
-                    <Field label="Other Names">
-                      <input className="input" placeholder="Middle / other names" value={form.other_names ?? ""} onChange={(e) => setForm({ ...form, other_names: e.target.value })} />
-                    </Field>
-                    <Field label="Date of Birth">
-                      <input className="input" type="date" value={form.dob ?? ""} onChange={(e) => setForm({ ...form, dob: e.target.value })} />
-                    </Field>
-                    <Field label="Gender">
-                      <select className="input" value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value as "male" | "female" })}>
+            {/* FORM CONTENT */}
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+
+              {/* SECTION 1: BASIC INFORMATION */}
+              {tab === 'basic' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: BASIC INFORMATION</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* First Name */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">First Name *</label>
+                      <input type="text" placeholder="e.g. Kwame" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Last Name */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Last Name *</label>
+                      <input type="text" placeholder="e.g. Asante" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Other Names */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Other Names</label>
+                      <input type="text" placeholder="Middle names" value={form.other_names} onChange={(e) => setForm({...form, other_names: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Date of Birth */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Date of Birth *</label>
+                      <input type="date" value={form.dob} onChange={(e) => setForm({...form, dob: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Gender */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Gender *</label>
+                      <select value={form.gender ?? 'male'} onChange={(e) => setForm({...form, gender: e.target.value as 'male' | 'female'})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                       </select>
-                    </Field>
-                    <Field label="Blood Group">
-                      <select className="input" value={form.blood_group ?? "unknown"} onChange={(e) => setForm({ ...form, blood_group: e.target.value as BloodGroup })}>
-                        {BLOOD_GROUPS.map((b) => <option key={b} value={b}>{b}</option>)}
-                      </select>
-                    </Field>
-                  </section>
-
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Admission</h4>
-                    <Field label="Admission Number *">
-                      <input className="input font-mono" placeholder="PIS001" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })} disabled={!!editing} />
-                      {!editing && (
-                        <button type="button" className="text-xs text-indigo-600 hover:underline mt-1" onClick={() => setForm({ ...form, student_id: nextAdmissionNumber() })}>
-                          Reset to auto-generated
-                        </button>
-                      )}
-                    </Field>
-                    <Field label="Level">
-                      <select className="input" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value as StudentLevel })}>
-                        {LEVELS.map((l) => <option key={l} value={l}>{LEVEL_NAMES[l]}</option>)}
-                      </select>
-                    </Field>
-                    <Field label="Class / Batch">
-                      <select className="input" value={form.class_name} onChange={(e) => setForm({ ...form, class_name: e.target.value })}>
-                        {CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </Field>
-                    <Field label="Course Group">
-                      <select className="input" value={form.course_group_id ?? ""} onChange={(e) => setForm({ ...form, course_group_id: e.target.value || undefined })}>
-                        <option value="">— none —</option>
-                        {courseGroups.filter((g) => g.active).map((g) => <option key={g.id} value={g.id}>{g.name} ({g.code})</option>)}
-                      </select>
-                    </Field>
-                    <Field label="Student Category">
-                      <select className="input" value={form.category ?? "new"} onChange={(e) => setForm({ ...form, category: e.target.value as "new" | "continuing" })}>
-                        <option value="new">New Student</option>
-                        <option value="continuing">Continuing Student</option>
-                      </select>
-                    </Field>
-                    <Field label="Student House (optional)">
-                      <input className="input" placeholder="e.g. Red House" value={form.student_house ?? ""} onChange={(e) => setForm({ ...form, student_house: e.target.value })} />
-                    </Field>
-                  </section>
-
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Contact & Location</h4>
-                    <Field label="Country">
-                      <input className="input" placeholder="e.g. Ghana" value={form.country ?? ""} onChange={(e) => setForm({ ...form, country: e.target.value })} />
-                    </Field>
-                    <Field label="State / Province / Region">
-                      <input className="input" placeholder="e.g. Greater Accra" value={form.state_province ?? ""} onChange={(e) => setForm({ ...form, state_province: e.target.value })} />
-                    </Field>
-                    <Field label="Residential City">
-                      <input className="input" placeholder="e.g. Accra" value={form.residential_city ?? ""} onChange={(e) => setForm({ ...form, residential_city: e.target.value })} />
-                    </Field>
-                    <Field label="Nationality">
-                      <input className="input" placeholder="e.g. Ghanaian" value={form.nationality ?? ""} onChange={(e) => setForm({ ...form, nationality: e.target.value })} />
-                    </Field>
-                    <Field label="GPS Address">
-                      <input className="input" placeholder="e.g. GA-123-4567" value={form.gps_address ?? ""} onChange={(e) => setForm({ ...form, gps_address: e.target.value })} />
-                    </Field>
-                    <Field label="Address">
-                      <textarea className="input" rows={2} value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-                    </Field>
-                    <Field label="Mobile No.">
-                      <input className="input" placeholder="0244000000" value={form.mobile_no ?? ""} onChange={(e) => setForm({ ...form, mobile_no: e.target.value })} />
-                    </Field>
-                    <Field label="Email">
-                      <input className="input" type="email" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                    </Field>
-                    <div className="flex gap-4 pt-1">
-                      <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
-                        <input type="checkbox" className="w-4 h-4" checked={form.can_receive_sms ?? true} onChange={(e) => setForm({ ...form, can_receive_sms: e.target.checked })} />
-                        Can Receive SMS
-                      </label>
-                      <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
-                        <input type="checkbox" className="w-4 h-4" checked={form.can_receive_email ?? true} onChange={(e) => setForm({ ...form, can_receive_email: e.target.checked })} />
-                        Can Receive Email
-                      </label>
                     </div>
-                  </section>
+
+                    {/* Student Image */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Student Image</label>
+                      <input type="file" accept="image/jpg,image/png"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-600 font-medium focus:border-indigo-500 focus:outline-none" />
+                      <p className="text-xs text-gray-500 mt-1">JPG or PNG format</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {tab === "previous" && (
-                <div className="space-y-6">
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Guardian Information</h4>
-                    <Field label="Primary Guardian Name (quick-add)">
-                      <input className="input" placeholder="Mr. / Mrs. ..." value={form.parent_name ?? ""} onChange={(e) => setForm({ ...form, parent_name: e.target.value })} />
-                      <p className="text-xs text-gray-500 mt-1">
-                        For a full guardian record (relationship, occupation, emergency contact, multi-student links), use the <span className="font-medium">Guardians</span> page after admitting.
-                      </p>
-                    </Field>
-                    <Field label="Primary Guardian Phone">
-                      <input className="input" type="tel" placeholder="0244000000" value={form.parent_phone ?? ""} onChange={(e) => setForm({ ...form, parent_phone: e.target.value })} />
-                    </Field>
-                  </section>
+              {/* SECTION 2: ADMISSION DETAILS */}
+              {tab === 'admission' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: ADMISSION DETAILS</h3>
+                  </div>
 
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Previous Education</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field label="Previous School Name">
-                        <input className="input" placeholder="e.g. Primary School A" value={form.previous_school ?? ""} onChange={(e) => setForm({ ...form, previous_school: e.target.value })} />
-                      </Field>
-                      <Field label="Year of Leaving">
-                        <input className="input" type="number" placeholder="e.g. 2023" value={form.year_of_leaving_previous_school ?? ""} onChange={(e) => setForm({ ...form, year_of_leaving_previous_school: e.target.value })} />
-                      </Field>
-                      <Field label="Last Batch / Class">
-                        <input className="input" placeholder="e.g. Class 6" value={form.previous_class ?? ""} onChange={(e) => setForm({ ...form, previous_class: e.target.value })} />
-                      </Field>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Admission Date */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Admission Date *</label>
+                      <input type="date" value={form.admission_date ?? ''} onChange={(e) => setForm({...form, admission_date: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
                     </div>
-                  </section>
 
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Health Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field label="NHIS No.">
-                        <input className="input" value={form.nhis_no ?? ""} onChange={(e) => setForm({ ...form, nhis_no: e.target.value })} />
-                      </Field>
-                      <Field label="Allergies">
-                        <input className="input" placeholder="e.g. Peanut allergy" value={form.allergies ?? ""} onChange={(e) => setForm({ ...form, allergies: e.target.value })} />
-                      </Field>
-                      <Field label="Special Health Needs">
-                        <input className="input" placeholder="e.g. Asthma, requires inhaler" value={form.special_health_needs ?? ""} onChange={(e) => setForm({ ...form, special_health_needs: e.target.value })} />
-                      </Field>
+                    {/* Admission Number */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Admission Number *</label>
+                      <input type="text" value={form.student_id} onChange={(e) => setForm({...form, student_id: e.target.value})} disabled={!!editing}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none disabled:bg-gray-100" />
                     </div>
-                  </section>
+
+                    {/* Select a Course */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Select a Course</label>
+                      <select value={form.course_group_id ?? ''} onChange={(e) => setForm({...form, course_group_id: e.target.value || undefined})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        <option value="">— Select —</option>
+                        {courseGroups.filter(c => c.active).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Select a Class */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Select a Class *</label>
+                      <select value={form.class_name} onChange={(e) => setForm({...form, class_name: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Student Category */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Student Category</label>
+                      <select value={form.category ?? 'Day'} onChange={(e) => setForm({...form, category: e.target.value as any})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        {STUDENT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Student House */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Student House</label>
+                      <select value={form.student_house ?? ''} onChange={(e) => setForm({...form, student_house: e.target.value || undefined})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        <option value="">— Select —</option>
+                        {HOUSES.map(h => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {tab === "general" && (
-                <div className="space-y-6 max-w-2xl">
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Social Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field label="Hometown">
-                        <input className="input" placeholder="e.g. Kumasi" value={form.hometown ?? ""} onChange={(e) => setForm({ ...form, hometown: e.target.value })} />
-                      </Field>
-                      <Field label="Religion">
-                        <input className="input" placeholder="e.g. Christian, Muslim" value={form.religion ?? ""} onChange={(e) => setForm({ ...form, religion: e.target.value })} />
-                      </Field>
-                      <Field label="Language Spoken">
-                        <input className="input" placeholder="e.g. English, Twi, Ga" value={form.language_spoken ?? ""} onChange={(e) => setForm({ ...form, language_spoken: e.target.value })} />
-                      </Field>
-                    </div>
-                  </section>
+              {/* SECTION 3: CONTACT DETAILS */}
+              {tab === 'contact' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: CONTACT DETAILS</h3>
+                  </div>
 
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Other Relations</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field label="Sibling ID (optional)">
-                        <select className="input" value={form.sibling_id ?? ""} onChange={(e) => setForm({ ...form, sibling_id: e.target.value || undefined })}>
-                          <option value="">— no sibling in system —</option>
-                          {students.filter((s) => s.id !== editing?.id).map((s) => (
-                            <option key={s.id} value={s.id}>{s.full_name} ({s.class_name})</option>
-                          ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Link to a sibling already enrolled in the school.</p>
-                      </Field>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Country */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Country</label>
+                      <select value={form.country ?? 'Ghana'} onChange={(e) => setForm({...form, country: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
                     </div>
-                  </section>
 
-                  <section className="space-y-3">
-                    <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider">Media & Documents</h4>
-                    <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                      <p className="font-medium text-gray-700 mb-1">📸 Photo upload</p>
-                      <p className="text-xs">Photo upload requires a server-side storage bucket (Supabase Storage or Cloudflare R2). Will be wired in a future phase. For now, leave blank — student avatars fall back to initials.</p>
+                    {/* Nationality */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Nationality</label>
+                      <input type="text" placeholder="e.g. Ghanaian" value={form.nationality ?? ''} onChange={(e) => setForm({...form, nationality: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
                     </div>
-                    <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
-                      <p className="font-medium text-gray-700 mb-1">🆔 Birth certificate / supporting docs</p>
-                      <p className="text-xs">Document attachments queued for the same storage-bucket phase.</p>
+
+                    {/* State / Province / Region */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">State / Province / Region</label>
+                      <input type="text" placeholder="e.g. Greater Accra" value={form.state_province ?? ''} onChange={(e) => setForm({...form, state_province: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
                     </div>
-                  </section>
+
+                    {/* City */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">City</label>
+                      <input type="text" placeholder="e.g. Accra" value={form.residential_city ?? ''} onChange={(e) => setForm({...form, residential_city: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Address */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-black text-gray-900 mb-2">Address</label>
+                      <textarea placeholder="Street address" value={form.address ?? ''} onChange={(e) => setForm({...form, address: e.target.value})} rows={2}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Student's Mobile Number */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Student's Mobile Number</label>
+                      <input type="tel" placeholder="0244000000" value={form.mobile_no ?? ''} onChange={(e) => setForm({...form, mobile_no: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Email</label>
+                      <input type="email" placeholder="student@email.com" value={form.email ?? ''} onChange={(e) => setForm({...form, email: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Can Receive SMS */}
+                    <div className="flex items-center pt-3">
+                      <input type="checkbox" id="sms" checked={form.can_receive_sms ?? false} onChange={(e) => setForm({...form, can_receive_sms: e.target.checked})}
+                        className="w-5 h-5 mr-3 rounded border-2 border-gray-300" />
+                      <label htmlFor="sms" className="font-bold text-gray-900">Student Can Receive SMS</label>
+                    </div>
+
+                    {/* Can Receive Email */}
+                    <div className="flex items-center pt-3">
+                      <input type="checkbox" id="email" checked={form.can_receive_email ?? false} onChange={(e) => setForm({...form, can_receive_email: e.target.checked})}
+                        className="w-5 h-5 mr-3 rounded border-2 border-gray-300" />
+                      <label htmlFor="email" className="font-bold text-gray-900">Student Can Receive Email</label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 4: BASIC HEALTH INFO */}
+              {tab === 'health' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: BASIC HEALTH INFO</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Any Allergies */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Any Allergies</label>
+                      <textarea placeholder="e.g. Peanuts, Dairy" value={form.allergies ?? ''} onChange={(e) => setForm({...form, allergies: e.target.value})} rows={3}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Special Health Needs */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Special Health Needs</label>
+                      <textarea placeholder="e.g. Asthma, requires inhaler" value={form.special_health_needs ?? ''} onChange={(e) => setForm({...form, special_health_needs: e.target.value})} rows={3}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 5: OTHER SOCIAL INFO */}
+              {tab === 'social' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: OTHER SOCIAL INFO</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Hometown */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Hometown</label>
+                      <input type="text" placeholder="e.g. Kumasi" value={form.hometown ?? ''} onChange={(e) => setForm({...form, hometown: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Religion */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Religion</label>
+                      <select value={form.religion ?? ''} onChange={(e) => setForm({...form, religion: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        <option value="">— Select —</option>
+                        {RELIGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Language Spoken */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-black text-gray-900 mb-2">Language Spoken</label>
+                      <input type="text" placeholder="e.g. English, Twi, Ga" value={form.language_spoken ?? ''} onChange={(e) => setForm({...form, language_spoken: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                      <p className="text-xs text-gray-500 mt-1">Separate multiple with commas</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 6: STUDENT'S PREVIOUS EDUCATION */}
+              {tab === 'previous' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: STUDENT'S PREVIOUS EDUCATION</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Name of School */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Name of School</label>
+                      <input type="text" placeholder="e.g. ABC Primary School" value={form.previous_school ?? ''} onChange={(e) => setForm({...form, previous_school: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Year of Leaving */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Year of Leaving</label>
+                      <input type="number" placeholder="e.g. 2023" value={form.year_of_leaving_previous_school ?? ''} onChange={(e) => setForm({...form, year_of_leaving_previous_school: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    {/* Last Batch / Class */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Last Batch / Class</label>
+                      <input type="text" placeholder="e.g. Class 6" value={form.previous_class ?? ''} onChange={(e) => setForm({...form, previous_class: e.target.value})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 7: OTHER RELATIONS */}
+              {tab === 'relations' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: OTHER RELATIONS</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Select Sibling Class */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Select Sibling Class</label>
+                      <select value={form.sibling_id ?? ''} onChange={(e) => setForm({...form, sibling_id: e.target.value || undefined})}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        <option value="">— No Sibling —</option>
+                        {students.filter(s => s.id !== editing?.id).map(s => <option key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.class_name})</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 8: GUARDIAN */}
+              {tab === 'guardian' && (
+                <div className="space-y-5 max-w-3xl">
+                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
+                    <h3 className="font-black text-gray-900 text-lg">SECTION: SELECT GUARDIAN</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Select Guardian Dropdown */}
+                    <div>
+                      <label className="block text-sm font-black text-gray-900 mb-2">Select Guardian</label>
+                      <select value={form.guardian_id ?? ''} onChange={(e) => { setForm({...form, guardian_id: e.target.value || undefined}); setAddingNewGuardian(false); }}
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        <option value="">— Select Existing Guardian —</option>
+                        {guardians.map(g => <option key={g.id} value={g.id}>{g.first_name} {g.last_name} ({g.relationship})</option>)}
+                      </select>
+                    </div>
+
+                    {/* Add New Guardian Button */}
+                    {!form.guardian_id && (
+                      <button type="button" onClick={() => setAddingNewGuardian(!addingNewGuardian)}
+                        className="px-4 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 w-full">
+                        {addingNewGuardian ? '✓ Cancel' : '+ Add New Guardian'}
+                      </button>
+                    )}
+
+                    {/* Guardian Preview (if selected) */}
+                    {form.guardian_id && (
+                      <div className="border-2 border-indigo-200 bg-indigo-50 p-4 rounded-lg">
+                        {guardians.find(g => g.id === form.guardian_id) && (
+                          <>
+                            <h4 className="font-black text-gray-900 mb-3">Selected Guardian</h4>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div><span className="font-bold text-gray-700">Name:</span> <span className="text-gray-900">{guardians.find(g => g.id === form.guardian_id)?.first_name} {guardians.find(g => g.id === form.guardian_id)?.last_name}</span></div>
+                              <div><span className="font-bold text-gray-700">Relation:</span> <span className="text-gray-900">{guardians.find(g => g.id === form.guardian_id)?.relationship}</span></div>
+                              <div><span className="font-bold text-gray-700">Phone:</span> <span className="text-gray-900">{guardians.find(g => g.id === form.guardian_id)?.phone || '—'}</span></div>
+                              <div><span className="font-bold text-gray-700">Email:</span> <span className="text-gray-900">{guardians.find(g => g.id === form.guardian_id)?.email || '—'}</span></div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* New Guardian Form (if adding) */}
+                    {addingNewGuardian && (
+                      <>
+                        <div className="border-t-2 border-gray-200 pt-5 mt-5">
+                          <h4 className="font-black text-gray-900 mb-4 bg-indigo-100 px-4 py-2 rounded-lg">GUARDIAN BASIC INFO</h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Guardian First Name */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">First Name *</label>
+                              <input type="text" placeholder="e.g. John" value={newGuardian.first_name} onChange={(e) => setNewGuardian({...newGuardian, first_name: e.target.value})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            {/* Guardian Last Name */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Last Name *</label>
+                              <input type="text" placeholder="e.g. Doe" value={newGuardian.last_name} onChange={(e) => setNewGuardian({...newGuardian, last_name: e.target.value})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            {/* Relation to Student */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Relation to Student *</label>
+                              <select value={newGuardian.relationship} onChange={(e) => setNewGuardian({...newGuardian, relationship: e.target.value as GuardianRelationship})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                                {GUARDIAN_RELATIONSHIPS.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                              </select>
+                            </div>
+
+                            {/* Guardian Username */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Guardian Username</label>
+                              <input type="text" placeholder="e.g. john.doe" value={newGuardian.username} onChange={(e) => setNewGuardian({...newGuardian, username: e.target.value})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border-t-2 border-gray-200 pt-5 mt-5">
+                          <h4 className="font-black text-gray-900 mb-4 bg-indigo-100 px-4 py-2 rounded-lg">GUARDIAN CONTACT DETAILS</h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Occupation */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Occupation</label>
+                              <input type="text" placeholder="e.g. Engineer" value={newGuardian.occupation} onChange={(e) => setNewGuardian({...newGuardian, occupation: e.target.value})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            {/* Mobile Number */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Mobile Number</label>
+                              <input type="tel" placeholder="0244000000" value={newGuardian.phone} onChange={(e) => setNewGuardian({...newGuardian, phone: e.target.value})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            {/* Telephone */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Telephone</label>
+                              <input type="tel" placeholder="0244000000" value={newGuardian.alt_phone} onChange={(e) => setNewGuardian({...newGuardian, alt_phone: e.target.value})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Email</label>
+                              <input type="email" placeholder="guardian@email.com" value={newGuardian.email} onChange={(e) => setNewGuardian({...newGuardian, email: e.target.value})}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            {/* Address */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-black text-gray-900 mb-2">Address</label>
+                              <textarea placeholder="Guardian address" value={newGuardian.address} onChange={(e) => setNewGuardian({...newGuardian, address: e.target.value})} rows={2}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            {/* Guardian Photo */}
+                            <div>
+                              <label className="block text-sm font-black text-gray-900 mb-2">Guardian Photo</label>
+                              <input type="file" accept="image/jpg,image/png"
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-600 font-medium focus:border-indigo-500 focus:outline-none" />
+                              <p className="text-xs text-gray-500 mt-1">JPG or PNG format</p>
+                            </div>
+
+                            {/* Guardian Can Receive SMS */}
+                            <div className="flex items-center pt-3">
+                              <input type="checkbox" id="g-sms" checked={newGuardian.can_receive_sms} onChange={(e) => setNewGuardian({...newGuardian, can_receive_sms: e.target.checked})}
+                                className="w-5 h-5 mr-3 rounded border-2 border-gray-300" />
+                              <label htmlFor="g-sms" className="font-bold text-gray-900">Guardian Can Receive SMS</label>
+                            </div>
+
+                            {/* Guardian Can Receive Email */}
+                            <div className="flex items-center pt-3">
+                              <input type="checkbox" id="g-email" checked={newGuardian.can_receive_email} onChange={(e) => setNewGuardian({...newGuardian, can_receive_email: e.target.checked})}
+                                className="w-5 h-5 mr-3 rounded border-2 border-gray-300" />
+                              <label htmlFor="g-email" className="font-bold text-gray-900">Guardian Can Receive Email</label>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="px-6 py-4 border-t bg-gray-50 flex gap-3 justify-end">
-              <button type="button" onClick={() => setShowModal(false)}
-                className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 bg-white">
-                Cancel
-              </button>
-              <button type="button" onClick={handleSave} className="btn-gold px-6 py-2.5">
-                {editing ? "Update Student" : "Admit Student"}
-              </button>
+            {/* FOOTER */}
+            <div className="border-t bg-gray-50 px-6 py-4 flex gap-3 justify-end">
+              <button onClick={() => setShowModal(false)} className="px-6 py-2 border-2 border-gray-300 text-gray-900 font-bold rounded-lg hover:bg-gray-100">Cancel</button>
+              <button onClick={handleSave} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">{editing ? 'Update Student' : 'Admit Student'}</button>
             </div>
-          </div>
-          <style jsx>{`
-            .input { width: 100%; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.9rem; }
-            .input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-            .input:disabled { background: #f3f4f6; color: #6b7280; }
-          `}</style>
-        </div>
-      )}
-
-      {/* View Modal */}
-      {viewing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm">
-            <div className="text-center mb-4">
-              <div className="mx-auto mb-3 inline-block">
-                <ProfilePhotoUploader studentId={viewing.id}
-                  currentUrl={viewing.photo_url}
-                  fallbackEmoji={viewing.gender === "female" ? "👧" : "👦"}
-                  size={80} rounded="2xl" />
-              </div>
-              <h3 className="font-black text-gray-900 text-lg">{viewing.full_name}</h3>
-              <p className="text-xs text-gray-400 font-mono">{viewing.student_id}</p>
-              <p className="text-[10px] text-gray-500 mt-1">📷 Tap the gold button to take or upload a photo</p>
-            </div>
-            {[
-              ["Class", viewing.class_name], ["Level", LEVEL_NAMES[viewing.level]],
-              ["Date of Birth", viewing.dob ?? "—"], ["Gender", viewing.gender ?? "—"],
-              ["Parent", viewing.parent_name ?? "—"], ["Parent Phone", viewing.parent_phone ?? "—"],
-              ["Fee Status", viewing.fee_status],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between py-1.5 border-b border-gray-50 text-sm">
-                <span className="text-gray-500 font-medium">{k}</span>
-                <span className="font-bold text-gray-900 capitalize">{v}</span>
-              </div>
-            ))}
-            <button type="button" onClick={() => setViewing(null)}
-              className="mt-4 w-full py-2.5 rounded-xl bg-gray-100 text-sm font-bold text-gray-700">
-              Close
-            </button>
           </div>
         </div>
       )}
     </DashboardShell>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="text-xs font-bold text-gray-600">{label}</span>
-      <div className="mt-1">{children}</div>
-    </label>
   );
 }

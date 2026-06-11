@@ -1,8 +1,0 @@
-{
-  "appId": "gh.edu.phoenixintlschool",
-  "appName": "Phoenix Intl School",
-  "webDir": "out",
-  "server": {
-    "androidScheme": "https"
-  }
-}
