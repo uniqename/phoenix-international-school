@@ -172,7 +172,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-60 flex-shrink-0 sticky top-0 h-screen overflow-y-auto"
         style={{ background: colors.sidebar, borderRight: `1px solid ${colors.sidebarBorder}` }}>
-        <div className="p-4 border-b border-white/10">
+        <div className="p-4 border-b" style={{ borderColor: colors.sidebarBorder }}>
           <div className="flex items-center justify-between mb-4">
             <Link href="/" className="flex items-center gap-2.5">
               <img src="/logo.png" alt="Phoenix crest" className="w-9 h-11 object-contain shrink-0" />
@@ -296,12 +296,12 @@ export default function DashboardShell({ role, navItems, children }: Props) {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all"
                     style={{
                       background: active ? meta.color + "18" : "transparent",
-                      color: active ? meta.color : "rgba(255,255,255,0.6)",
+                      color: active ? meta.color : colors.sidebarText,
                       borderLeft: active ? `3px solid ${meta.color}` : "3px solid transparent",
                       fontWeight: active ? 700 : 500,
                     }}>
                     <span className="text-base">{item.icon}</span>
-                    <span className="text-xs">{item.label}</span>
+                    <span className="text-xs font-semibold">{item.label}</span>
                   </Link>
                 );
               })}

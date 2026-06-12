@@ -60,6 +60,31 @@ h1, h2, h3, h4, h5, h6, p, div, span, button, a {
   color: inherit;
 }
 
+/* Dark mode color overrides for hardcoded gray/light colors */
+:root[data-theme="dark"] .text-gray-900 { color: #F1F5F9; }
+:root[data-theme="dark"] .text-gray-800 { color: #E2E8F0; }
+:root[data-theme="dark"] .text-gray-700 { color: #CBD5E1; }
+:root[data-theme="dark"] .text-gray-600 { color: #94A3B8; }
+:root[data-theme="dark"] .text-gray-500 { color: #64748B; }
+
+:root[data-theme="dark"] .bg-white { background-color: #0F172A; }
+:root[data-theme="dark"] .bg-gray-50 { background-color: #1E293B; }
+:root[data-theme="dark"] .bg-gray-100 { background-color: #334155; }
+:root[data-theme="dark"] .bg-gray-200 { background-color: #475569; }
+:root[data-theme="dark"] .bg-gray-300 { background-color: #64748B; }
+
+:root[data-theme="dark"] .border-gray-200 { border-color: #334155; }
+:root[data-theme="dark"] .border-gray-300 { border-color: #475569; }
+
+/* Light purple text - boost contrast in dark mode */
+:root[data-theme="dark"] .text-purple-200 { color: #E9D5FF; }
+:root[data-theme="dark"] .text-purple-300 { color: #D8B4FE; }
+:root[data-theme="dark"] .text-indigo-50 { background-color: #1E1B4B; }
+:root[data-theme="dark"] .text-indigo-100 { background-color: #312E81; }
+:root[data-theme="dark"] .text-indigo-600 { color: #A78BFA; }
+:root[data-theme="dark"] .text-indigo-700 { color: #C4B5FD; }
+:root[data-theme="dark"] .text-indigo-900 { color: #E9D5FF; }
+
 /* Dark mode */
 :root[data-theme="dark"] body {
   background: #0C0A1E;
