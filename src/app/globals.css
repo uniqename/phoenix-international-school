@@ -321,3 +321,68 @@ tbody tr:hover {
 .animate-slide-in {
   animation: slideIn 0.3s ease;
 }
+
+/* ===== PAGE-SPECIFIC UTILITIES ===== */
+.hero-bg {
+  background: linear-gradient(135deg, #0C0A1E 0%, #1E0B42 30%, #2D1060 55%, #1A3FA0 80%, #0C0A1E 100%);
+}
+
+.heading-1 {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.heading-2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.heading-3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
+
+.text-light {
+  color: var(--text-tertiary);
+}
+
+.input-field {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(26, 63, 160, 0.1);
+}
+
+.surface {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.surface-hover {
+  transition: all 0.2s ease;
+}
+
+.surface-hover:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
