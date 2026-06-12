@@ -73,7 +73,7 @@ function LoginForm() {
           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold mb-2 text-white">
+              <label className="block text-sm font-bold mb-2" style={{ color: "white" }}>
                 Email or Phone Number
               </label>
               <input
@@ -90,7 +90,7 @@ function LoginForm() {
               />
             </div>
             <div>
-              <label className="block text-sm font-bold mb-2 text-white">
+              <label className="block text-sm font-bold mb-2" style={{ color: "white" }}>
                 Password
               </label>
               <div className="relative">

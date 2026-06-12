@@ -210,8 +210,8 @@ export default function DashboardShell({ role, navItems, children }: Props) {
                   borderLeft: active ? `3px solid ${meta.color}` : "3px solid transparent",
                   fontWeight: active ? 700 : 500,
                 }}>
-                <span className="text-base">{item.icon}</span>
-                <span className="text-xs font-semibold">{item.label}</span>
+                <span className="text-base flex-shrink-0">{item.icon}</span>
+                <span className="text-xs font-semibold flex-1" style={{ color: "inherit" }}>{item.label}</span>
               </Link>
             );
           })}
