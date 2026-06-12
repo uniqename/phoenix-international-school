@@ -47,22 +47,33 @@
 
 * { box-sizing: border-box; }
 
+/* Default light mode */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #F9FAFB;
+  color: #111827;
   font-family: 'Inter', system-ui, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-:root[data-theme="light"] {
-  --background: #FFFFFF;
-  --foreground: #000000;
+h1, h2, h3, h4, h5, h6, p, div, span, button, a {
+  color: inherit;
 }
 
-:root[data-theme="light"] body {
-  background: #F9FAFB;
-  color: #111827;
+/* Dark mode */
+:root[data-theme="dark"] body {
+  background: #0C0A1E;
+  color: #F4F2FF;
+}
+
+:root[data-theme="light"] {
+  --background: #FFFFFF;
+  --foreground: #111827;
+}
+
+:root[data-theme="dark"] {
+  --background: #0C0A1E;
+  --foreground: #F4F2FF;
 }
 
 /* Form controls must always be legible regardless of the surrounding surface
