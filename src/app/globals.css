@@ -1,292 +1,323 @@
 @import "tailwindcss";
 
+/* ===== COLOR SYSTEM ===== */
 :root {
-  /* ── Phoenix School Brand Colors ─── */
-  --background: #FFFFFF;       /* light background as default */
-  --foreground: #111827;       /* dark text for readability */
+  /* Light Mode (DEFAULT) */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F3F4F6;
+  --bg-tertiary: #E5E7EB;
 
-  --blue:        #1A3FA0;      /* school royal blue */
-  --blue-mid:    #2B55C9;
-  --blue-light:  #4D78F0;
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
 
-  --purple:      #6B21A8;      /* school deep purple */
-  --purple-mid:  #8B35E0;
-  --purple-light: #A855F7;
+  --border-color: #D1D5DB;
 
-  --black:       #0C0A1E;      /* near-black, purple-tinted */
-  --dark:        #160D30;      /* sidebar / hero dark */
+  /* Brand Colors */
+  --blue: #1A3FA0;
+  --blue-light: #3B82F6;
+  --purple: #6B21A8;
+  --purple-light: #8B5CF6;
+  --gold: #FFD700;
 
-  --gold:        #FFD700;      /* logo sun accent */
-  --gold-dark:   #E5B800;
-
-  /* ── Light Mode Colors ── */
-  --light-bg-primary: #FFFFFF;
-  --light-bg-secondary: #F9FAFB;
-  --light-text-primary: #111827;
-  --light-text-secondary: #6B7280;
-  --light-border: #E5E7EB;
+  /* Status Colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
 }
 
-/* Dark mode overrides */
+/* Dark Mode */
 :root[data-theme="dark"] {
-  --background: #0C0A1E;
-  --foreground: #F4F2FF;
-  --light-bg-primary: #0F0F1E;
-  --light-bg-secondary: #1A1A2E;
-  --light-text-primary: #FFFFFF;
-  --light-text-secondary: #D1D5DB;
-  --light-border: rgba(255, 255, 255, 0.12);
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-tertiary: #334155;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+
+  --border-color: #475569;
+
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
+  --info: #60A5FA;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ===== RESET & BASE STYLES ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-* { box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+}
 
-/* Default light mode */
 body {
-  background: #F9FAFB;
-  color: #111827;
-  font-family: 'Inter', system-ui, Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-h1, h2, h3, h4, h5, h6, p, div, span, button, a {
-  color: inherit;
+/* ===== TEXT ELEMENTS ===== */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-/* Dark mode */
-:root[data-theme="dark"] body {
-  background: #0C0A1E;
-  color: #F4F2FF;
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p, div, span, li, td, th {
+  color: var(--text-primary);
 }
 
-:root[data-theme="light"] {
-  --background: #FFFFFF;
-  --foreground: #111827;
+small, .text-secondary {
+  color: var(--text-secondary);
 }
 
-:root[data-theme="dark"] {
-  --background: #0C0A1E;
-  --foreground: #F4F2FF;
+a {
+  color: var(--blue);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-/* Form controls must always be legible regardless of the surrounding surface
-   color. Without this, inputs inherit the light-purple body foreground and
-   become invisible on the white modal cards (e.g. parent payment modal). */
+a:hover {
+  color: var(--blue-light);
+  text-decoration: underline;
+}
+
+/* ===== BUTTONS ===== */
+button, input[type="button"], input[type="submit"] {
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background-color: var(--blue);
+  color: white;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(26, 63, 160, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: var(--blue-light);
+  box-shadow: 0 6px 16px rgba(26, 63, 160, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: white;
+  font-weight: 700;
+}
+
+.btn-success:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.btn-warning {
+  background-color: var(--warning);
+  color: white;
+  font-weight: 700;
+}
+
+.btn-warning:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.btn-error {
+  background-color: var(--error);
+  color: white;
+  font-weight: 700;
+}
+
+.btn-error:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* ===== FORM ELEMENTS ===== */
 input, textarea, select {
-  color: #111827;        /* gray-900 */
-  background-color: #fff;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: inherit;
+  transition: border-color 0.2s ease;
 }
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(26, 63, 160, 0.1);
+}
+
 input::placeholder, textarea::placeholder {
-  color: #9ca3af;        /* gray-400 */
+  color: var(--text-tertiary);
 }
 
-/* Standalone full-screen pages (login, bece, driver, library, offline) that
-   don't render inside DashboardShell still need to clear the iPhone notch /
-   Dynamic Island. Use the `.safe-top` utility on the outermost wrapper. */
-.safe-top { padding-top: calc(env(safe-area-inset-top, 0px) + 1.25rem); }
-.safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+/* ===== CARDS & SURFACES ===== */
+.card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
 
-/* ── Glass surfaces ── */
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
 .glass {
-  background: rgba(255, 255, 255, 0.97);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(107, 33, 168, 0.18);
-  box-shadow: 0 4px 28px rgba(26, 63, 160, 0.13), 0 1px 4px rgba(107, 33, 168, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
 }
 
 :root[data-theme="dark"] .glass {
-  background: rgba(22, 13, 48, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 28px rgba(107, 33, 168, 0.08), 0 1px 4px rgba(255, 255, 255, 0.05);
-}
-
-.glass-dark {
-  background: rgba(22, 13, 48, 0.82);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-/* ── Gradients ── */
-.gradient-text {
-  background: linear-gradient(135deg, #1A3FA0 0%, #6B21A8 55%, #A855F7 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-purple {
-  background: linear-gradient(135deg, #6B21A8, #A855F7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ── Hero / dark backgrounds ── */
-.hero-bg {
-  background: linear-gradient(135deg,
-    #0C0A1E 0%,
-    #1E0B42 30%,
-    #2D1060 55%,
-    #1A3FA0 80%,
-    #0C0A1E 100%
-  );
-}
-
-/* ── Card / interaction ── */
-.card-hover {
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(107, 33, 168, 0.18);
-}
-
-/* ── Glows ── */
-.gold-glow {
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.35), 0 0 40px rgba(255, 215, 0, 0.12);
-}
-.purple-glow {
-  box-shadow: 0 0 20px rgba(107, 33, 168, 0.4), 0 4px 20px rgba(107, 33, 168, 0.2);
-}
-.blue-glow {
-  box-shadow: 0 0 20px rgba(26, 63, 160, 0.35), 0 4px 20px rgba(26, 63, 160, 0.2);
-}
-.cyan-glow {
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(168, 85, 247, 0.1);
-}
-
-/* ── Stat card ── */
-.stat-card {
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(15, 23, 42, 0.8);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(107, 33, 168, 0.18);
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(26, 63, 160, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-/* ── Buttons ── */
-.btn-gold {
-  /* Primary CTA — school blue → purple */
-  background: linear-gradient(135deg, #1A3FA0, #6B21A8);
-  color: white;
+/* ===== TABLES ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   font-weight: 700;
-  border-radius: 999px;
-  padding: 12px 28px;
-  font-size: 14px;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 18px rgba(107, 33, 168, 0.35);
-}
-.btn-gold:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(107, 33, 168, 0.5);
-  background: linear-gradient(135deg, #2B55C9, #8B35E0);
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
 }
 
-.btn-outline {
-  background: transparent;
-  color: white;
+td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+tbody tr:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* ===== STATUS BADGES ===== */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
   font-weight: 600;
-  border-radius: 999px;
-  padding: 11px 26px;
-  font-size: 14px;
-  transition: all 0.2s;
-  border: 1.5px solid rgba(255, 255, 255, 0.45);
-  cursor: pointer;
-}
-.btn-outline:hover {
-  border-color: white;
-  background: rgba(255, 255, 255, 0.1);
 }
 
-/* Light-surface outline variant (e.g. inside white cards) */
-.btn-outline.light {
-  color: #1A3FA0;
-  border-color: rgba(26, 63, 160, 0.35);
-}
-.btn-outline.light:hover {
-  border-color: #6B21A8;
-  color: #6B21A8;
-  background: rgba(107, 33, 168, 0.06);
+.badge-success {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: var(--success);
 }
 
-/* ── Nav links ── */
-.nav-link {
-  position: relative;
-  color: rgba(255, 255, 255, 0.82);
-  font-weight: 500;
-  font-size: 14px;
-  transition: color 0.2s;
-  text-decoration: none;
-}
-.nav-link:hover { color: #A855F7; }
-
-/* ── Table rows ── */
-.table-row:hover { background: rgba(107, 33, 168, 0.04); }
-
-/* ── Phase / status badges ── */
-.phase-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.badge-warning {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: var(--warning);
 }
 
-/* ── Feature icon ── */
-.feature-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  flex-shrink: 0;
+.badge-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: var(--error);
 }
 
-.tick { color: #22c55e; font-weight: 700; }
-
-/* ── Animations ── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-12px); }
-}
-@keyframes pulse-purple {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(107, 33, 168, 0.45); }
-  50%       { box-shadow: 0 0 0 14px rgba(107, 33, 168, 0); }
-}
-@keyframes slide-in {
-  from { opacity: 0; transform: translateY(30px); }
-  to   { opacity: 1; transform: translateY(0); }
+.badge-info {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: var(--info);
 }
 
-.animate-float       { animation: float 4s ease-in-out infinite; }
-.animate-pulse-gold  { animation: pulse-purple 2s infinite; }
-.animate-slide-in    { animation: slide-in 0.6s ease forwards; }
+/* ===== UTILITIES ===== */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
 
-/* ── Grid pattern overlay ── */
-.grid-pattern {
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.07) 1px, transparent 0);
-  background-size: 32px 32px;
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.p-2 { padding: 1rem; }
+.p-4 { padding: 2rem; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.gap-2 { gap: 1rem; }
+.gap-4 { gap: 2rem; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* ── Scrollbar ── */
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease;
+}
