@@ -42,7 +42,7 @@ export default function WhatsNewModal() {
 
           <ul className="space-y-3 mb-5">
             {HIGHLIGHTS.map((h, i) => (
-              <li key={i} className="flex items-start gap-3 rounded-xl p-3 bg-white/5 border border-white/10">
+              <li key={i} className="flex items-start gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <span className="text-2xl flex-shrink-0">{h.emoji}</span>
                 <div className="min-w-0">
                   <p className="font-bold text-white text-sm">{h.title}</p>
