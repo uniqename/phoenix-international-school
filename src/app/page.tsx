@@ -67,16 +67,15 @@ export default function Home() {
         </div>
 
         {/* Headline */}
-        <div className="text-xs font-bold tracking-widest uppercase mb-3"
-          style={{ color: "#C4B5FD" }}>🇬🇭 Accra, Ghana</div>
-        <h1 className="text-5xl md:text-6xl font-black mb-2 leading-tight">
-          <span style={{ color: "#FFD700" }}>Phoenix</span><br />
-          <span className="gradient-text" style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-white/70">🇬🇭 Accra, Ghana</div>
+        <h1 className="text-5xl md:text-6xl font-black mb-2 leading-tight text-white">
+          <span className="text-yellow-400">Phoenix</span><br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
             International
           </span>
         </h1>
-        <p className="text-lg font-bold text-white/80 mb-1">School Management System</p>
-        <p className="text-sm mb-2" style={{ color: "rgba(196,181,253,0.65)" }}>
+        <p className="text-lg font-bold text-white/90 mb-1">School Management System</p>
+        <p className="text-sm mb-2 text-white/70">
           The Pace Setters · Est. 2006 · Crèche through JHS 3
         </p>
 
@@ -99,14 +98,13 @@ export default function Home() {
                 style={{ background: "white", transform: "translate(30%,-30%)" }} />
               <span className="text-3xl relative">{p.icon}</span>
               <div className="font-black text-white text-xs relative">{p.label}</div>
-              <div className="text-[10px] relative" style={{ color: "rgba(255,255,255,0.6)" }}>{p.sub}</div>
+              <div className="text-[10px] relative text-white/60">{p.sub}</div>
             </Link>
           ))}
         </div>
       </div>
 
-      <footer className="py-4 text-center text-xs border-t border-white/10"
-        style={{ color: "rgba(196,181,253,0.45)" }}>
+      <footer className="py-4 text-center text-xs border-t border-white/10 text-white/50">
         Phoenix International School Ghana © 2026 · All rights reserved
       </footer>
     </div>
