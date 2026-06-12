@@ -31,25 +31,22 @@ export default function WhatsNewModal() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4"
-      style={{ background: "rgba(12,10,30,0.85)" }}>
-      <div className="rounded-3xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto"
-        style={{ background: "linear-gradient(160deg,#0C0A1E,#1A0E4D)", border: "1px solid rgba(255,215,0,0.35)" }}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50">
+      <div className="rounded-3xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-950 to-purple-950 border border-yellow-500/40">
         <div className="p-6">
           <div className="text-center mb-4">
             <div className="text-4xl mb-2">🎉</div>
             <h2 className="text-2xl font-black text-white">What&apos;s new</h2>
-            <p className="text-xs mt-1" style={{ color: "#FFD700" }}>{APP_BUILD}</p>
+            <p className="text-xs mt-1 text-yellow-400">{APP_BUILD}</p>
           </div>
 
           <ul className="space-y-3 mb-5">
             {HIGHLIGHTS.map((h, i) => (
-              <li key={i} className="flex items-start gap-3 rounded-xl p-3"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <li key={i} className="flex items-start gap-3 rounded-xl p-3 bg-white/5 border border-white/10">
                 <span className="text-2xl flex-shrink-0">{h.emoji}</span>
                 <div className="min-w-0">
                   <p className="font-bold text-white text-sm">{h.title}</p>
-                  <p className="text-[11px] text-white/75 leading-relaxed mt-0.5">{h.detail}</p>
+                  <p className="text-[11px] text-white/70 leading-relaxed mt-0.5">{h.detail}</p>
                 </div>
               </li>
             ))}
