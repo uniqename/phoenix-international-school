@@ -81,7 +81,8 @@ h4 { font-size: 1.25rem; }
 h5 { font-size: 1.125rem; }
 h6 { font-size: 1rem; }
 
-p, div, span, li, td, th {
+/* Only apply default text color to unstyled elements */
+p:not([class]), div:not([class]), span:not([class]), li:not([class]), td:not([class]), th:not([class]) {
   color: var(--text-primary);
 }
 
