@@ -59,7 +59,7 @@ export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
     // Return a default theme if not in a ThemeProvider (e.g., during SSR)
-    return { theme: "light" as const, toggleTheme: () => {} };
+    return { theme: "dark" as const, toggleTheme: () => {} };
   }
   return context;
 }
