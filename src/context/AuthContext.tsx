@@ -110,6 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  if (!ctx) {
+    // Return a default context if not in an AuthProvider (e.g., during SSR)
+    return { user: null, loading: true, login: async () => ({ error: 'Not authenticated' }), loginAsRole: () => {}, logout: () => {} }
+  }
   return ctx
 }
