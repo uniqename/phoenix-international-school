@@ -59,11 +59,11 @@ function LoginForm() {
             <img src="/logo.png" alt="Phoenix International School crest"
               className="w-24 h-28 mx-auto object-contain drop-shadow-2xl" />
           </div>
-          <h1 className="text-2xl font-black text-white mb-1">Phoenix International</h1>
-          <p className="text-sm font-bold" style={{ color: "#C4B5FD" }}>
+          <h1 className="text-3xl font-black text-white mb-2">Phoenix International</h1>
+          <p className="text-base font-bold text-white/90 mb-1">
             School Management System · Ghana
           </p>
-          <p className="text-xs mt-0.5" style={{ color: "rgba(196,181,253,0.55)" }}>
+          <p className="text-xs text-white/70">
             The Pace Setters · Est. 2006
           </p>
         </div>
@@ -73,7 +73,7 @@ function LoginForm() {
           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold mb-1.5" style={{ color: "rgba(196,181,253,0.85)" }}>
+              <label className="block text-sm font-bold mb-2 text-white">
                 Email or Phone Number
               </label>
               <input
@@ -85,12 +85,12 @@ function LoginForm() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 autoComplete="username"
-                className="w-full px-4 py-3 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all"
-                style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white" }}
+                className="w-full px-4 py-3 rounded-lg text-white placeholder-white/50 focus:outline-none transition-all"
+                style={{ background: "rgba(255,255,255,0.15)", border: "2px solid rgba(255,255,255,0.3)", color: "white" }}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5" style={{ color: "rgba(196,181,253,0.85)" }}>
+              <label className="block text-sm font-bold mb-2 text-white">
                 Password
               </label>
               <div className="relative">
@@ -101,14 +101,13 @@ function LoginForm() {
                   placeholder="Your password"
                   required
                   autoComplete="current-password"
-                  className="w-full px-4 py-3 pr-12 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all"
-                  style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white" }}
+                  className="w-full px-4 py-3 pr-12 rounded-lg text-white placeholder-white/50 focus:outline-none transition-all"
+                  style={{ background: "rgba(255,255,255,0.15)", border: "2px solid rgba(255,255,255,0.3)", color: "white" }}
                 />
                 <button type="button" onClick={() => setShowPw((v) => !v)}
                   aria-label={showPw ? "Hide password" : "Show password"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md text-xs font-bold"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)" }}>
-                  {showPw ? "🙈 Hide" : "👁 Show"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded text-xs font-bold text-white/80 hover:text-white transition-colors">
+                  {showPw ? "🙈" : "👁️"}
                 </button>
               </div>
             </div>
@@ -122,30 +121,28 @@ function LoginForm() {
 
         {/* First-time setup helper — collapsed by default so the credentials
             aren't visible to anyone glancing at the screen. Tap once to expand. */}
-        <div className="text-center mb-3">
+        <div className="text-center mb-4">
           <button type="button" onClick={() => setShowSetup((s) => !s)}
-            className="text-xs font-bold underline"
-            style={{ color: "rgba(196,181,253,0.7)" }}>
+            className="text-sm font-bold text-white/80 hover:text-white underline transition-colors">
             {showSetup ? "Hide setup help" : "First-time setting up the school? →"}
           </button>
         </div>
 
         {showSetup && (
-          <div className="rounded-3xl p-4 mb-3"
-            style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.35)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
-            <p className="text-xs font-bold mb-1" style={{ color: "#FFD700" }}>
+          <div className="rounded-2xl p-4 mb-4 border-2 border-yellow-400/30" style={{ background: "rgba(255,215,0,0.12)" }}>
+            <p className="text-sm font-bold mb-2 text-yellow-300">
               🔑 First-time school sign-in
             </p>
-            <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>
+            <p className="text-xs mb-3 text-white/85 leading-relaxed">
               On day one only, the Admin and Principal sign in with the temporary credentials provided to your school in your handover document. The app will force a password change on first login.
             </p>
             <button type="button"
               onClick={() => { setEmail("a_admin@phoenixintl.school"); setShowSetup(false); toast("Enter the temporary admin password from your handover document"); }}
-              className="w-full py-2 text-[11px] font-bold rounded-lg"
-              style={{ background: "rgba(255,215,0,0.18)", color: "#FFD700", border: "1px solid rgba(255,215,0,0.35)" }}>
+              className="w-full py-2.5 text-xs font-bold rounded-lg text-yellow-300 hover:text-yellow-200 transition-colors border-2 border-yellow-400/40 hover:border-yellow-400/60"
+              style={{ background: "rgba(255,215,0,0.1)" }}>
               Auto-fill Admin Email
             </button>
-            <p className="text-[10px] mt-2 italic" style={{ color: "rgba(196,181,253,0.55)" }}>
+            <p className="text-xs mt-2 text-white/70 italic">
               Hide this card after your first sign-in — staff and parents shouldn&apos;t see it.
             </p>
           </div>
