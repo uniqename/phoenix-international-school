@@ -53,18 +53,10 @@ function LinkOAuthContent() {
           </p>
         </div>
 
-        <div
-          className="rounded-3xl p-6 mb-4"
-          style={{
-            background: "rgba(255,255,255,0.07)",
-            border: "1px solid rgba(255,255,255,0.14)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-          }}
-        >
+        <div className="rounded-3xl p-6 mb-4 bg-white/5 border border-white/10 backdrop-blur-2xl">
           <form onSubmit={handleLink} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold mb-1.5" style={{ color: "rgba(196,181,253,0.85)" }}>
+              <label className="block text-xs font-bold mb-1.5 text-violet-200">
                 Sign in with your school account
               </label>
               <input
@@ -73,12 +65,11 @@ function LinkOAuthContent() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your school email"
                 required
-                className="w-full px-4 py-3 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all"
-                style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white" }}
+                className="w-full px-4 py-3 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all bg-white/10 border border-white/25 text-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5" style={{ color: "rgba(196,181,253,0.85)" }}>
+              <label className="block text-xs font-bold mb-1.5 text-violet-200">
                 Password
               </label>
               <input
@@ -87,8 +78,7 @@ function LinkOAuthContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Your password"
                 required
-                className="w-full px-4 py-3 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all"
-                style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "white" }}
+                className="w-full px-4 py-3 rounded-xl text-base placeholder-white/55 focus:outline-none transition-all bg-white/10 border border-white/25 text-white"
               />
             </div>
             <button
@@ -104,8 +94,7 @@ function LinkOAuthContent() {
         <button
           type="button"
           onClick={() => router.replace("/login")}
-          className="w-full text-center text-xs font-bold underline"
-          style={{ color: "rgba(196,181,253,0.7)" }}
+          className="w-full text-center text-xs font-bold underline text-violet-200/70"
         >
           Back to login
         </button>

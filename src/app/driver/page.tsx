@@ -39,8 +39,7 @@ export default function DriverPage() {
 
   if (loading || !user || !['driver', 'admin', 'principal'].includes(user.role)) {
     return (
-      <div className="min-h-screen flex items-center justify-center"
-        style={{ background: "linear-gradient(135deg, #4c1d95, #581c87)" }}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-800 to-purple-950">
         <p className="text-purple-200 text-sm">Loading driver app…</p>
       </div>
     );
@@ -160,20 +159,18 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-950 to-black text-white p-6 safe-top safe-bottom">
       <div className="max-w-md mx-auto space-y-4">
         <header className="flex items-center justify-between pt-4">
-          <Link href="/" className="text-xs font-bold px-3 py-1.5 rounded-lg"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)" }}>← Home</Link>
+          <Link href="/" className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white/10 border border-white/20">← Home</Link>
           <div className="text-center">
             <h1 className="text-2xl font-black">🚌 Driver</h1>
             <p className="text-[10px] text-purple-300">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long" })}</p>
           </div>
           <button type="button" onClick={handleSignOut}
-            className="text-xs font-bold px-3 py-1.5 rounded-lg"
-            style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.5)", color: "#fca5a5" }}>
+            className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300">
             🚪 Sign out
           </button>
         </header>
 
-        <section className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.06)" }}>
+        <section className="rounded-2xl p-4 bg-white/5">
           <label className="block">
             <span className="block text-xs font-bold text-purple-200 mb-1">Route</span>
             <select className="input"
@@ -190,8 +187,7 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
             <p className="text-[11px] text-purple-300 mt-2">Driver on file: {route.driver_name}</p>
           )}
           {routes.length === 0 && (
-            <div className="mt-3 rounded-lg p-3 text-xs"
-              style={{ background: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.4)", color: "#fcd34d" }}>
+            <div className="mt-3 rounded-lg p-3 text-xs bg-amber-500/15 border border-amber-500/40 text-amber-300">
               <p className="font-bold">No routes set up yet.</p>
               <p className="mt-1">Ask your school admin to open <span className="font-mono">/admin/transport</span> and create your route + stops. Once they save, your route will appear here.</p>
             </div>
@@ -199,28 +195,26 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
         </section>
 
         {!activeRun ? (
-          <section className="rounded-2xl p-4 space-y-2" style={{ background: "rgba(255,255,255,0.06)" }}>
+          <section className="rounded-2xl p-4 space-y-2 bg-white/5">
             <p className="text-xs text-purple-200 mb-2">Tap the direction you&apos;re running now:</p>
             <button type="button" onClick={() => onStart("pickup")}
-              className="w-full py-4 rounded-xl font-black text-base"
-              style={{ background: "linear-gradient(135deg,#10b981,#34d399)", color: "#052e16" }}>
+              className="w-full py-4 rounded-xl font-black text-base bg-gradient-to-br from-green-600 to-green-400 text-green-950">
               🌅 Start morning pickup
             </button>
             <button type="button" onClick={() => onStart("dropoff")}
-              className="w-full py-4 rounded-xl font-black text-base"
-              style={{ background: "linear-gradient(135deg,#f59e0b,#fcd34d)", color: "#1f1300" }}>
+              className="w-full py-4 rounded-xl font-black text-base bg-gradient-to-br from-amber-500 to-yellow-300 text-amber-950">
               🌇 Start afternoon drop-off
             </button>
           </section>
         ) : (
           <>
             {!isOnline && (
-              <section className="rounded-2xl p-3 text-center" style={{ background: "rgba(239,68,68,0.18)", border: "1px solid rgba(239,68,68,0.4)" }}>
+              <section className="rounded-2xl p-3 text-center bg-red-500/15 border border-red-500/40">
                 <p className="text-xs text-red-300">📴 No internet connection — recording events only</p>
               </section>
             )}
 
-            <section className="rounded-2xl p-4 text-center" style={{ background: "rgba(16,185,129,0.18)", border: "1px solid rgba(16,185,129,0.4)" }}>
+            <section className="rounded-2xl p-4 text-center bg-emerald-500/15 border border-emerald-500/40">
               <p className="text-xs text-emerald-200 mb-1">🟢 LIVE — {activeRun.direction === "pickup" ? "Morning pickup" : "Afternoon drop-off"}</p>
               {currentStop ? (
                 <>
@@ -246,14 +240,12 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
               <section className="space-y-2">
                 {!atStop ? (
                   <button type="button" onClick={onArrive}
-                    className="w-full py-5 rounded-2xl font-black text-lg"
-                    style={{ background: "linear-gradient(135deg,#3b82f6,#60a5fa)", color: "white" }}>
+                    className="w-full py-5 rounded-2xl font-black text-lg bg-gradient-to-br from-blue-500 to-blue-400 text-white">
                     ✋ Arrived at {currentStop.name}
                   </button>
                 ) : (
                   <button type="button" onClick={onDepart}
-                    className="w-full py-5 rounded-2xl font-black text-lg"
-                    style={{ background: "linear-gradient(135deg,#8b5cf6,#a78bfa)", color: "white" }}>
+                    className="w-full py-5 rounded-2xl font-black text-lg bg-gradient-to-br from-purple-600 to-purple-400 text-white">
                     ➡️ Departed {currentStop.name}
                   </button>
                 )}
@@ -262,8 +254,7 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
 
             <div className="flex gap-2">
               <button type="button" onClick={() => setShowRoll((r) => !r)}
-                className="flex-1 py-3 rounded-xl font-bold text-sm"
-                style={{ background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700" }}>
+                className="flex-1 py-3 rounded-xl font-bold text-sm bg-yellow-500/15 border border-yellow-500/40 text-yellow-400">
                 {showRoll ? "Hide roll call" : "🎒 Mark students on/off bus"}
               </button>
               <button type="button"
@@ -271,20 +262,18 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
                   activeRun && pingDriver(activeRun.route_id ?? "", "Driver", "🆘 EMERGENCY — Driver needs immediate assistance");
                   toast.success("SOS sent to school admin — immediate assistance requested.");
                 }}
-                className="flex-1 py-3 rounded-xl font-bold text-sm animate-pulse"
-                style={{ background: "rgba(239,68,68,0.25)", border: "2px solid #ef4444", color: "#fca5a5" }}>
+                className="flex-1 py-3 rounded-xl font-bold text-sm animate-pulse bg-red-500/25 border-2 border-red-500 text-red-300">
                 🆘 SOS
               </button>
             </div>
 
             {showRoll && (
-              <section className="rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <section className="rounded-2xl p-3 bg-white/5">
                 <input value={search}
                   aria-label="Search students"
                   placeholder="Search student name or class…"
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full mb-2 px-3 py-2 rounded-lg text-sm"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }} />
+                  className="w-full mb-2 px-3 py-2 rounded-lg text-sm bg-white/5 text-white border border-white/10" />
                 <div className="max-h-64 overflow-y-auto space-y-1">
                   {students
                     .filter((s) => {
@@ -297,8 +286,7 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
                       const today = new Date().toISOString().slice(0, 10);
                       const onBus = attendance.some((a) => a.student_id === s.id && a.date === today && a.context === 'bus');
                       return (
-                        <div key={s.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg"
-                          style={{ background: onBus ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.03)" }}>
+                        <div key={s.id} className={`flex items-center gap-2 py-1.5 px-2 rounded-lg ${onBus ? "bg-emerald-500/10" : "bg-white/3"}`}>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-white truncate">{s.full_name}</p>
                             <p className="text-[10px] text-purple-300">{s.class_name}</p>
@@ -306,15 +294,13 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
                           {onBus ? (
                             <button type="button"
                               onClick={() => activeRun && recordBusBoarding(activeRun.id, s.id, 'off')}
-                              className="text-[11px] font-bold px-2 py-1 rounded-md"
-                              style={{ background: "rgba(245,158,11,0.18)", color: "#FFD700" }}>
+                              className="text-[11px] font-bold px-2 py-1 rounded-md bg-amber-500/15 text-amber-400">
                               Off bus
                             </button>
                           ) : (
                             <button type="button"
                               onClick={() => activeRun && recordBusBoarding(activeRun.id, s.id, 'on')}
-                              className="text-[11px] font-bold px-2 py-1 rounded-md"
-                              style={{ background: "#10b981", color: "white" }}>
+                              className="text-[11px] font-bold px-2 py-1 rounded-md bg-emerald-600 text-white">
                               ✓ On bus
                             </button>
                           )}
@@ -327,8 +313,7 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
             )}
 
             <button type="button" onClick={onComplete}
-              className="w-full py-3 rounded-xl font-bold text-sm"
-              style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#fca5a5" }}>
+              className="w-full py-3 rounded-xl font-bold text-sm bg-red-500/15 border border-red-500/40 text-red-300">
               🏁 Finish run
             </button>
 
@@ -341,7 +326,7 @@ function DriverPageInner({ isOnline }: { isOnline: boolean }) {
 
       <style jsx>{`
         .input { width: 100%; border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem; padding: 0.6rem 0.8rem; font-size: 1rem; background: rgba(255,255,255,0.05); color: white; }
-        .input:focus { outline: none; border-color: rgba(167,139,250,0.7); }
+        .input:focus { outline: none; border-color: rgb(167,139,250); }
       `}</style>
     </div>
   );

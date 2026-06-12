@@ -134,8 +134,7 @@ function InviteForm() {
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="w-full mt-2 py-3 rounded-xl font-bold text-white disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, #1A3FA0, #6B21A8)" }}
+          className="w-full mt-2 py-3 rounded-xl font-bold text-white disabled:opacity-50 bg-gradient-to-br from-blue-900 to-purple-900"
         >
           {submitting ? "Creating account…" : "Create account & log in"}
         </button>
@@ -147,11 +146,11 @@ function InviteForm() {
           border-radius: 0.6rem;
           background: rgba(255,255,255,0.08);
           color: white;
-          border: 1px solid rgba(255,255,255,0.2);
+          border: 1px solid rgba(255,255,255,0.15);
           font-size: 0.95rem;
         }
         .invite-input::placeholder { color: rgba(255,255,255,0.4); }
-        .invite-input:focus { outline: none; border-color: #A855F7; box-shadow: 0 0 0 3px rgba(168,85,247,0.25); }
+        .invite-input:focus { outline: none; border-color: rgb(168,85,247); box-shadow: 0 0 0 3px rgba(168,85,247,0.25); }
       `}</style>
     </Frame>
   );
@@ -159,8 +158,8 @@ function InviteForm() {
 
 function Frame({ title, body, children }: { title: string; body: string; children?: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 safe-top safe-bottom" style={{ background: "linear-gradient(135deg, #0C0A1E, #1A0E4D)" }}>
-      <div className="max-w-md w-full rounded-2xl p-7 text-white" style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.12)" }}>
+    <div className="min-h-screen flex items-center justify-center p-6 safe-top safe-bottom bg-gradient-to-br from-slate-950 to-purple-950">
+      <div className="max-w-md w-full rounded-2xl p-7 text-white bg-white/5 backdrop-blur-xl border border-white/10">
         <div className="flex items-center gap-3 mb-3">
           <div className="text-3xl">🔥</div>
           <div>

@@ -67,13 +67,12 @@ export default function LibraryPage() {
             className="w-10 h-12 object-contain" />
           <div>
             <div className="text-white font-black text-sm leading-tight">Phoenix International School Ghana</div>
-            <div className="text-xs font-semibold" style={{ color: "#C4B5FD" }}>
+            <div className="text-xs font-semibold text-violet-300">
               The Pace Setters · Est. 2006
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold"
-          style={{ background: "rgba(139,53,224,0.18)", color: "#C4B5FD", border: "1px solid rgba(139,53,224,0.35)" }}>
+        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-purple-500/15 text-violet-300 border border-purple-500/30">
           🖥️ Library Kiosk &nbsp;·&nbsp; Session auto-ends after 5 min idle
         </div>
       </header>
@@ -82,10 +81,9 @@ export default function LibraryPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
 
         <div className="text-center mb-10">
-          <p className="text-xs font-black tracking-widest uppercase mb-3"
-            style={{ color: "#C4B5FD" }}>Welcome to the school library kiosk</p>
+          <p className="text-xs font-black tracking-widest uppercase mb-3 text-violet-300">Welcome to the school library kiosk</p>
           <h1 className="text-3xl lg:text-4xl font-black text-white mb-2">Who are you today?</h1>
-          <p className="text-sm" style={{ color: "rgba(196,181,253,0.7)" }}>
+          <p className="text-sm text-violet-200/70">
             Select your role to open your portal on this shared computer.
           </p>
         </div>
@@ -98,31 +96,28 @@ export default function LibraryPage() {
               type="button"
               onClick={() => enter(role)}
               disabled={!!entering}
-              className="rounded-2xl p-6 text-left flex flex-col transition-all hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] disabled:opacity-60 group relative overflow-hidden"
+              className="rounded-2xl p-6 text-left flex flex-col transition-all hover:scale-[1.03] hover:brightness-110 active:scale-[0.98] disabled:opacity-60 group relative overflow-hidden border border-white/10"
               style={{
                 background: `linear-gradient(145deg, ${from}, ${to})`,
-                border: "1px solid rgba(255,255,255,0.12)",
                 cursor: entering ? "wait" : "pointer",
               }}>
               {/* Decorative circle */}
-              <div className="absolute top-0 right-0 w-28 h-28 rounded-full opacity-10"
-                style={{ background: "white", transform: "translate(35%, -35%)" }} />
+              <div className="absolute top-0 right-0 w-28 h-28 rounded-full opacity-10 bg-white"
+                style={{ transform: "translate(35%, -35%)" }} />
 
               <div className="text-4xl mb-4 relative">{icon}</div>
               <div className="font-black text-white text-xl mb-0.5 relative">{label}</div>
-              <div className="text-xs mb-4 relative" style={{ color: "rgba(255,255,255,0.65)" }}>{desc}</div>
+              <div className="text-xs mb-4 relative text-white/65">{desc}</div>
 
               <ul className="flex-1 space-y-1.5 mb-5 relative">
                 {items.map((item) => (
-                  <li key={item} className="flex items-center gap-1.5 text-[11px]"
-                    style={{ color: "rgba(255,255,255,0.75)" }}>
-                    <span style={{ color: "rgba(255,255,255,0.5)" }}>›</span> {item}
+                  <li key={item} className="flex items-center gap-1.5 text-[11px] text-white/75">
+                    <span className="text-white/50">›</span> {item}
                   </li>
                 ))}
               </ul>
 
-              <div className="text-xs font-black px-4 py-2 rounded-xl text-center relative transition-all"
-                style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.2)" }}>
+              <div className="text-xs font-black px-4 py-2 rounded-xl text-center relative transition-all bg-white/10 text-white border border-white/20">
                 {entering === role ? "Opening…" : `Enter as ${label} →`}
               </div>
             </button>
@@ -130,8 +125,7 @@ export default function LibraryPage() {
         </div>
 
         {/* Rules strip */}
-        <div className="w-full max-w-6xl rounded-2xl p-4 grid sm:grid-cols-4 gap-3"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="w-full max-w-6xl rounded-2xl p-4 grid sm:grid-cols-4 gap-3 bg-white/5 border border-white/10">
           {[
             { icon: "⏱️", text: "Session closes after 5 min of inactivity" },
             { icon: "🖥️", text: "Click \"End Library Session\" when you're done" },
@@ -140,15 +134,14 @@ export default function LibraryPage() {
           ].map(({ icon, text }) => (
             <div key={text} className="flex items-start gap-2">
               <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
-              <p className="text-[11px] leading-relaxed" style={{ color: "rgba(196,181,253,0.7)" }}>{text}</p>
+              <p className="text-[11px] leading-relaxed text-violet-200/70">{text}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── Footer ── */}
-      <footer className="text-center py-3 text-[11px] border-t border-white/5"
-        style={{ color: "rgba(196,181,253,0.4)" }}>
+      <footer className="text-center py-3 text-[11px] border-t border-white/5 text-violet-300/40">
         Phoenix International School Ghana &nbsp;·&nbsp; Library Shared Access Terminal
       </footer>
     </div>

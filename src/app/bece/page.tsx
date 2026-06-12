@@ -79,7 +79,7 @@ export default function BECESimulator() {
   const pct = qs.length ? Math.round((score / qs.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen safe-top safe-bottom" style={{ background: "#0A1628" }}>
+    <div className="min-h-screen safe-top safe-bottom bg-slate-950">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 gap-3">
         <Link href="/student"
@@ -114,8 +114,7 @@ export default function BECESimulator() {
             </div>
 
             {visibleSubjects.length === 0 && (
-              <div className="rounded-2xl p-8 text-center mb-6"
-                style={{ background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.25)" }}>
+              <div className="rounded-2xl p-8 text-center mb-6 bg-yellow-500/5 border border-yellow-500/20">
                 <div className="text-3xl mb-2">📝</div>
                 <p className="text-white font-bold mb-1">No practice questions for your level yet.</p>
                 <p className="text-blue-300 text-xs">Your teachers will add some on <span className="font-mono">/teacher/questions</span> soon. Come back later!</p>
@@ -144,18 +143,17 @@ export default function BECESimulator() {
             </div>
 
             {/* Aggregate info */}
-            <div className="mt-10 rounded-2xl p-5" style={{ background: "rgba(255,215,0,0.06)", border: "1px solid rgba(255,215,0,0.2)" }}>
+            <div className="mt-10 rounded-2xl p-5 bg-yellow-500/5 border border-yellow-500/10">
               <h3 className="font-black text-white mb-3">📊 Understanding Your BECE Aggregate</h3>
               <div className="grid sm:grid-cols-4 gap-3">
                 {[
-                  { range: "Agg 6–8",   label: "Excellent",  color: "#22c55e", desc: "Top SHS placement" },
-                  { range: "Agg 9–12",  label: "Very Good",  color: "#00D4FF", desc: "Good SHS options" },
-                  { range: "Agg 13–18", label: "Good",       color: "#f59e0b", desc: "Regular SHS" },
-                  { range: "Agg 19–36", label: "Needs Work", color: "#ef4444", desc: "Keep practicing" },
+                  { range: "Agg 6–8",   label: "Excellent",  color: "#22c55e", bgClass: "bg-green-500/10", borderClass: "border-green-500/30", textClass: "text-green-400" },
+                  { range: "Agg 9–12",  label: "Very Good",  color: "#00D4FF", bgClass: "bg-cyan-400/10", borderClass: "border-cyan-400/30", textClass: "text-cyan-300" },
+                  { range: "Agg 13–18", label: "Good",       color: "#f59e0b", bgClass: "bg-amber-500/10", borderClass: "border-amber-500/30", textClass: "text-amber-400" },
+                  { range: "Agg 19–36", label: "Needs Work", color: "#ef4444", bgClass: "bg-red-500/10", borderClass: "border-red-500/30", textClass: "text-red-400" },
                 ].map((a) => (
-                  <div key={a.range} className="text-center p-3 rounded-xl"
-                    style={{ background: a.color + "15", border: `1px solid ${a.color}30` }}>
-                    <div className="text-sm font-black" style={{ color: a.color }}>{a.range}</div>
+                  <div key={a.range} className={`text-center p-3 rounded-xl border ${a.bgClass} ${a.borderClass}`}>
+                    <div className={`text-sm font-black ${a.textClass}`}>{a.range}</div>
                     <div className="text-xs text-white/80 font-bold">{a.label}</div>
                     <div className="text-[10px] text-white/50 mt-0.5">{a.desc}</div>
                   </div>
@@ -168,7 +166,7 @@ export default function BECESimulator() {
           <div className="text-center">
             <div className="text-6xl mb-4">{pct >= 70 ? "🏆" : pct >= 50 ? "👍" : "💪"}</div>
             <h2 className="text-3xl font-black text-white mb-2">{selectedSubj} Complete!</h2>
-            <div className="text-6xl font-black mb-2" style={{ color: pct >= 70 ? "#FFD700" : pct >= 50 ? "#00D4FF" : "#ef4444" }}>
+            <div className={`text-6xl font-black mb-2 ${pct >= 70 ? "text-yellow-400" : pct >= 50 ? "text-cyan-400" : "text-red-500"}`}>
               {pct}%
             </div>
             <div className="text-blue-300 mb-2">You scored {score} out of {qs.length}</div>
@@ -223,7 +221,7 @@ export default function BECESimulator() {
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <div className="text-xs text-blue-400">Score</div>
-                  <div className="font-black" style={{ color: "#FFD700" }}>{score}/{currentQ}</div>
+                  <div className="font-black text-yellow-400">{score}/{currentQ}</div>
                 </div>
                 <button type="button" onClick={() => setSelectedSubj(null)}
                   className="text-xs text-blue-400 hover:text-white transition-colors">✕ Exit</button>
@@ -232,8 +230,8 @@ export default function BECESimulator() {
 
             {/* Progress bar */}
             <div className="h-1.5 bg-white/10 rounded-full mb-8 overflow-hidden">
-              <div className="h-full rounded-full transition-all"
-                style={{ width: `${(currentQ / qs.length) * 100}%`, background: "#FFD700" }} />
+              <div className="h-full rounded-full transition-all bg-yellow-400"
+                style={{ width: `${(currentQ / qs.length) * 100}%` }} />
             </div>
 
             {/* Question */}
@@ -249,19 +247,21 @@ export default function BECESimulator() {
               {qs[currentQ].options.map((opt, i) => {
                 const isCorrect  = i === qs[currentQ].answer;
                 const isSelected = i === selected;
-                let bg        = "rgba(255,255,255,0.06)";
-                let border    = "1px solid rgba(255,255,255,0.1)";
-                let textColor = "white";
+                let bgClass    = "bg-white/5 border border-white/10 text-white";
+                let cursorClass = "cursor-pointer";
 
                 if (answered) {
-                  if (isCorrect)                    { bg = "rgba(34,197,94,0.2)";  border = "2px solid #22c55e"; textColor = "#22c55e"; }
-                  else if (isSelected && !isCorrect) { bg = "rgba(239,68,68,0.2)"; border = "2px solid #ef4444"; textColor = "#ef4444"; }
+                  if (isCorrect) {
+                    bgClass = "bg-green-500/20 border-2 border-green-500 text-green-400";
+                  } else if (isSelected && !isCorrect) {
+                    bgClass = "bg-red-500/20 border-2 border-red-500 text-red-400";
+                  }
+                  cursorClass = "cursor-default";
                 }
 
                 return (
                   <button key={i} type="button" onClick={() => handleAnswer(i)}
-                    className="w-full text-left p-4 rounded-xl font-semibold text-sm transition-all"
-                    style={{ background: bg, border, color: textColor, cursor: answered ? "default" : "pointer" }}>
+                    className={`w-full text-left p-4 rounded-xl font-semibold text-sm transition-all ${bgClass} ${cursorClass}`}>
                     <span className="font-black mr-3">{["A", "B", "C", "D"][i]}.</span>
                     {opt}
                     {answered && isCorrect    && <span className="float-right">✅</span>}
@@ -273,9 +273,8 @@ export default function BECESimulator() {
 
             {/* Explanation */}
             {answered && qs[currentQ].explanation && (
-              <div className="rounded-xl p-4 mb-6"
-                style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.25)" }}>
-                <div className="text-xs font-black mb-1" style={{ color: "#FFD700" }}>💡 Explanation</div>
+              <div className="rounded-xl p-4 mb-6 bg-yellow-500/10 border border-yellow-500/25">
+                <div className="text-xs font-black mb-1 text-yellow-400">💡 Explanation</div>
                 <div className="text-sm text-white/80">{qs[currentQ].explanation}</div>
               </div>
             )}
