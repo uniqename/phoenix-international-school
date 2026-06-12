@@ -31,7 +31,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
   const path = usePathname();
   const router = useRouter();
   const { user, loading, logout } = useAuth();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const changeAccountPassword = useAppStore((s) => s.changeAccountPassword);
   const meta = ROLE_META[role];
 
@@ -141,8 +141,8 @@ export default function DashboardShell({ role, navItems, children }: Props) {
           style={{ background: isDark ? "rgba(10,22,40,0.92)" : "rgba(0,0,0,0.5)" }}>
           <div className="w-full max-w-sm rounded-2xl p-8" style={{ background: colors.modal, border: `1px solid ${colors.modalBorder}` }}>
             <div className="text-4xl text-center mb-5">🔐</div>
-            <h2 className="font-black text-white text-xl text-center mb-1">Set Your Password</h2>
-            <p className="text-blue-300 text-xs text-center mb-6">
+            <h2 className="font-black text-xl text-center mb-1" style={{color: colors.text}}>Set Your Password</h2>
+            <p className="text-xs text-center mb-6" style={{color: isDark ? "#93C5FD" : "#3B82F6"}}>
               Your account was just created by school admin. Please set a personal password before you continue.
             </p>
             <div className="space-y-3 mb-6">
@@ -151,16 +151,16 @@ export default function DashboardShell({ role, navItems, children }: Props) {
                 placeholder="New password (min 6 characters)"
                 value={pwForm.password}
                 onChange={(e) => setPwForm((p) => ({ ...p, password: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl text-white text-sm placeholder-white/40 focus:outline-none"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }} />
+                className="w-full px-4 py-3 rounded-xl text-sm placeholder-gray-500 focus:outline-none"
+                style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}` }} />
               <input
                 type="password"
                 placeholder="Confirm new password"
                 value={pwForm.confirm}
                 onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
                 onKeyDown={(e) => e.key === "Enter" && handlePwChange()}
-                className="w-full px-4 py-3 rounded-xl text-white text-sm placeholder-white/40 focus:outline-none"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }} />
+                className="w-full px-4 py-3 rounded-xl text-sm placeholder-gray-500 focus:outline-none"
+                style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}` }} />
             </div>
             <button type="button" onClick={handlePwChange} className="btn-gold w-full py-3 text-sm font-black">
               Set Password &amp; Continue →
@@ -177,19 +177,19 @@ export default function DashboardShell({ role, navItems, children }: Props) {
             <Link href="/" className="flex items-center gap-2.5">
               <img src="/logo.png" alt="Phoenix crest" className="w-9 h-11 object-contain shrink-0" />
               <div>
-                <div className="text-white font-black text-xs leading-tight">Phoenix International</div>
-                <div className="text-[10px]" style={{ color: "#C4B5FD" }}>School Ghana</div>
+                <div className="font-black text-xs leading-tight" style={{color: colors.text}}>Phoenix International</div>
+                <div className="text-[10px]" style={{ color: isDark ? "#C4B5FD" : "#6B7280" }}>School Ghana</div>
               </div>
             </Link>
             <NotificationBell role={role} />
           </div>
-          <div className="flex items-center gap-2.5 p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
+          <div className="flex items-center gap-2.5 p-2.5 rounded-xl" style={{ background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white"
               style={{ background: meta.color }}>
               {user.full_name.charAt(0)}
             </div>
             <div className="min-w-0">
-              <div className="text-white text-xs font-bold truncate">{user.full_name}</div>
+              <div className="text-xs font-bold truncate" style={{color: colors.text}}>{user.full_name}</div>
               <div className="text-[11px] font-bold px-1.5 py-0.5 rounded-full inline-block"
                 style={{ background: meta.color + "25", color: meta.color }}>
                 {meta.icon} {role.charAt(0).toUpperCase() + role.slice(1)}
@@ -217,8 +217,13 @@ export default function DashboardShell({ role, navItems, children }: Props) {
           })}
         </nav>
 
-        <div className="p-3 border-t border-white/10 space-y-1">
-          <Link href="/" className="flex items-center gap-2 px-3 py-2 text-xs text-blue-400 hover:text-white rounded-xl transition-colors">
+        <div className="p-3 border-t space-y-1" style={{borderColor: colors.sidebarBorder}}>
+          <button type="button" onClick={toggleTheme}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl transition-colors text-left"
+            style={{ color: colors.sidebarText, background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)", border: `1px solid ${colors.buttonBorder}` }}>
+            {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
+          </button>
+          <Link href="/" className="flex items-center gap-2 px-3 py-2 text-xs rounded-xl transition-colors" style={{color: isDark ? "#93C5FD" : "#3B82F6"}}>
             🏠 School Home
           </Link>
           {isLibraryMode && (
@@ -229,7 +234,8 @@ export default function DashboardShell({ role, navItems, children }: Props) {
             </button>
           )}
           <button type="button" onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 rounded-xl transition-colors text-left">
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl transition-colors text-left"
+            style={{ color: isDark ? "#FCA5A5" : "#DC2626", background: isDark ? "rgba(252, 165, 165, 0.1)" : "rgba(220, 38, 38, 0.1)", border: isDark ? "1px solid rgba(252, 165, 165, 0.2)" : "1px solid rgba(220, 38, 38, 0.2)" }}>
             🚪 Sign Out
           </button>
         </div>
@@ -247,13 +253,13 @@ export default function DashboardShell({ role, navItems, children }: Props) {
           {path !== `/${role}` && (
             <button type="button" onClick={() => router.back()} aria-label="Go back"
               className="px-2.5 py-1.5 rounded-lg text-[15px] font-bold leading-none"
-              style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}>
+              style={{ background: colors.button, color: colors.buttonText, border: `1px solid ${colors.buttonBorder}` }}>
               ←
             </button>
           )}
           <Link href={`/${role}`} className="flex items-center gap-1.5">
             <img src="/logo.png" alt="Phoenix" className="w-7 h-8 object-contain" />
-            <span className="text-white font-black text-sm">Phoenix</span>
+            <span className="font-black text-sm" style={{color: colors.text}}>Phoenix</span>
           </Link>
         </div>
         <div className="flex items-center gap-2">
@@ -273,11 +279,11 @@ export default function DashboardShell({ role, navItems, children }: Props) {
             onClick={() => setDrawerOpen(false)} />
           <div className="md:hidden fixed top-0 right-0 bottom-0 z-50 w-64 overflow-y-auto"
             style={{ background: colors.sidebar, borderLeft: `1px solid ${colors.sidebarBorder}` }}>
-            <div className="p-4 flex items-center justify-between border-b border-white/10">
-              <span className="text-white font-black text-sm">Menu</span>
+            <div className="p-4 flex items-center justify-between border-b" style={{borderColor: colors.sidebarBorder}}>
+              <span className="font-black text-sm" style={{color: colors.text}}>Menu</span>
               <button type="button" onClick={() => setDrawerOpen(false)} aria-label="Close menu"
                 className="px-2 py-1 rounded-lg text-lg font-bold"
-                style={{ background: "rgba(255,255,255,0.08)", color: "white" }}>
+                style={{ background: colors.button, color: colors.buttonText, border: `1px solid ${colors.buttonBorder}` }}>
                 ✕
               </button>
             </div>
@@ -300,8 +306,13 @@ export default function DashboardShell({ role, navItems, children }: Props) {
                 );
               })}
             </nav>
-            <div className="p-3 border-t border-white/10 space-y-1">
-              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2 px-3 py-2 text-xs text-blue-400 hover:text-white rounded-xl transition-colors">
+            <div className="p-3 border-t space-y-1" style={{borderColor: colors.sidebarBorder}}>
+              <button type="button" onClick={() => { toggleTheme(); setDrawerOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl transition-colors text-left"
+                style={{ color: colors.sidebarText, background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)", border: `1px solid ${colors.buttonBorder}` }}>
+                {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
+              </button>
+              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2 px-3 py-2 text-xs rounded-xl transition-colors" style={{color: isDark ? "#93C5FD" : "#3B82F6"}}>
                 🏠 School Home
               </Link>
               {isLibraryMode && (
@@ -312,7 +323,8 @@ export default function DashboardShell({ role, navItems, children }: Props) {
                 </button>
               )}
               <button type="button" onClick={() => { handleLogout(); setDrawerOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 rounded-xl transition-colors text-left">
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl transition-colors text-left"
+                style={{ color: isDark ? "#FCA5A5" : "#DC2626", background: isDark ? "rgba(252, 165, 165, 0.1)" : "rgba(220, 38, 38, 0.1)", border: isDark ? "1px solid rgba(252, 165, 165, 0.2)" : "1px solid rgba(220, 38, 38, 0.2)" }}>
                 🚪 Sign Out
               </button>
             </div>
@@ -327,7 +339,7 @@ export default function DashboardShell({ role, navItems, children }: Props) {
           {path !== `/${role}` && (
             <button type="button" onClick={() => router.back()}
               className="hidden md:inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 rounded-lg text-xs font-bold"
-              style={{ background: "rgba(255,255,255,0.06)", color: "white", border: "1px solid rgba(255,255,255,0.12)" }}>
+              style={{ background: colors.button, color: colors.buttonText, border: `1px solid ${colors.buttonBorder}` }}>
               ← Back
             </button>
           )}

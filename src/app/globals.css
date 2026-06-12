@@ -2,8 +2,8 @@
 
 :root {
   /* ── Phoenix School Brand Colors ─── */
-  --background: #0C0A1E;       /* dark hero default — pages with light surfaces override locally */
-  --foreground: #F4F2FF;       /* soft purple-white text on dark */
+  --background: #FFFFFF;       /* light background as default */
+  --foreground: #111827;       /* dark text for readability */
 
   --blue:        #1A3FA0;      /* school royal blue */
   --blue-mid:    #2B55C9;
@@ -22,17 +22,19 @@
   /* ── Light Mode Colors ── */
   --light-bg-primary: #FFFFFF;
   --light-bg-secondary: #F9FAFB;
-  --light-text-primary: #000000;
-  --light-text-secondary: #666666;
+  --light-text-primary: #111827;
+  --light-text-secondary: #6B7280;
   --light-border: #E5E7EB;
 }
 
 /* Dark mode overrides */
 :root[data-theme="dark"] {
+  --background: #0C0A1E;
+  --foreground: #F4F2FF;
   --light-bg-primary: #0F0F1E;
   --light-bg-secondary: #1A1A2E;
   --light-text-primary: #FFFFFF;
-  --light-text-secondary: #AAAAAA;
+  --light-text-secondary: #D1D5DB;
   --light-border: rgba(255, 255, 255, 0.12);
 }
 

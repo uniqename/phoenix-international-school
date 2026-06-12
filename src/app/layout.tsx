@@ -37,10 +37,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable} data-theme="dark">
+    <html lang="en" className={inter.variable} data-theme="light">
       <script dangerouslySetInnerHTML={{__html: `
         try {
-          const theme = localStorage.getItem('phoenixTheme') || 'dark';
+          const theme = localStorage.getItem('phoenixTheme') || 'light';
           document.documentElement.setAttribute('data-theme', theme);
           document.documentElement.style.colorScheme = theme;
         } catch {}

@@ -11,18 +11,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Get saved preference or system preference
+    // Get saved preference or system preference (default to light)
     const saved = localStorage.getItem("phoenixTheme") as Theme | null;
-    let resolvedTheme: Theme = "dark";
+    let resolvedTheme: Theme = "light";
 
     if (saved) {
       resolvedTheme = saved;
-    } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches) {
-      resolvedTheme = "light";
+    } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      resolvedTheme = "dark";
     }
 
     setTheme(resolvedTheme);
