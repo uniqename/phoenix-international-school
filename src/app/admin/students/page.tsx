@@ -3,6 +3,7 @@ import { useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import { ADMIN_NAV as NAV } from "@/lib/adminNav";
 import { useAppStore } from "@/store/useAppStore";
+import { useTheme } from "@/context/ThemeContext";
 import { CLASSES, LEVEL_NAMES } from "@/lib/utils";
 import type { Student, StudentLevel, GuardianRelationship } from "@/lib/types";
 import toast from "react-hot-toast";
@@ -67,6 +68,8 @@ const blankGuardian = () => ({
 type FormTab = "basic" | "admission" | "contact" | "health" | "social" | "previous" | "relations" | "guardian";
 
 export default function StudentsPage() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const students = useAppStore((s) => s.students);
   const addStudent = useAppStore((s) => s.addStudent);
   const updateStudent = useAppStore((s) => s.updateStudent);
@@ -211,8 +214,8 @@ export default function StudentsPage() {
 
       <div className="glass rounded-2xl overflow-hidden">
         <table className="w-full text-sm">
-          <thead style={{ background: "#0A1628" }}>
-            <tr className="text-xs text-blue-300 uppercase tracking-wider">
+          <thead style={{ background: isDark ? "#0A1628" : "#F3F4F6" }}>
+            <tr className={isDark ? "text-xs text-blue-300 uppercase tracking-wider" : "text-xs text-blue-700 uppercase tracking-wider font-bold"}>
               <th className="text-left px-4 py-3 font-semibold">Student</th>
               <th className="text-left px-4 py-3 font-semibold">ID</th>
               <th className="text-left px-4 py-3 font-semibold">Class</th>
@@ -241,12 +244,12 @@ export default function StudentsPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className={`rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col ${isDark ? "bg-slate-900" : "bg-white"}`}>
 
             {/* HEADER WITH TABS */}
-            <div className="px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-blue-50">
-              <h2 className="text-2xl font-black text-gray-900 mb-1">Student Admission</h2>
-              <p className="text-sm text-gray-700 mb-4">Fill in the form below. All starred (*) fields are required.</p>
+            <div className={`px-6 py-4 border-b ${isDark ? "bg-slate-800 border-slate-700" : "bg-gradient-to-r from-indigo-50 to-blue-50 border-gray-200"}`}>
+              <h2 className={`text-2xl font-black mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>Student Admission</h2>
+              <p className={`text-sm mb-4 ${isDark ? "text-slate-300" : "text-gray-700"}`}>Fill in the form below. All starred (*) fields are required.</p>
 
               <div className="flex gap-2 border-t pt-3">
                 {(['basic','admission','contact','health','social','previous','relations','guardian'] as FormTab[]).map(t => (
@@ -268,44 +271,44 @@ export default function StudentsPage() {
               {/* SECTION 1: BASIC INFORMATION */}
               {tab === 'basic' && (
                 <div className="space-y-5 max-w-3xl">
-                  <div className="bg-indigo-100 px-4 py-3 rounded-lg border-l-4 border-indigo-600">
-                    <h3 className="font-black text-gray-900 text-lg">SECTION: BASIC INFORMATION</h3>
+                  <div className={`px-4 py-3 rounded-lg border-l-4 ${isDark ? "bg-slate-800 border-indigo-500 text-white" : "bg-indigo-100 border-indigo-600 text-gray-900"}`}>
+                    <h3 className="font-black text-lg">SECTION: BASIC INFORMATION</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* First Name */}
                     <div>
-                      <label className="block text-sm font-black text-gray-900 mb-2">First Name *</label>
+                      <label className={`block text-sm font-black mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>First Name *</label>
                       <input type="text" placeholder="e.g. Kwame" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                        className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none ${isDark ? "bg-slate-700 border-slate-600 text-white focus:border-indigo-400" : "border-gray-300 text-gray-900 focus:border-indigo-500"}`} />
                     </div>
 
                     {/* Last Name */}
                     <div>
-                      <label className="block text-sm font-black text-gray-900 mb-2">Last Name *</label>
+                      <label className={`block text-sm font-black mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Last Name *</label>
                       <input type="text" placeholder="e.g. Asante" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                        className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none ${isDark ? "bg-slate-700 border-slate-600 text-white focus:border-indigo-400" : "border-gray-300 text-gray-900 focus:border-indigo-500"}`} />
                     </div>
 
                     {/* Other Names */}
                     <div>
-                      <label className="block text-sm font-black text-gray-900 mb-2">Other Names</label>
+                      <label className={`block text-sm font-black mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Other Names</label>
                       <input type="text" placeholder="Middle names" value={form.other_names} onChange={(e) => setForm({...form, other_names: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                        className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none ${isDark ? "bg-slate-700 border-slate-600 text-white focus:border-indigo-400" : "border-gray-300 text-gray-900 focus:border-indigo-500"}`} />
                     </div>
 
                     {/* Date of Birth */}
                     <div>
-                      <label className="block text-sm font-black text-gray-900 mb-2">Date of Birth *</label>
+                      <label className={`block text-sm font-black mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Date of Birth *</label>
                       <input type="date" value={form.dob} onChange={(e) => setForm({...form, dob: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none" />
+                        className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none ${isDark ? "bg-slate-700 border-slate-600 text-white focus:border-indigo-400" : "border-gray-300 text-gray-900 focus:border-indigo-500"}`} />
                     </div>
 
                     {/* Gender */}
                     <div>
-                      <label className="block text-sm font-black text-gray-900 mb-2">Gender *</label>
+                      <label className={`block text-sm font-black mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Gender *</label>
                       <select value={form.gender ?? 'male'} onChange={(e) => setForm({...form, gender: e.target.value as 'male' | 'female'})}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 font-medium focus:border-indigo-500 focus:outline-none">
+                        className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none ${isDark ? "bg-slate-700 border-slate-600 text-white focus:border-indigo-400" : "border-gray-300 text-gray-900 focus:border-indigo-500"}`}>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                       </select>
@@ -313,10 +316,10 @@ export default function StudentsPage() {
 
                     {/* Student Image */}
                     <div>
-                      <label className="block text-sm font-black text-gray-900 mb-2">Student Image</label>
+                      <label className={`block text-sm font-black mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Student Image</label>
                       <input type="file" accept="image/jpg,image/png"
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-600 font-medium focus:border-indigo-500 focus:outline-none" />
-                      <p className="text-xs text-gray-500 mt-1">JPG or PNG format</p>
+                        className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none ${isDark ? "bg-slate-700 border-slate-600 text-slate-300 focus:border-indigo-400" : "border-gray-300 text-gray-600 focus:border-indigo-500"}`} />
+                      <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>JPG or PNG format</p>
                     </div>
                   </div>
                 </div>
@@ -727,8 +730,8 @@ export default function StudentsPage() {
             </div>
 
             {/* FOOTER */}
-            <div className="border-t bg-gray-50 px-6 py-4 flex gap-3 justify-end">
-              <button onClick={() => setShowModal(false)} className="px-6 py-2 border-2 border-gray-300 text-gray-900 font-bold rounded-lg hover:bg-gray-100">Cancel</button>
+            <div className={`border-t px-6 py-4 flex gap-3 justify-end ${isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"}`}>
+              <button onClick={() => setShowModal(false)} className={`px-6 py-2 border-2 font-bold rounded-lg transition-colors ${isDark ? "border-slate-600 text-slate-100 hover:bg-slate-700" : "border-gray-300 text-gray-900 hover:bg-gray-100"}`}>Cancel</button>
               <button onClick={handleSave} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">{editing ? 'Update Student' : 'Admit Student'}</button>
             </div>
           </div>
