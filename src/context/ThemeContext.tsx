@@ -11,26 +11,35 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Get saved preference or system preference
     const saved = localStorage.getItem("phoenixTheme") as Theme | null;
+    let resolvedTheme: Theme = "dark";
+
     if (saved) {
-      setTheme(saved);
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark");
+      resolvedTheme = saved;
+    } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches) {
+      resolvedTheme = "light";
     }
+
+    setTheme(resolvedTheme);
+    // Set immediately on mount
+    const html = document.documentElement;
+    html.setAttribute("data-theme", resolvedTheme);
+    html.style.colorScheme = resolvedTheme;
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
 
-    // Update DOM and localStorage
+    // Update DOM and localStorage when theme changes
     const html = document.documentElement;
     html.setAttribute("data-theme", theme);
+    html.style.colorScheme = theme;
     localStorage.setItem("phoenixTheme", theme);
   }, [theme, mounted]);
 
@@ -38,11 +47,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  // Prevent flash of unstyled content
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // Always render with provider to maintain context
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}

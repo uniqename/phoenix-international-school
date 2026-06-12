@@ -37,7 +37,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} data-theme="dark">
+      <script dangerouslySetInnerHTML={{__html: `
+        try {
+          const theme = localStorage.getItem('phoenixTheme') || 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+          document.documentElement.style.colorScheme = theme;
+        } catch {}
+      `}} />
       <body className="min-h-screen">
         <RootErrorBoundary>
           <ThemeProvider>
