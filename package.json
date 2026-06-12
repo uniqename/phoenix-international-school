@@ -1,17 +1,12 @@
 {
   "name": "phoenix-international-school",
-  "version": "2.4.0",
+  "version": "3.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "build:web": "next build",
-    "sync:capacitor": "npx cap sync",
-    "build:android": "cd android && ./gradlew bundleRelease",
-    "build:ios": "cd ios && xcodebuild -workspace Phoenix\\ Intl\\ School.xcworkspace -scheme Phoenix\\ Intl\\ School -configuration Release -derivedDataPath build",
-    "build:all": "npm run build:web && npm run sync:capacitor && npm run build:android && npm run build:ios"
+    "lint": "eslint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
